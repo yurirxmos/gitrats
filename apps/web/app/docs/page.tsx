@@ -79,7 +79,10 @@ export default function Docs() {
                   </thead>
                   <tbody>
                     {levelProgression.map((item, idx) => (
-                      <tr key={item.level} className="border-b border-border/50">
+                      <tr
+                        key={item.level}
+                        className="border-b border-border/50"
+                      >
                         <td className="py-3 px-4 font-bold">{item.level}</td>
                         <td className="py-3 px-4">{item.xp.toLocaleString()}</td>
                         <td className="py-3 px-4">
