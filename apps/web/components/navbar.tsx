@@ -62,6 +62,13 @@ export function Navbar() {
         </button>
 
         <Link
+          href="/docs"
+          className="hover:underline"
+        >
+          /docs
+        </Link>
+
+        <Link
           href="/leaderboard"
           className="hover:underline"
         >

@@ -19,13 +19,47 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Se o usuário já estiver logado quando abrir o modal, pular para o passo 2
+  // Verificar se usuário já tem personagem ao abrir modal
   useEffect(() => {
-    if (isOpen && user) {
-      setStep(2);
-    } else if (isOpen && !user) {
-      setStep(1);
-    }
+    const checkExistingCharacter = async () => {
+      if (!isOpen || !user) {
+        if (isOpen && !user) {
+          setStep(1);
+        }
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+
+        if (!token) {
+          setStep(2);
+          return;
+        }
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+        const response = await fetch(`${apiUrl}/api/character`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          // Já tem personagem, redirecionar para leaderboard
+          window.location.href = "/leaderboard";
+        } else {
+          // Não tem personagem, ir para step 2
+          setStep(2);
+        }
+      } catch (err) {
+        console.error("Erro ao verificar personagem:", err);
+        setStep(2);
+      }
+    };
+
+    checkExistingCharacter();
   }, [isOpen, user]);
 
   const handleCharacterCreation = async (data: { name: string; class: string }) => {

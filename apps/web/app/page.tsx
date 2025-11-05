@@ -53,6 +53,10 @@ export default function Home() {
 
         if (response.ok) {
           setHasCharacter(true);
+          // Se já tem personagem e o modal está aberto, redirecionar
+          if (isOnboardingOpen) {
+            window.location.href = "/leaderboard";
+          }
         } else {
           setHasCharacter(false);
         }
@@ -65,7 +69,7 @@ export default function Home() {
     };
 
     checkCharacter();
-  }, [user]);
+  }, [user, isOnboardingOpen]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
