@@ -350,8 +350,11 @@ export default function Leaderboard() {
                           <FaMedal className="text-gray-400 text-3xl" />
                           <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden">
                             <Image
-                              src={getCharacterAvatar(leaderboard[1]?.character_class || 'orc', leaderboard[1]?.level || 1)}
-                              alt={leaderboard[1]?.character_name || ''}
+                              src={getCharacterAvatar(
+                                leaderboard[1]?.character_class || "orc",
+                                leaderboard[1]?.level || 1
+                              )}
+                              alt={leaderboard[1]?.character_name || ""}
                               fill
                               className="object-contain"
                             />
@@ -359,7 +362,7 @@ export default function Leaderboard() {
                           <div className="text-center">
                             <h3 className="font-bold text-base">{leaderboard[1]?.character_name}</h3>
                             <p className="text-xs text-blue-400">
-                              {getCurrentRank(leaderboard[1]?.character_class || 'orc', leaderboard[1]?.level || 1)}
+                              {getCurrentRank(leaderboard[1]?.character_class || "orc", leaderboard[1]?.level || 1)}
                             </p>
                             <button
                               onClick={() =>
@@ -396,8 +399,11 @@ export default function Leaderboard() {
                           <FaTrophy className="text-yellow-500 text-4xl animate-bounce" />
                           <div className="relative w-32 h-32 bg-muted rounded-lg overflow-hidden">
                             <Image
-                              src={getCharacterAvatar(leaderboard[0]?.character_class || 'orc', leaderboard[0]?.level || 1)}
-                              alt={leaderboard[0]?.character_name || ''}
+                              src={getCharacterAvatar(
+                                leaderboard[0]?.character_class || "orc",
+                                leaderboard[0]?.level || 1
+                              )}
+                              alt={leaderboard[0]?.character_name || ""}
                               fill
                               className="object-contain"
                             />
@@ -405,7 +411,7 @@ export default function Leaderboard() {
                           <div className="text-center">
                             <h3 className="font-bold text-lg">{leaderboard[0]?.character_name}</h3>
                             <p className="text-sm text-blue-400">
-                              {getCurrentRank(leaderboard[0]?.character_class || 'orc', leaderboard[0]?.level || 1)}
+                              {getCurrentRank(leaderboard[0]?.character_class || "orc", leaderboard[0]?.level || 1)}
                             </p>
                             <button
                               onClick={() =>
@@ -442,8 +448,11 @@ export default function Leaderboard() {
                           <FaMedal className="text-amber-700 text-3xl" />
                           <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden">
                             <Image
-                              src={getCharacterAvatar(leaderboard[2]?.character_class || 'orc', leaderboard[2]?.level || 1)}
-                              alt={leaderboard[2]?.character_name || ''}
+                              src={getCharacterAvatar(
+                                leaderboard[2]?.character_class || "orc",
+                                leaderboard[2]?.level || 1
+                              )}
+                              alt={leaderboard[2]?.character_name || ""}
                               fill
                               className="object-contain"
                             />
@@ -451,7 +460,7 @@ export default function Leaderboard() {
                           <div className="text-center">
                             <h3 className="font-bold text-base">{leaderboard[2]?.character_name}</h3>
                             <p className="text-xs text-blue-400">
-                              {getCurrentRank(leaderboard[2]?.character_class || 'orc', leaderboard[2]?.level || 1)}
+                              {getCurrentRank(leaderboard[2]?.character_class || "orc", leaderboard[2]?.level || 1)}
                             </p>
                             <button
                               onClick={() =>

@@ -36,6 +36,7 @@ GITHUB_WEBHOOK_SECRET=gere-uma-string-aleatoria-segura
 ## 3️⃣ Deploy na Vercel
 
 ### Opção A: Via GitHub Integration (Recomendado)
+
 1. Acesse [vercel.com](https://vercel.com)
 2. Clique em **Add New > Project**
 3. Importe seu repositório `gitrats`
@@ -48,6 +49,7 @@ GITHUB_WEBHOOK_SECRET=gere-uma-string-aleatoria-segura
 6. Clique em **Deploy**
 
 ### Opção B: Via CLI
+
 ```bash
 npm i -g vercel
 cd apps/web
