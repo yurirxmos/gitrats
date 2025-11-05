@@ -45,7 +45,7 @@ export default function Home() {
           setCheckingCharacter(false);
           return;
         }
-        const response = await fetch("http://localhost:3002/api/character", {
+        const response = await fetch("/api/character", {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
@@ -227,7 +227,6 @@ export default function Home() {
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
       />
-
     </div>
   );
 }

@@ -46,7 +46,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         throw new Error("Sessão não encontrada");
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
       // 1. Criar/atualizar usuário no banco
       const userResponse = await fetch(`${apiUrl}/api/user`, {

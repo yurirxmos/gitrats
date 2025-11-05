@@ -77,10 +77,14 @@ export default function Leaderboard() {
 
   const loadLeaderboard = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
       const response = await fetch(`${apiUrl}/api/leaderboard?limit=50`);
 
-      if (!response.ok) throw new Error("Erro ao carregar leaderboard");
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Erro da API:", response.status, errorText);
+        throw new Error("Erro ao carregar leaderboard");
+      }
 
       const { data, lastUpdate: updateTime } = await response.json();
       setLeaderboard(data || []);
@@ -118,7 +122,7 @@ export default function Leaderboard() {
         return;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
       console.log("🔍 Buscando personagem para user:", user.id);
 
