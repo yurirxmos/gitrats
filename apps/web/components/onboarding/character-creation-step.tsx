@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaArrowRight, FaArrowLeft, FaAnglesUp } from "react-icons/fa6";
+import { FaArrowRight, FaArrowLeft, FaAnglesUp, FaFire, FaStar } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
@@ -16,8 +16,9 @@ import orcLvl5 from "@/assets/orc_lvl_5.png";
 import orcLvl10 from "@/assets/orc_lvl_10.png";
 import { Card, CardContent } from "../ui/card";
 import { GiSwordsPower } from "react-icons/gi";
+import { CLASS_DESCRIPTIONS } from "@/lib/classes";
 
-type CharacterClass = "warrior" | "mage" | "archer";
+type CharacterClass = "warrior" | "mage" | "orc";
 
 interface CharacterCreationStepProps {
   onNext: (characterData: { name: string; class: CharacterClass }) => void;
@@ -124,7 +125,7 @@ export function CharacterCreationStep({ onNext, onBack, isLoading = false }: Cha
         <div className="rounded-lg p-3">
           <div className="text-xs opacity-50 mb-4 flex flex-row items-center gap-2 justify-center">
             <FaAnglesUp />
-            <h3 className="font-normal  text-center">evolução da classe</h3>
+            <h3 className="font-normal text-center">evolução da classe</h3>
           </div>
 
           <div className="flex flex-row items-center justify-center gap-4">
@@ -160,6 +161,36 @@ export function CharacterCreationStep({ onNext, onBack, isLoading = false }: Cha
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Bônus de Classe */}
+        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-2">
+            <FaFire className="text-orange-500" />
+            <h3 className="font-bold text-sm uppercase">Bônus de XP</h3>
+          </div>
+
+          <p className="text-xs text-muted-foreground mb-3">
+            {CLASS_DESCRIPTIONS[selectedClass].description}
+          </p>
+
+          <div className="space-y-2">
+            {CLASS_DESCRIPTIONS[selectedClass].strengths.map((strength, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-2 text-xs"
+              >
+                <FaStar className="text-yellow-500 text-[10px] mt-0.5 shrink-0" />
+                <span className="text-foreground/90">{strength}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-2 border-t border-border/50">
+            <p className="text-[10px] text-muted-foreground italic">
+              Estilo: {CLASS_DESCRIPTIONS[selectedClass].playstyle}
+            </p>
           </div>
         </div>
       </div>

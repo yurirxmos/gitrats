@@ -58,14 +58,56 @@ vercel --prod
 
 ## 4️⃣ Configurar GitHub Webhook
 
+### Importante: Sistema de Classes
+O webhook agora calcula XP baseado na classe do personagem (Orc, Warrior, Mage). Cada classe tem multiplicadores únicos!
+
+### Configuração do Webhook
+
 1. Vá em **Settings** do repositório que deseja monitorar
 2. **Webhooks > Add webhook**
 3. Configure:
    - **Payload URL**: `https://seu-dominio.vercel.app/api/github/webhook`
    - **Content type**: `application/json`
    - **Secret**: mesmo valor de `GITHUB_WEBHOOK_SECRET`
-   - **Events**: Push, Pull requests, Issues, Pull request reviews
+   - **Events**: Selecione individualmente:
+     - ✅ Pushes
+     - ✅ Pull requests
+     - ✅ Pull request reviews
+     - ✅ Issues
+     - ✅ Stars
+     - ✅ Forks
 4. Salve
+
+### Testar Webhook
+
+Após configurar, faça um teste:
+
+```bash
+# Faça um commit vazio para testar
+git commit --allow-empty -m "test: webhook integration"
+git push
+```
+
+Verifique:
+- GitHub: Settings → Webhooks → Recent Deliveries (deve mostrar status 200)
+- Vercel: Logs em tempo real
+- Supabase: Tabela `activity_log` deve ter novo registro
+
+```sql
+-- Ver últimas atividades
+SELECT * FROM activity_log ORDER BY created_at DESC LIMIT 10;
+
+-- Ver XP ganho por usuário
+SELECT 
+  u.github_username,
+  c.name as character_name,
+  c.class,
+  c.level,
+  c.total_xp
+FROM characters c
+JOIN users u ON c.user_id = u.id
+ORDER BY c.total_xp DESC;
+```
 
 ## 5️⃣ Atualizar GitHub OAuth
 

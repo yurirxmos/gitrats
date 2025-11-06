@@ -4,6 +4,9 @@
  * Progressão similar ao sistema Fast/Medium Fast de Pokémon
  */
 
+import type { CharacterClass } from "./classes";
+import { getClassXpMultiplier } from "./classes";
+
 // Constantes do sistema
 export const XP_CONSTANTS = {
   // Caps diários para prevenir grinding excessivo
@@ -107,8 +110,13 @@ export function getCurrentXp(totalXp: number, level: number): number {
 
 /**
  * Calcula XP ganho por commit baseado no número de linhas alteradas
+ * Aplica multiplicador de classe
  */
-export function calculateCommitXp(linesChanged: number, isOwnRepo: boolean = true): number {
+export function calculateCommitXp(
+  linesChanged: number,
+  isOwnRepo: boolean = true,
+  characterClass?: CharacterClass
+): number {
   let baseXp = 0;
 
   if (linesChanged === 0) {
@@ -126,6 +134,17 @@ export function calculateCommitXp(linesChanged: number, isOwnRepo: boolean = tru
   // Penalidade menor para repos próprios (incentiva contribuições externas)
   if (!isOwnRepo) {
     baseXp *= XP_CONSTANTS.MULTIPLIERS.EXTERNAL_REPO;
+    // Aplicar multiplicador de classe para repos externos
+    if (characterClass) {
+      baseXp *= getClassXpMultiplier(characterClass, "externalRepos");
+    }
+  }
+
+  // Aplicar multiplicador de classe
+  if (characterClass) {
+    const isLargeCommit = linesChanged >= 100;
+    const multiplierType = isLargeCommit ? "largeCommits" : "commits";
+    baseXp *= getClassXpMultiplier(characterClass, multiplierType);
   }
 
   return Math.floor(baseXp);
@@ -133,11 +152,13 @@ export function calculateCommitXp(linesChanged: number, isOwnRepo: boolean = tru
 
 /**
  * Calcula XP de Pull Request baseado em status e popularidade do repo
+ * Aplica multiplicador de classe
  */
 export function calculatePullRequestXp(
   status: "opened" | "merged" | "closed",
   isOwnRepo: boolean = true,
-  repoStars: number = 0
+  repoStars: number = 0,
+  characterClass?: CharacterClass
 ): number {
   let baseXp = 0;
 
@@ -156,6 +177,9 @@ export function calculatePullRequestXp(
   // Aplicar penalidade para repos próprios
   if (isOwnRepo) {
     baseXp *= XP_CONSTANTS.PULL_REQUEST.OWN_REPO_PENALTY;
+  } else if (characterClass) {
+    // Aplicar bônus de classe para repos externos
+    baseXp *= getClassXpMultiplier(characterClass, "externalRepos");
   }
 
   // Bônus por popularidade do repo
@@ -163,6 +187,143 @@ export function calculatePullRequestXp(
     baseXp *= 2; // +100% bonus
   } else if (repoStars >= 1000) {
     baseXp *= 1.5; // +50% bonus
+  }
+
+  // Aplicar multiplicador de classe para PRs
+  if (characterClass) {
+    baseXp *= getClassXpMultiplier(characterClass, "pullRequests");
+  }
+
+  return Math.floor(baseXp);
+}
+
+/**
+ * Calcula XP de Code Review com multiplicador de classe
+ */
+export function calculateCodeReviewXp(
+  hasChanges: boolean = false,
+  characterClass?: CharacterClass
+): number {
+  let baseXp = hasChanges ? XP_CONSTANTS.CODE_REVIEW.WITH_CHANGES : XP_CONSTANTS.CODE_REVIEW.SUBMITTED;
+
+  if (characterClass) {
+    baseXp *= getClassXpMultiplier(characterClass, "codeReviews");
+  }
+
+  return Math.floor(baseXp);
+}
+
+/**
+ * Calcula XP de Issues com multiplicador de classe
+ */
+export function calculateIssueXp(
+  type: "created" | "resolved_by_author" | "resolved_by_community" | "bug_fix",
+  characterClass?: CharacterClass
+): number {
+  let baseXp = 0;
+
+  switch (type) {
+    case "created":
+      baseXp = XP_CONSTANTS.ISSUES.CREATED;
+      break;
+    case "resolved_by_author":
+      baseXp = XP_CONSTANTS.ISSUES.RESOLVED_BY_AUTHOR;
+      break;
+    case "resolved_by_community":
+      baseXp = XP_CONSTANTS.ISSUES.RESOLVED_BY_COMMUNITY;
+      break;
+    case "bug_fix":
+      baseXp = XP_CONSTANTS.ISSUES.BUG_FIX;
+      break;
+  }
+
+  if (characterClass) {
+    baseXp *= getClassXpMultiplier(characterClass, "issuesResolved");
+  }
+
+  return Math.floor(baseXp);
+}
+
+/**
+ * Calcula XP de Stars/Forks com multiplicador de classe
+ */
+export function calculateStarForkXp(
+  type: "star" | "fork",
+  isFirst: boolean = false,
+  characterClass?: CharacterClass
+): number {
+  let baseXp = 0;
+
+  if (type === "star") {
+    baseXp = isFirst ? XP_CONSTANTS.STARS.FIRST : XP_CONSTANTS.STARS.ADDITIONAL;
+  } else {
+    baseXp = isFirst ? XP_CONSTANTS.FORKS.FIRST : XP_CONSTANTS.FORKS.ADDITIONAL;
+  }
+
+  if (characterClass) {
+    baseXp *= getClassXpMultiplier(characterClass, "starsAndForks");
+  }
+
+  return Math.floor(baseXp);
+}
+
+/**
+ * Calcula XP de Release com multiplicador de classe
+ */
+export function calculateReleaseXp(
+  type: "first" | "major" | "minor" | "patch",
+  characterClass?: CharacterClass
+): number {
+  let baseXp = 0;
+
+  switch (type) {
+    case "first":
+      baseXp = XP_CONSTANTS.RELEASE.FIRST;
+      break;
+    case "major":
+      baseXp = XP_CONSTANTS.RELEASE.MAJOR;
+      break;
+    case "minor":
+      baseXp = XP_CONSTANTS.RELEASE.MINOR;
+      break;
+    case "patch":
+      baseXp = XP_CONSTANTS.RELEASE.PATCH;
+      break;
+  }
+
+  if (characterClass) {
+    baseXp *= getClassXpMultiplier(characterClass, "releases");
+  }
+
+  return Math.floor(baseXp);
+}
+
+/**
+ * Calcula XP de Achievement com multiplicador de classe
+ */
+export function calculateAchievementXp(
+  type: "first_open_source" | "trending_repo" | "package_published" | "featured",
+  characterClass?: CharacterClass
+): number {
+  let baseXp = 0;
+
+  switch (type) {
+    case "first_open_source":
+      baseXp = XP_CONSTANTS.ACHIEVEMENTS.FIRST_OPEN_SOURCE;
+      break;
+    case "trending_repo":
+      baseXp = XP_CONSTANTS.ACHIEVEMENTS.TRENDING_REPO;
+      break;
+    case "package_published":
+      baseXp = XP_CONSTANTS.ACHIEVEMENTS.PACKAGE_PUBLISHED;
+      break;
+    case "featured":
+      baseXp = XP_CONSTANTS.ACHIEVEMENTS.FEATURED;
+      break;
+  }
+
+  if (characterClass) {
+    baseXp *= getClassXpMultiplier(characterClass, "achievements");
   }
 
   return Math.floor(baseXp);

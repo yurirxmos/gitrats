@@ -14,6 +14,7 @@ import { getXpForLevel } from "@/lib/xp-system";
 import { getCurrentRank, getNextRank, getLevelsUntilNextRank } from "@/lib/class-evolution";
 import { Select, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { SelectContent } from "@radix-ui/react-select";
+import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
 
 interface LeaderboardEntry {
   rank: number;
@@ -287,6 +288,9 @@ export default function Leaderboard() {
                           As atividades do GitHub são sincronizadas automaticamente a cada 1 hora.
                         </small>
                       </div>
+
+                      {/* Bônus de Classe */}
+                      <ClassBonusIndicator characterClass={userProfile.character_class as "orc" | "warrior" | "mage"} />
 
                       <div className="flex flex-row items-center justify-center gap-2">
                         <Button

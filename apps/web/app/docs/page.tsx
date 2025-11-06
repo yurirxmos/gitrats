@@ -3,6 +3,8 @@
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { XP_CONSTANTS, getXpForLevel } from "@/lib/xp-system";
+import { CLASS_DESCRIPTIONS, CLASS_XP_MULTIPLIERS } from "@/lib/classes";
+import { FaFire } from "react-icons/fa6";
 
 export default function Docs() {
   const levelProgression = [
@@ -60,6 +62,65 @@ export default function Docs() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* NOVO: Bônus de Classes */}
+          <Card className="bg-orange-500/10 border-orange-500/50">
+            <CardContent className="space-y-6">
+              <div className="flex items-center gap-2">
+                <FaFire className="text-orange-500 text-2xl" />
+                <h2 className="text-2xl font-bold">Bônus de XP por Classe</h2>
+              </div>
+              <p className="text-muted-foreground">
+                Cada classe tem multiplicadores únicos de XP baseados em seu estilo de desenvolvimento.
+              </p>
+
+              <div className="grid md:grid-cols-3 gap-6">
+                {(["orc", "warrior", "mage"] as const).map((characterClass) => {
+                  const classInfo = CLASS_DESCRIPTIONS[characterClass];
+                  const multipliers = CLASS_XP_MULTIPLIERS[characterClass];
+
+                  return (
+                    <div
+                      key={characterClass}
+                      className="p-4 bg-background rounded-lg border-2 border-border"
+                    >
+                      <h3 className="text-xl font-bold mb-1">{classInfo.name}</h3>
+                      <p className="text-sm text-blue-400 mb-3">{classInfo.title}</p>
+                      <p className="text-xs text-muted-foreground mb-4">{classInfo.description}</p>
+
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-bold text-orange-500">Principais Bônus:</h4>
+                        {classInfo.strengths.map((strength, idx) => (
+                          <div
+                            key={idx}
+                            className="text-xs bg-muted/50 p-2 rounded"
+                          >
+                            {strength}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <p className="text-xs italic text-muted-foreground">
+                          Estilo: {classInfo.playstyle}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="bg-background rounded-lg p-4 space-y-3">
+                <h3 className="font-bold text-sm">Como funcionam os multiplicadores:</h3>
+                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Os bônus são aplicados APÓS o cálculo base de XP</li>
+                  <li>Multiplicadores acima de 1.0 aumentam o XP ganho</li>
+                  <li>Multiplicadores abaixo de 1.0 reduzem o XP ganho</li>
+                  <li>Escolha a classe que combina com seu estilo de desenvolvimento!</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
