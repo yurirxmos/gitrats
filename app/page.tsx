@@ -191,7 +191,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-background relative bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] animate-[grid-move_2s_linear_infinite]">
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 opacity-50 pointer-events-none "
+        className="absolute inset-0 opacity-50 pointer-events-none hidden md:block"
       />
       <Navbar />
 
@@ -210,7 +210,7 @@ export default function Home() {
             Transforme seus commits e pull requests em experiência. Crie seu personagem e domine o leaderboard.
           </p>
 
-          <div className="flex flex-row items-stretch justify-center gap-8 mt-12">
+          <div className="flex flex-row items-stretch justify-center gap-8 mt-12 flex-wrap">
             {/* Card 1: Login GitHub */}
             <div className="flex flex-col items-center gap-4 p-6 rounded-lg hover:border-foreground transition-colors flex-1 max-w-xs">
               <div className="w-16 h-16 flex items-center justify-center bg-foreground/10 rounded-full">

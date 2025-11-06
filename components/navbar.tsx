@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@/assets/github.png";
@@ -17,13 +18,14 @@ import {
 } from "@radix-ui/react-dropdown-menu";
 import { Button } from "./ui/button";
 import { DropdownMenuLabel, DropdownMenuSeparator } from "./ui/dropdown-menu";
-import { FaArrowRight, FaGithub, FaMoon, FaPowerOff, FaSun } from "react-icons/fa6";
+import { FaArrowRight, FaBars, FaGithub, FaMoon, FaPowerOff, FaSun, FaXmark } from "react-icons/fa6";
 
 export function Navbar() {
   const { user, loading } = useUser();
   const router = useRouter();
   const supabase = createClient();
   const { theme, toggleTheme } = useTheme();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogin = async () => {
     await supabase.auth.signInWithOAuth({
@@ -41,90 +43,168 @@ export function Navbar() {
   };
 
   return (
-    <nav className="w-full py-5 px-10 flex justify-between items-center bg-background">
-      <Link
-        href="/"
-        className="flex items-center gap-1"
-      >
-        <Image
-          src={logo}
-          alt="Gitrats Logo"
-          className="w-5 h-5 dark:invert"
-        />
-        <h1 className="text-lg font-black uppercase">Gitrats</h1>
-
-        {loading ? (
-          <span className="opacity-50">/loading...</span>
-        ) : (
-          user && (
-            <>
-              <span className="opacity-70 text-xs ml-2">/{user.user_metadata?.user_name || user.email}</span>
-            </>
-          )
-        )}
-      </Link>
-
-      <div className="flex items-center gap-8 text-xs">
+    <>
+      <nav className="w-full py-5 px-4 sm:px-10 flex justify-between items-center bg-background relative">
+        {/* Logo */}
         <Link
-          href="/docs"
-          className="hover:underline"
+          href="/"
+          className="flex items-center gap-1"
         >
-          /docs
+          <Image
+            src={logo}
+            alt="Gitrats Logo"
+            className="w-5 h-5 dark:invert"
+          />
+          <h1 className="text-lg font-black uppercase">Gitrats</h1>
+          {loading ? (
+            <span className="opacity-50 hidden sm:inline">/loading...</span>
+          ) : (
+            user && (
+              <span className="opacity-70 text-xs ml-2 hidden sm:inline">
+                /{user.user_metadata?.user_name || user.email}
+              </span>
+            )
+          )}
         </Link>
 
-        <Link
-          href="/leaderboard"
-          className="hover:underline"
-        >
-          /leaderboard
-        </Link>
-
-        {user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                className="flex flex-row items-center gap-1.5 hover:cursor-pointer px-3 py-0.5"
-                variant={"secondary"}
-              >
-                <p className="text-[10px]">{user.user_metadata?.user_name || user.email}</p>
-                <Avatar className="w-5 h-5">
-                  <img
-                    src={user.user_metadata?.avatar_url || "/default-avatar.png"}
-                    alt="User Avatar"
-                  />
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="bg-foreground text-background p-2 rounded-md shadow-md mt-1 w-32 text-center gap-2 border-none"
-            >
-              <DropdownMenuItem
-                className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none p-2"
-                onClick={toggleTheme}
-              >
-                {theme === "dark" ? <FaSun /> : <FaMoon />}
-                {theme === "dark" ? "light mode" : "dark mode"}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none p-2"
-                onClick={handleLogout}
-              >
-                <FaPowerOff />
-                logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <Button
-            className="flex flex-row items-center gap-1.5 hover:cursor-pointer px-3 py-0.5"
-            variant={"secondary"}
+        {/* Desktop Menu */}
+        <div className="hidden md:flex items-center gap-8 text-xs">
+          <Link
+            href="/docs"
+            className="hover:underline"
           >
-            <FaArrowRight />
-            <p className="text-[10px]">/entrar</p>
-          </Button>
-        )}
-      </div>
-    </nav>
+            /docs
+          </Link>
+          <Link
+            href="/leaderboard"
+            className="hover:underline"
+          >
+            /leaderboard
+          </Link>
+
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="flex flex-row items-center gap-1.5 hover:cursor-pointer px-3 py-0.5"
+                  variant={"secondary"}
+                >
+                  <p className="text-[10px]">{user.user_metadata?.user_name || user.email}</p>
+                  <Avatar className="w-5 h-5">
+                    <img
+                      src={user.user_metadata?.avatar_url || "/default-avatar.png"}
+                      alt="User Avatar"
+                    />
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="bg-foreground text-background p-1 rounded-md shadow-md mt-1 w-32 text-center gap-2 border-none"
+              >
+                <DropdownMenuItem
+                  className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  onClick={toggleTheme}
+                >
+                  {theme === "dark" ? <FaSun /> : <FaMoon />}
+                  {theme === "dark" ? "light mode" : "dark mode"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  onClick={handleLogout}
+                >
+                  <FaPowerOff />
+                  logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              onClick={handleLogin}
+              className="flex flex-row items-center gap-1.5 hover:cursor-pointer px-3 py-0.5"
+              variant={"secondary"}
+            >
+              <FaArrowRight />
+              <p className="text-[10px]">/entrar</p>
+            </Button>
+          )}
+        </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden p-2 hover:bg-secondary/20 rounded-md"
+        >
+          {mobileMenuOpen ? <FaXmark className="w-5 h-5" /> : <FaBars className="w-5 h-5" />}
+        </button>
+      </nav>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-background border-t border-border">
+          <div className="flex flex-col gap-4 p-4">
+            <Link
+              href="/docs"
+              className="hover:underline text-sm"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              /docs
+            </Link>
+            <Link
+              href="/leaderboard"
+              className="hover:underline text-sm"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              /leaderboard
+            </Link>
+
+            {user ? (
+              <>
+                <div className="flex items-center gap-2 py-2 border-t border-border">
+                  <Avatar className="w-8 h-8">
+                    <img
+                      src={user.user_metadata?.avatar_url || "/default-avatar.png"}
+                      alt="User Avatar"
+                    />
+                  </Avatar>
+                  <span className="text-sm">{user.user_metadata?.user_name || user.email}</span>
+                </div>
+                <Button
+                  onClick={toggleTheme}
+                  variant="outline"
+                  className="flex items-center gap-2 justify-center w-full"
+                >
+                  {theme === "dark" ? <FaSun /> : <FaMoon />}
+                  {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  variant="destructive"
+                  className="flex items-center gap-2 justify-center w-full"
+                >
+                  <FaPowerOff />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={() => {
+                  handleLogin();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center gap-2 justify-center w-full"
+                variant="secondary"
+              >
+                <FaGithub />
+                Entrar com GitHub
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

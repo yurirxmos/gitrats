@@ -240,7 +240,7 @@ export default function Leaderboard() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-row justify-center gap-10">
+        <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10">
           {/* Sidebar - Profile */}
           {user && (
             <aside className="w-80 shrink-0">
@@ -365,27 +365,11 @@ export default function Leaderboard() {
           {/* Main - Leaderboard */}
           <main className={user ? "flex-1 max-w-4xl" : "flex-1 max-w-6xl"}>
             <div className="space-y-8">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-center lg:justify-start">
                 <div className="flex items-center gap-2">
                   <FaTrophy className="text-2xl text-foreground" />
                   <h1 className="text-2xl font-black">LEADERBOARD</h1>
-
-                  <div className="ml-4">
-                    <Select>
-                      <SelectTrigger className="text-xs border-none">global</SelectTrigger>
-                    </Select>
-                  </div>
                 </div>
-                {lastUpdate && (
-                  <div className="text-xs text-muted-foreground">
-                    Atualizado{" "}
-                    {new Date(lastUpdate).toLocaleTimeString("pt-BR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}{" "}
-                    • Atualiza sempre às 00:00
-                  </div>
-                )}
               </div>
 
               {leaderboard.length === 0 ? (
@@ -619,7 +603,6 @@ export default function Leaderboard() {
                     )
                   ) : (
                     <div className="mb-10">
-                      <h2 className="text-lg font-black mb-4">RANKING GERAL</h2>
                       <ScrollArea className="h-100 pr-4">
                         <div className="space-y-2">
                           {leaderboard.map((player) => (
@@ -628,7 +611,7 @@ export default function Leaderboard() {
                               className="transition-all hover:opacity-60 border-none shadow-none"
                             >
                               <CardContent className="px-4">
-                                <div className="flex items-center gap-4">
+                                <div className="flex md:flex-row flex-col items-center gap-4">
                                   <div className="w-12 flex items-center justify-center shrink-0">
                                     {getRankIcon(player.rank)}
                                   </div>
