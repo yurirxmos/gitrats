@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import GitHubService from "@/lib/github-service";
 import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
+import { getClassXpMultiplier } from "@/lib/classes";
 
 /**
  * Sincronização de atividades do GitHub usando GraphQL API
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const { data: currentStats, error: statsError } = await supabase
       .from("github_stats")
-      .select("total_commits, total_prs, total_issues, total_reviews, last_sync_at")
+      .select("total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, last_sync_at")
       .eq("user_id", userData.id)
       .maybeSingle(); // Usar maybeSingle() ao invés de single() para não dar erro se não existir
 
@@ -69,6 +70,8 @@ export async function POST(request: NextRequest) {
         total_prs: 0,
         total_issues: 0,
         total_reviews: 0,
+        baseline_commits: 0,
+        baseline_prs: 0,
         last_sync_at: null,
       });
     }
@@ -90,8 +93,10 @@ export async function POST(request: NextRequest) {
       const { data: updatedStats, error: upsertError } = await supabase
         .from("github_stats")
         .update({
-          total_commits: githubStats.totalCommits, // Baseline - ponto de partida
-          total_prs: githubStats.totalPRs, // Baseline - ponto de partida
+          total_commits: githubStats.totalCommits,
+          total_prs: githubStats.totalPRs,
+          baseline_commits: githubStats.totalCommits, // Histórico = baseline
+          baseline_prs: githubStats.totalPRs, // Histórico = baseline
           last_sync_at: new Date().toISOString(),
         })
         .eq("user_id", userData.id)
@@ -104,8 +109,8 @@ export async function POST(request: NextRequest) {
       }
 
       console.log(`[Sync] Baseline salvo (histórico GitHub ignorado):`, {
-        baseline_commits: updatedStats?.total_commits,
-        baseline_prs: updatedStats?.total_prs,
+        baseline_commits: updatedStats?.baseline_commits,
+        baseline_prs: updatedStats?.baseline_prs,
         mensagem: "A partir de agora, apenas NOVOS commits/PRs gerarão XP",
       });
 
@@ -137,11 +142,19 @@ export async function POST(request: NextRequest) {
       baseline: currentStats?.total_commits || 0,
     });
 
-    const xpFromCommits = newCommits * 5;
-    const xpFromPRs = newPRs * 40;
+    // Aplicar multiplicadores de classe
+    const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
+    const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
+
+    const xpFromCommits = Math.floor(newCommits * 5 * commitMultiplier);
+    const xpFromPRs = Math.floor(newPRs * 40 * prMultiplier);
     const totalXpGained = xpFromCommits + xpFromPRs;
 
-    console.log(`[Sync] XP calculado:`, {
+    console.log(`[Sync] XP calculado (com bônus de classe ${character.class.toUpperCase()}):`, {
+      newCommits,
+      newPRs,
+      commitMultiplier: `${commitMultiplier}x`,
+      prMultiplier: `${prMultiplier}x`,
       xpFromCommits,
       xpFromPRs,
       totalXpGained,

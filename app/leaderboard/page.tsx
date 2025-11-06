@@ -298,8 +298,8 @@ export default function Leaderboard() {
                             <div className="pt-2 space-y-1">
                               {nextRank && (
                                 <p className="text-[9px] text-blue-400 text-center">
-                                  {userProfile.character_class.toUpperCase()} vira {nextRank.name.toUpperCase()} em{" "}
-                                  {levelsUntil} {levelsUntil === 1 ? "nível" : "níveis"}
+                                  {userProfile.character_class.toUpperCase()} evolui para {nextRank.name.toUpperCase()}{" "}
+                                  em {levelsUntil} {levelsUntil === 1 ? "nível" : "níveis"}
                                 </p>
                               )}
                             </div>

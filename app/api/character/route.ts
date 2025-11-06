@@ -33,13 +33,20 @@ export async function GET(request: NextRequest) {
     // Buscar estatísticas do GitHub separadamente
     const { data: githubStats } = await supabase
       .from("github_stats")
-      .select("total_commits, total_prs")
+      .select("total_commits, total_prs, baseline_commits, baseline_prs")
       .eq("user_id", user.id)
       .single();
 
-    // IMPORTANTE: total_commits e total_prs são usados apenas internamente como baseline
-    // Para o usuário, mostramos sempre 0 até ele fazer novos commits APÓS a primeira sync
-    // O XP é calculado pela diferença entre syncs, então funciona corretamente
+    // Mostrar apenas atividades APÓS a primeira sync (baseline)
+    // baseline_commits/prs = histórico GitHub ignorado
+    // total_commits/prs = total atual do GitHub
+    // Diferença = atividades que geraram XP
+    const commitsAfterJoin = githubStats 
+      ? (githubStats.total_commits || 0) - (githubStats.baseline_commits || 0)
+      : 0;
+    const prsAfterJoin = githubStats
+      ? (githubStats.total_prs || 0) - (githubStats.baseline_prs || 0)
+      : 0;
 
     return NextResponse.json({
       data: {
@@ -50,8 +57,8 @@ export async function GET(request: NextRequest) {
         current_xp: character.current_xp,
         total_xp: character.total_xp,
         github_stats: {
-          total_commits: 0, // Sempre 0 porque ignora histórico
-          total_prs: 0, // Sempre 0 porque ignora histórico
+          total_commits: commitsAfterJoin, // Apenas após entrar na plataforma
+          total_prs: prsAfterJoin, // Apenas após entrar na plataforma
         },
       },
     });
