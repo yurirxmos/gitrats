@@ -158,10 +158,10 @@ export async function POST(request: NextRequest) {
     const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
     const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
 
-    // XP base: 5 por commit, 40 por PR, 15 por issue
-    const xpFromCommits = Math.floor(newCommits * 5 * commitMultiplier);
-    const xpFromPRs = Math.floor(newPRs * 40 * prMultiplier);
-    const xpFromIssues = Math.floor(newIssues * 15 * issueMultiplier);
+    // XP base AUMENTADO: 10 por commit, 50 por PR, 25 por issue
+    const xpFromCommits = Math.floor(newCommits * 10 * commitMultiplier);
+    const xpFromPRs = Math.floor(newPRs * 50 * prMultiplier);
+    const xpFromIssues = Math.floor(newIssues * 25 * issueMultiplier);
     const totalXpGained = xpFromCommits + xpFromPRs + xpFromIssues;
 
     console.log(`[Sync] XP calculado (com bônus de classe ${character.class.toUpperCase()}):`, {

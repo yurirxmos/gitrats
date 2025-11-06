@@ -144,7 +144,7 @@ export default function Docs() {
                   <li>Multiplicadores acima de 1.0 aumentam o XP ganho</li>
                   <li>Multiplicadores abaixo de 1.0 reduzem o XP ganho</li>
                   <li>Escolha a classe que combina com seu estilo de desenvolvimento!</li>
-                  <li><strong className="text-orange-500">XP Base Atual:</strong> 5 XP/commit, 40 XP/PR, 15 XP/issue</li>
+                  <li><strong className="text-orange-500">XP Base Atual:</strong> 10 XP/commit, 50 XP/PR, 25 XP/issue</li>
                 </ul>
               </div>
             </CardContent>

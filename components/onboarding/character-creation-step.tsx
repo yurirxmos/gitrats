@@ -197,7 +197,7 @@ export function CharacterCreationStep({ onNext, onBack, isLoading = false }: Cha
 
           <div className="mt-2 pt-2 border-t border-border/50">
             <p className="text-[9px] text-muted-foreground">
-              <strong className="text-blue-400">XP Base:</strong> 5/commit · 40/PR · 15/issue
+              <strong className="text-blue-400">XP Base:</strong> 10/commit · 50/PR · 25/issue
             </p>
           </div>
         </div>
