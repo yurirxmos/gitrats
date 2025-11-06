@@ -30,18 +30,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Buscar personagem
-    const { data: character } = await supabase
-      .from("characters")
-      .select("*")
-      .eq("user_id", userData.id)
-      .single();
+    const { data: character } = await supabase.from("characters").select("*").eq("user_id", userData.id).single();
 
     // Buscar stats do GitHub no banco
-    const { data: githubStats } = await supabase
-      .from("github_stats")
-      .select("*")
-      .eq("user_id", userData.id)
-      .single();
+    const { data: githubStats } = await supabase.from("github_stats").select("*").eq("user_id", userData.id).single();
 
     // Buscar stats reais do GitHub via API
     let realGithubStats = null;
@@ -70,12 +62,13 @@ export async function GET(request: NextRequest) {
             totalRepos: realGithubStats.totalRepos,
           }
         : "Não foi possível buscar stats do GitHub",
-      diff: githubStats && realGithubStats
-        ? {
-            commits_diff: realGithubStats.totalCommits - (githubStats.total_commits || 0),
-            prs_diff: realGithubStats.totalPRs - (githubStats.total_prs || 0),
-          }
-        : null,
+      diff:
+        githubStats && realGithubStats
+          ? {
+              commits_diff: realGithubStats.totalCommits - (githubStats.total_commits || 0),
+              prs_diff: realGithubStats.totalPRs - (githubStats.total_prs || 0),
+            }
+          : null,
     });
   } catch (error) {
     console.error("Erro no debug:", error);

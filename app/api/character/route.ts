@@ -37,6 +37,10 @@ export async function GET(request: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
+    // IMPORTANTE: total_commits e total_prs são usados apenas internamente como baseline
+    // Para o usuário, mostramos sempre 0 até ele fazer novos commits APÓS a primeira sync
+    // O XP é calculado pela diferença entre syncs, então funciona corretamente
+
     return NextResponse.json({
       data: {
         id: character.id,
@@ -46,8 +50,8 @@ export async function GET(request: NextRequest) {
         current_xp: character.current_xp,
         total_xp: character.total_xp,
         github_stats: {
-          total_commits: githubStats?.total_commits || 0,
-          total_prs: githubStats?.total_prs || 0,
+          total_commits: 0, // Sempre 0 porque ignora histórico
+          total_prs: 0, // Sempre 0 porque ignora histórico
         },
       },
     });
@@ -109,8 +113,8 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       total_commits: 0,
       total_prs: 0,
-      total_stars: 0,
-      total_repos: 0,
+      total_issues: 0,
+      total_reviews: 0,
       last_sync_at: null, // Marca que nunca foi sincronizado
     });
 

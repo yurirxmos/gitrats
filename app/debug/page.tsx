@@ -67,16 +67,30 @@ export default function DebugPage() {
         <h1 className="text-3xl font-black">🔧 DEBUG - Sincronização GitHub</h1>
 
         <div className="flex gap-4 flex-wrap">
-          <Button onClick={checkStatus} disabled={loading}>
+          <Button
+            onClick={checkStatus}
+            disabled={loading}
+          >
             Verificar Status
           </Button>
-          <Button onClick={forceSync} disabled={loading} variant="destructive">
+          <Button
+            onClick={forceSync}
+            disabled={loading}
+            variant="destructive"
+          >
             Forçar Sincronização
           </Button>
-          <Button onClick={fixSync} disabled={loading} variant="outline">
+          <Button
+            onClick={fixSync}
+            disabled={loading}
+            variant="outline"
+          >
             🔧 Corrigir Sync (Resetar last_sync_at)
           </Button>
-          <Button onClick={() => router.push("/leaderboard")} variant="secondary">
+          <Button
+            onClick={() => router.push("/leaderboard")}
+            variant="secondary"
+          >
             ← Voltar ao Leaderboard
           </Button>
         </div>
@@ -87,9 +101,7 @@ export default function DebugPage() {
               <h2 className="text-xl font-bold mb-2">⚠️ Análise Rápida</h2>
               {status.diff.commits_diff > 0 || status.diff.prs_diff > 0 ? (
                 <div className="space-y-2">
-                  <p className="text-yellow-500 font-bold">
-                    ❌ Dados NÃO sincronizados!
-                  </p>
+                  <p className="text-yellow-500 font-bold">❌ Dados NÃO sincronizados!</p>
                   <p className="text-sm">
                     Faltam <strong>{status.diff.commits_diff} commits</strong> e{" "}
                     <strong>{status.diff.prs_diff} PRs</strong> para serem salvos no banco.
@@ -108,8 +120,8 @@ export default function DebugPage() {
                     <strong>{status.github_stats_db.total_prs} PRs</strong>
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Agora você vai ganhar XP apenas por NOVAS atividades. Faça novos commits e aguarde
-                    a sincronização automática!
+                    Agora você vai ganhar XP apenas por NOVAS atividades. Faça novos commits e aguarde a sincronização
+                    automática!
                   </p>
                 </div>
               )}

@@ -54,11 +54,24 @@ export async function POST(request: NextRequest) {
       totalRepos: githubStats.totalRepos,
     });
 
-    const { data: currentStats } = await supabase
+    const { data: currentStats, error: statsError } = await supabase
       .from("github_stats")
-      .select("total_commits, total_prs, total_stars, total_repos, last_sync_at")
+      .select("total_commits, total_prs, total_issues, total_reviews, last_sync_at")
       .eq("user_id", userData.id)
-      .single();
+      .maybeSingle(); // Usar maybeSingle() ao invés de single() para não dar erro se não existir
+
+    // Se não existe registro de stats, criar um vazio primeiro
+    if (!currentStats) {
+      console.log(`[Sync] Nenhum registro de github_stats encontrado. Criando...`);
+      await supabase.from("github_stats").insert({
+        user_id: userData.id,
+        total_commits: 0,
+        total_prs: 0,
+        total_issues: 0,
+        total_reviews: 0,
+        last_sync_at: null,
+      });
+    }
 
     console.log(`[Sync] Stats atuais no banco:`, {
       currentStats,
@@ -68,36 +81,46 @@ export async function POST(request: NextRequest) {
     });
 
     // Se é a primeira sync (nunca sincronizou antes), apenas inicializar sem dar XP
-    const isFirstSync = !currentStats?.last_sync_at;
+    // IMPORTANTE: Salva o baseline dos commits/PRs atuais, mas NÃO conta como atividade
+    const isFirstSync = !currentStats || !currentStats?.last_sync_at;
 
     if (isFirstSync) {
-      console.log(`[Sync] PRIMEIRA SINCRONIZAÇÃO - Inicializando stats sem dar XP`);
+      console.log(`[Sync] PRIMEIRA SINCRONIZAÇÃO - Salvando baseline (histórico ignorado)`);
 
-      await supabase.from("github_stats").upsert({
-        user_id: userData.id,
-        total_commits: githubStats.totalCommits,
-        total_prs: githubStats.totalPRs,
-        total_stars: githubStats.totalStars,
-        total_repos: githubStats.totalRepos,
-        last_sync_at: new Date().toISOString(),
-      });
+      const { data: updatedStats, error: upsertError } = await supabase
+        .from("github_stats")
+        .update({
+          total_commits: githubStats.totalCommits, // Baseline - ponto de partida
+          total_prs: githubStats.totalPRs, // Baseline - ponto de partida
+          last_sync_at: new Date().toISOString(),
+        })
+        .eq("user_id", userData.id)
+        .select()
+        .single();
 
-      console.log(`[Sync] Stats inicializados:`, {
-        total_commits: githubStats.totalCommits,
-        total_prs: githubStats.totalPRs,
+      if (upsertError) {
+        console.error(`[Sync] ERRO ao atualizar github_stats:`, upsertError);
+        return NextResponse.json({ error: `Erro ao salvar stats: ${upsertError.message}` }, { status: 500 });
+      }
+
+      console.log(`[Sync] Baseline salvo (histórico GitHub ignorado):`, {
+        baseline_commits: updatedStats?.total_commits,
+        baseline_prs: updatedStats?.total_prs,
+        mensagem: "A partir de agora, apenas NOVOS commits/PRs gerarão XP",
       });
 
       return NextResponse.json({
         success: true,
-        message: "Conta sincronizada! A partir de agora você ganhará XP por novas atividades.",
+        message:
+          "✅ Conta sincronizada! Seu histórico foi ignorado. A partir de agora você ganhará XP apenas por novas atividades.",
         data: {
           xp_gained: 0,
           activities_synced: 0,
           stats: {
-            commits: 0,
-            prs: 0,
-            total_commits: githubStats.totalCommits,
-            total_prs: githubStats.totalPRs,
+            commits: 0, // Zerado porque é baseline
+            prs: 0, // Zerado porque é baseline
+            total_commits: 0, // Mostra 0 pro usuário (histórico ignorado)
+            total_prs: 0, // Mostra 0 pro usuário (histórico ignorado)
           },
         },
       });
@@ -110,6 +133,8 @@ export async function POST(request: NextRequest) {
     console.log(`[Sync] Novas atividades desde último sync:`, {
       newCommits,
       newPRs,
+      github_total: githubStats.totalCommits,
+      baseline: currentStats?.total_commits || 0,
     });
 
     const xpFromCommits = newCommits * 5;
@@ -122,14 +147,18 @@ export async function POST(request: NextRequest) {
       totalXpGained,
     });
 
-    await supabase.from("github_stats").upsert({
-      user_id: userData.id,
-      total_commits: githubStats.totalCommits,
-      total_prs: githubStats.totalPRs,
-      total_stars: githubStats.totalStars,
-      total_repos: githubStats.totalRepos,
-      last_sync_at: new Date().toISOString(),
-    });
+    const { error: updateStatsError } = await supabase
+      .from("github_stats")
+      .update({
+        total_commits: githubStats.totalCommits,
+        total_prs: githubStats.totalPRs,
+        last_sync_at: new Date().toISOString(),
+      })
+      .eq("user_id", userData.id);
+
+    if (updateStatsError) {
+      console.error(`[Sync] ERRO ao atualizar github_stats:`, updateStatsError);
+    }
 
     console.log(`[Sync] github_stats atualizado com:`, {
       total_commits: githubStats.totalCommits,

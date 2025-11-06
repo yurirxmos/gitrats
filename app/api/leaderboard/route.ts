@@ -66,8 +66,8 @@ export async function GET(request: NextRequest) {
         total_xp: character.total_xp,
         github_username: user?.github_username || "unknown",
         github_avatar_url: user?.github_avatar_url || null,
-        total_commits: stats?.total_commits || 0,
-        total_prs: stats?.total_prs || 0,
+        total_commits: 0, // Sempre 0 - histórico ignorado, só mostra atividade pós-plataforma
+        total_prs: 0, // Sempre 0 - histórico ignorado, só mostra atividade pós-plataforma
       };
     });
 
