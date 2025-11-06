@@ -18,8 +18,8 @@ export default function Home() {
   const [checkingCharacter, setCheckingCharacter] = useState(true);
   const { user } = useUser();
 
-  // Sync automático a cada 10 minutos
-  useAutoSync();
+  // Sync automático a cada 10 minutos (só se tiver personagem)
+  useAutoSync(hasCharacter);
 
   useEffect(() => {
     // Verificar se estava no onboarding antes do login
@@ -245,13 +245,29 @@ export default function Home() {
           </div>
 
           {!hasCharacter && (
-            <Button
-              onClick={() => setIsOnboardingOpen(true)}
-              disabled={hasCharacter || checkingCharacter}
-            >
-              <FaGithub className="text-xl" />
-              Quero jogar!
-            </Button>
+            <div className="flex flex-col gap-4 items-center">
+              <Button
+                onClick={() => setIsOnboardingOpen(true)}
+                disabled={hasCharacter || checkingCharacter}
+              >
+                <FaGithub className="text-xl" />
+                Quero jogar!
+              </Button>
+
+              {user && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const res = await fetch("/api/github/configure-token", { method: "POST" });
+                    const data = await res.json();
+                    alert(data.message || data.error);
+                  }}
+                >
+                  Configurar Token GitHub
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </main>

@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     const { data: currentStats } = await supabase
       .from("github_stats")
-      .select("total_commits, total_prs, total_stars, total_repos")
+      .select("total_commits, total_prs, total_stars, total_repos, last_sync_at")
       .eq("user_id", userData.id)
       .single();
 
@@ -64,8 +64,48 @@ export async function POST(request: NextRequest) {
       currentStats,
       total_commits_db: currentStats?.total_commits || 0,
       total_prs_db: currentStats?.total_prs || 0,
+      last_sync_at: currentStats?.last_sync_at,
     });
 
+    // Se é a primeira sync (nunca sincronizou antes), apenas inicializar sem dar XP
+    const isFirstSync = !currentStats?.last_sync_at;
+    
+    if (isFirstSync) {
+      console.log(`[Sync] PRIMEIRA SINCRONIZAÇÃO - Inicializando stats sem dar XP`);
+      
+      await supabase
+        .from("github_stats")
+        .upsert({
+          user_id: userData.id,
+          total_commits: githubStats.totalCommits,
+          total_prs: githubStats.totalPRs,
+          total_stars: githubStats.totalStars,
+          total_repos: githubStats.totalRepos,
+          last_sync_at: new Date().toISOString(),
+        });
+
+      console.log(`[Sync] Stats inicializados:`, {
+        total_commits: githubStats.totalCommits,
+        total_prs: githubStats.totalPRs,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Conta sincronizada! A partir de agora você ganhará XP por novas atividades.",
+        data: {
+          xp_gained: 0,
+          activities_synced: 0,
+          stats: {
+            commits: 0,
+            prs: 0,
+            total_commits: githubStats.totalCommits,
+            total_prs: githubStats.totalPRs,
+          },
+        },
+      });
+    }
+
+    // Calcular apenas as NOVAS atividades desde a última sync
     const newCommits = githubStats.totalCommits - (currentStats?.total_commits || 0);
     const newPRs = githubStats.totalPRs - (currentStats?.total_prs || 0);
 
@@ -86,14 +126,14 @@ export async function POST(request: NextRequest) {
 
     await supabase
       .from("github_stats")
-      .update({
+      .upsert({
+        user_id: userData.id,
         total_commits: githubStats.totalCommits,
         total_prs: githubStats.totalPRs,
         total_stars: githubStats.totalStars,
         total_repos: githubStats.totalRepos,
         last_sync_at: new Date().toISOString(),
-      })
-      .eq("user_id", userData.id);
+      });
 
     console.log(`[Sync] github_stats atualizado com:`, {
       total_commits: githubStats.totalCommits,
@@ -144,6 +184,7 @@ export async function POST(request: NextRequest) {
       message: "Nenhuma atividade nova",
       data: {
         xp_gained: 0,
+        activities_synced: 0,
         stats: {
           commits: 0,
           prs: 0,

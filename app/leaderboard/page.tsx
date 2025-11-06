@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { OnboardingModal } from "@/components/onboarding-modal";
-import { FaTrophy, FaMedal, FaGithub, FaShareFromSquare, FaSpinner, FaArrowsRotate } from "react-icons/fa6";
+import { FaTrophy, FaMedal, FaGithub, FaShareFromSquare, FaSpinner } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
@@ -49,13 +49,12 @@ export default function Leaderboard() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  // Sync automático a cada 10 minutos
-  useAutoSync();
   const [hasCharacter, setHasCharacter] = useState<boolean | null>(null);
+
+  // Sync automático a cada 10 minutos (só se tiver personagem)
+  useAutoSync(hasCharacter === true);
+
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const hasLoadedRef = useRef(false);
   const hasSyncedRef = useRef(false);
 
@@ -93,9 +92,7 @@ export default function Leaderboard() {
   }, [user, userLoading]);
 
   const syncGitHubData = async (silent = false) => {
-    if (!user || isSyncing) return;
-
-    setIsSyncing(true);
+    if (!user) return;
 
     try {
       const supabase = createClient();
@@ -116,25 +113,13 @@ export default function Leaderboard() {
 
       if (!response.ok) {
         if (response.status === 429) {
-          // Cooldown ativo
           console.log("⏳ Sync: Cooldown ativo");
-          if (!silent) setSyncMessage("⏳ Aguarde 5 minutos entre sincronizações");
         } else if (response.status === 400 && data.error === "Token do GitHub não encontrado") {
-          // Usuário ainda não completou onboarding
           console.log("⚠️ Sync: GitHub não conectado (complete o onboarding)");
-          if (!silent) setSyncMessage("⚠️ Conecte seu GitHub no onboarding");
         } else if (response.status === 404 && data.error === "Personagem não encontrado") {
-          // Usuário sem personagem
           console.log("⚠️ Sync: Personagem não criado ainda");
-          if (!silent) setSyncMessage("⚠️ Crie seu personagem primeiro");
         } else {
           console.error("❌ Sync error:", data.error);
-          if (!silent) setSyncMessage(`❌ Erro: ${data.error}`);
-        }
-
-        // Limpar mensagem após 5 segundos
-        if (!silent) {
-          setTimeout(() => setSyncMessage(null), 5000);
         }
         return;
       }
@@ -142,20 +127,10 @@ export default function Leaderboard() {
       // Sucesso
       console.log("✅ Sync:", data.data.activities_synced, "atividades,", data.data.xp_gained, "XP");
 
-      if (!silent && data.data.xp_gained > 0) {
-        setSyncMessage(`🎉 +${data.data.xp_gained} XP | ${data.data.activities_synced} atividades sincronizadas!`);
-        setTimeout(() => setSyncMessage(null), 5000);
-      } else if (!silent && data.data.activities_synced === 0) {
-        setSyncMessage("✅ Nenhuma atividade nova encontrada");
-        setTimeout(() => setSyncMessage(null), 3000);
-      }
-
       await loadUserProfile();
       await loadLeaderboard();
     } catch (error) {
       console.error("❌ Erro ao sincronizar:", error);
-    } finally {
-      setIsSyncing(false);
     }
   };
 
@@ -333,24 +308,9 @@ export default function Leaderboard() {
                       </div>
 
                       <div className="space-y-1 border-t border-border pt-4">
-                        <div className="flex justify-between items-center mb-2">
+                        <div className="mb-2">
                           <span className="text-xs font-bold text-muted-foreground uppercase">Estatísticas</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => syncGitHubData(false)}
-                            disabled={isSyncing}
-                            className="h-6 px-2 text-xs"
-                          >
-                            <FaArrowsRotate className={`text-xs ${isSyncing ? "animate-spin" : ""}`} />
-                          </Button>
                         </div>
-
-                        {syncMessage && (
-                          <div className="mb-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-center">
-                            {syncMessage}
-                          </div>
-                        )}
 
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Ranking</span>
@@ -372,9 +332,7 @@ export default function Leaderboard() {
 
                       <div className="flex flex-row justify-center text-muted-foreground">
                         <small className="text-[8px] text-center">
-                          {isSyncing
-                            ? "Sincronizando..."
-                            : "Clique no botão ↻ para sincronizar suas atividades do GitHub"}
+                          Sincronização automática a cada 10 minutos
                         </small>
                       </div>
 

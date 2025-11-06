@@ -6,15 +6,17 @@ import { useUser } from "./use-user";
 /**
  * Hook para sincronização automática do GitHub a cada 10 minutos
  * Similar ao GitMon - sincroniza em background sem interromper o usuário
+ * Só executa se o usuário tiver personagem criado
  */
-export function useAutoSync() {
+export function useAutoSync(hasCharacter: boolean) {
   const { user } = useUser();
   const lastSyncRef = useRef<number>(0);
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!user) {
-      // Limpar interval se usuário fizer logout
+    // Só executar se tiver usuário E personagem
+    if (!user || !hasCharacter) {
+      // Limpar interval se não tiver condições
       if (syncIntervalRef.current) {
         clearInterval(syncIntervalRef.current);
         syncIntervalRef.current = null;
@@ -79,5 +81,5 @@ export function useAutoSync() {
         clearInterval(syncIntervalRef.current);
       }
     };
-  }, [user]);
+  }, [user, hasCharacter]);
 }

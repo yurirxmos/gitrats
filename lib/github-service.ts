@@ -29,7 +29,7 @@ export class GitHubService {
 
     this.graphqlWithAuth = graphql.defaults({
       headers: {
-        authorization: accessToken ? `token ${accessToken}` : undefined,
+        authorization: accessToken ? `Bearer ${accessToken}` : "",
       },
     });
   }

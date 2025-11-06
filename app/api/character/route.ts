@@ -104,11 +104,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: createError.message }, { status: 500 });
     }
 
-    // Criar registro de estatísticas do GitHub
+    // Criar registro de estatísticas do GitHub (sem last_sync_at para marcar como "nunca sincronizado")
     const { error: statsError } = await supabase.from("github_stats").insert({
       user_id: user.id,
       total_commits: 0,
       total_prs: 0,
+      total_stars: 0,
+      total_repos: 0,
+      last_sync_at: null, // Marca que nunca foi sincronizado
     });
 
     if (statsError) {

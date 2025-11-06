@@ -29,8 +29,23 @@ export async function GET(request: Request) {
         },
       }
     );
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error && data.session) {
+      const user = data.session.user;
+      const providerToken = data.session.provider_token;
+
+      // Salvar/atualizar informações do GitHub no banco
+      await supabase
+        .from("users")
+        .update({
+          github_access_token: providerToken,
+          github_username: user.user_metadata.user_name || user.user_metadata.preferred_username,
+          avatar_url: user.user_metadata.avatar_url,
+        })
+        .eq("id", user.id);
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
