@@ -56,7 +56,6 @@ export default function Leaderboard() {
 
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const hasLoadedRef = useRef(false);
-  const hasSyncedRef = useRef(false);
 
   useEffect(() => {
     const loadAllData = async () => {
@@ -67,19 +66,14 @@ export default function Leaderboard() {
 
       setIsLoading(true);
 
-      // Carregar leaderboard
-      await loadLeaderboard();
+      // Carregar leaderboard e perfil em paralelo
+      const promises: Promise<any>[] = [loadLeaderboard()];
 
-      // Carregar perfil se usuário estiver logado
       if (user && !userLoading) {
-        const userHasCharacter = await loadUserProfile();
-
-        // Auto-sync na primeira vez (somente se tiver personagem)
-        if (!hasSyncedRef.current && userHasCharacter) {
-          await syncGitHubData(true);
-          hasSyncedRef.current = true;
-        }
+        promises.push(loadUserProfile());
       }
+
+      await Promise.all(promises);
 
       setIsLoading(false);
       hasLoadedRef.current = true;
