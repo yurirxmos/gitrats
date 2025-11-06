@@ -331,9 +331,7 @@ export default function Leaderboard() {
                       </div>
 
                       <div className="flex flex-row justify-center text-muted-foreground">
-                        <small className="text-[8px] text-center">
-                          Sincronização automática a cada 10 minutos
-                        </small>
+                        <small className="text-[8px] text-center">Sincronização automática a cada 10 minutos</small>
                       </div>
 
                       {/* Bônus de Classe */}

@@ -69,20 +69,18 @@ export async function POST(request: NextRequest) {
 
     // Se é a primeira sync (nunca sincronizou antes), apenas inicializar sem dar XP
     const isFirstSync = !currentStats?.last_sync_at;
-    
+
     if (isFirstSync) {
       console.log(`[Sync] PRIMEIRA SINCRONIZAÇÃO - Inicializando stats sem dar XP`);
-      
-      await supabase
-        .from("github_stats")
-        .upsert({
-          user_id: userData.id,
-          total_commits: githubStats.totalCommits,
-          total_prs: githubStats.totalPRs,
-          total_stars: githubStats.totalStars,
-          total_repos: githubStats.totalRepos,
-          last_sync_at: new Date().toISOString(),
-        });
+
+      await supabase.from("github_stats").upsert({
+        user_id: userData.id,
+        total_commits: githubStats.totalCommits,
+        total_prs: githubStats.totalPRs,
+        total_stars: githubStats.totalStars,
+        total_repos: githubStats.totalRepos,
+        last_sync_at: new Date().toISOString(),
+      });
 
       console.log(`[Sync] Stats inicializados:`, {
         total_commits: githubStats.totalCommits,
@@ -124,16 +122,14 @@ export async function POST(request: NextRequest) {
       totalXpGained,
     });
 
-    await supabase
-      .from("github_stats")
-      .upsert({
-        user_id: userData.id,
-        total_commits: githubStats.totalCommits,
-        total_prs: githubStats.totalPRs,
-        total_stars: githubStats.totalStars,
-        total_repos: githubStats.totalRepos,
-        last_sync_at: new Date().toISOString(),
-      });
+    await supabase.from("github_stats").upsert({
+      user_id: userData.id,
+      total_commits: githubStats.totalCommits,
+      total_prs: githubStats.totalPRs,
+      total_stars: githubStats.totalStars,
+      total_repos: githubStats.totalRepos,
+      last_sync_at: new Date().toISOString(),
+    });
 
     console.log(`[Sync] github_stats atualizado com:`, {
       total_commits: githubStats.totalCommits,
