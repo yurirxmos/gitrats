@@ -118,6 +118,8 @@ export async function POST(request: NextRequest) {
       total_prs: 0,
       total_issues: 0,
       total_reviews: 0,
+      baseline_commits: 0,
+      baseline_prs: 0,
       last_sync_at: null, // Marca que nunca foi sincronizado
     });
 
