@@ -9,6 +9,15 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/theme-context";
 import { Avatar } from "./ui/avatar";
 import { Badge } from "./ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@radix-ui/react-dropdown-menu";
+import { Button } from "./ui/button";
+import { DropdownMenuLabel, DropdownMenuSeparator } from "./ui/dropdown-menu";
+import { FaArrowRight, FaGithub, FaMoon, FaPowerOff, FaSun } from "react-icons/fa6";
 
 export function Navbar() {
   const { user, loading } = useUser();
@@ -55,14 +64,7 @@ export function Navbar() {
         )}
       </Link>
 
-      <div className="flex items-center gap-10 text-xs">
-        <button
-          onClick={toggleTheme}
-          className="hover:underline hover:cursor-pointer"
-        >
-          /{theme === "dark" ? "light-mode" : "dark-mode"}
-        </button>
-
+      <div className="flex items-center gap-8 text-xs">
         <Link
           href="/docs"
           className="hover:underline"
@@ -77,39 +79,50 @@ export function Navbar() {
           /leaderboard
         </Link>
 
-        {loading ? (
-          <span className="opacity-50">/loading...</span>
-        ) : user ? (
-          <>
-            <button
-              onClick={handleLogout}
-              className="hover:underline hover:cursor-pointer"
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="flex flex-row items-center gap-1.5 hover:cursor-pointer px-3 py-0.5"
+                variant={"secondary"}
+              >
+                <p className="text-[10px]">{user.user_metadata?.user_name || user.email}</p>
+                <Avatar className="w-5 h-5">
+                  <img
+                    src={user.user_metadata?.avatar_url || "/default-avatar.png"}
+                    alt="User Avatar"
+                  />
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="bg-foreground text-background p-2 rounded-md shadow-md mt-1 w-32 text-center gap-2 border-none"
             >
-              /logout
-            </button>
-          </>
+              <DropdownMenuItem
+                className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none p-2"
+                onClick={toggleTheme}
+              >
+                {theme === "dark" ? <FaSun /> : <FaMoon />}
+                {theme === "dark" ? "light mode" : "dark mode"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none p-2"
+                onClick={handleLogout}
+              >
+                <FaPowerOff />
+                logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
-          <button
-            onClick={handleLogin}
-            className="hover:underline hover:cursor-pointer"
+          <Button
+            className="flex flex-row items-center gap-1.5 hover:cursor-pointer px-3 py-0.5"
+            variant={"secondary"}
           >
-            /login
-          </button>
-        )}
-
-        {user && (
-          <div className="flex flex-row items-center gap-1">
-            <Badge className="text-[10px]">{user.user_metadata?.user_name || user.email}</Badge>
-            <Avatar>
-              <img
-                src={user.user_metadata?.avatar_url || "/default-avatar.png"}
-                alt="User Avatar"
-                width={32}
-                height={32}
-                className="rounded-full border border-foreground"
-              />
-            </Avatar>
-          </div>
+            <FaArrowRight />
+            <p className="text-[10px]">/entrar</p>
+          </Button>
         )}
       </div>
     </nav>

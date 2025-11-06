@@ -9,7 +9,6 @@ import { OnboardingModal } from "@/components/onboarding-modal";
 import { Navbar } from "@/components/navbar";
 import { useUser } from "@/hooks/use-user";
 import { useAutoSync } from "@/hooks/use-auto-sync";
-import Link from "next/link";
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -253,20 +252,6 @@ export default function Home() {
                 <FaGithub className="text-xl" />
                 Quero jogar!
               </Button>
-
-              {user && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    const res = await fetch("/api/github/configure-token", { method: "POST" });
-                    const data = await res.json();
-                    alert(data.message || data.error);
-                  }}
-                >
-                  Configurar Token GitHub
-                </Button>
-              )}
             </div>
           )}
         </div>

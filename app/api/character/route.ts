@@ -41,12 +41,8 @@ export async function GET(request: NextRequest) {
     // baseline_commits/prs = histórico GitHub ignorado
     // total_commits/prs = total atual do GitHub
     // Diferença = atividades que geraram XP
-    const commitsAfterJoin = githubStats 
-      ? (githubStats.total_commits || 0) - (githubStats.baseline_commits || 0)
-      : 0;
-    const prsAfterJoin = githubStats
-      ? (githubStats.total_prs || 0) - (githubStats.baseline_prs || 0)
-      : 0;
+    const commitsAfterJoin = githubStats ? (githubStats.total_commits || 0) - (githubStats.baseline_commits || 0) : 0;
+    const prsAfterJoin = githubStats ? (githubStats.total_prs || 0) - (githubStats.baseline_prs || 0) : 0;
 
     return NextResponse.json({
       data: {

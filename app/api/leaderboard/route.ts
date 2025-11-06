@@ -58,12 +58,8 @@ export async function GET(request: NextRequest) {
       const stats = statsMap.get(character.user_id);
 
       // Mostrar apenas atividades APÓS entrar na plataforma (total - baseline)
-      const commitsAfterJoin = stats
-        ? (stats.total_commits || 0) - (stats.baseline_commits || 0)
-        : 0;
-      const prsAfterJoin = stats
-        ? (stats.total_prs || 0) - (stats.baseline_prs || 0)
-        : 0;
+      const commitsAfterJoin = stats ? (stats.total_commits || 0) - (stats.baseline_commits || 0) : 0;
+      const prsAfterJoin = stats ? (stats.total_prs || 0) - (stats.baseline_prs || 0) : 0;
 
       return {
         rank: index + 1,
