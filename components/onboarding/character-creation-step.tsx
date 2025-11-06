@@ -172,23 +172,33 @@ export function CharacterCreationStep({ onNext, onBack, isLoading = false }: Cha
           <div className="flex items-center gap-2 border-b border-border/50 pb-2">
             <FaFire className="text-orange-500" />
             <h3 className="font-bold text-sm uppercase">Bônus de XP</h3>
-            <p className="ml-auto text-[10px] text-muted-foreground italic">
-              {CLASS_DESCRIPTIONS[selectedClass].playstyle}
-            </p>
           </div>
+
+          <p className="text-[10px] text-muted-foreground mb-2 italic">{CLASS_DESCRIPTIONS[selectedClass].playstyle}</p>
 
           <p className="text-xs text-muted-foreground mb-3">{CLASS_DESCRIPTIONS[selectedClass].description}</p>
 
           <div className="space-y-1">
-            {CLASS_DESCRIPTIONS[selectedClass].strengths.map((strength, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-2 text-xs"
-              >
-                <FaStar className="text-yellow-500 text-[10px] mt-0.5 shrink-0" />
-                <span className="text-foreground/90">{strength}</span>
-              </div>
-            ))}
+            {CLASS_DESCRIPTIONS[selectedClass].strengths.map((strength, index) => {
+              const isActive = strength.startsWith("✅");
+              return (
+                <div
+                  key={index}
+                  className={`flex items-start gap-2 text-xs ${isActive ? "" : "opacity-50"}`}
+                >
+                  <FaStar
+                    className={`${isActive ? "text-green-500" : "text-yellow-500/50"} text-[10px] mt-0.5 shrink-0`}
+                  />
+                  <span className="text-foreground/90">{strength}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-2 pt-2 border-t border-border/50">
+            <p className="text-[9px] text-muted-foreground">
+              <strong className="text-blue-400">XP Base:</strong> 5/commit · 40/PR · 15/issue
+            </p>
           </div>
         </div>
       </div>

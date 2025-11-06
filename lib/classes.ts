@@ -70,9 +70,6 @@ export function getClassXpMultiplier(characterClass: CharacterClass, activityTyp
   return CLASS_XP_MULTIPLIERS[characterClass]?.[activityType] || 1.0;
 }
 
-/**
- * Descrições das classes para onboarding
- */
 export const CLASS_DESCRIPTIONS: Record<
   CharacterClass,
   {
@@ -86,28 +83,34 @@ export const CLASS_DESCRIPTIONS: Record<
   orc: {
     name: "Orc",
     title: "Brute Force Developer",
-    description:
-      "Desenvolvedores que preferem ação direta, commits grandes e entregas rápidas. Gostam de XGH.",
-    strengths: ["+30% XP em commits normais", "+40% XP em commits grandes (>100 linhas)", "+20% XP em releases"],
-    playstyle: "Agressivo, direto, focado em produtividade bruta",
+    description: "Desenvolvedores que preferem ação direta, commits frequentes e entregas rápidas. Gostam de XGH.",
+    strengths: [
+      "✅ +30% XP em commits",
+      "⏳ +40% XP em commits grandes (>100 linhas) - EM BREVE",
+      "⏳ +20% XP em releases - EM BREVE",
+    ],
+    playstyle: "Agressivo, direto, produtividade bruta",
   },
 
   warrior: {
     name: "Warrior",
     title: "Full-Stack Warrior",
     description:
-      "Guerreiros colaborativos que lutam em múltiplas frentes. Mestres em pull requests, code reviews e trabalho em equipe.",
-    strengths: ["+25% XP em Pull Requests", "+30% XP em Code Reviews", "+15% XP em contribuições externas"],
+      "Guerreiros colaborativos que lutam em múltiplas frentes. Mestres em pull requests e trabalho em equipe.",
+    strengths: ["✅ +25% XP em Pull Requests", "⏳ +30% XP em Code Reviews - EM BREVE", "+15% XP em issues resolvidas"],
     playstyle: "Colaborativo, versátil, trabalho em equipe",
   },
 
   mage: {
     name: "Mage",
     title: "Code Architect/Wizard",
-    description:
-      "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em problemas complexos e projetos influentes.",
-    strengths: ["+40% XP em issues resolvidas", "+30% XP em stars e forks", "+30% XP em achievements especiais"],
-    playstyle: "Estratégico, focado em impacto e qualidade",
+    description: "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em problemas complexos.",
+    strengths: [
+      "✅ +40% XP em issues resolvidas",
+      "⏳ +30% XP em stars e forks - EM BREVE",
+      "+15% XP em Pull Requests",
+    ],
+    playstyle: "Estratégico, impacto e qualidade",
   },
 };
 

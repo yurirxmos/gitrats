@@ -51,15 +51,18 @@ export async function POST(request: NextRequest) {
     console.log(`[Sync] Stats do GitHub:`, {
       totalCommits: githubStats.totalCommits,
       totalPRs: githubStats.totalPRs,
+      totalIssues: githubStats.totalIssues,
       totalStars: githubStats.totalStars,
       totalRepos: githubStats.totalRepos,
     });
 
     const { data: currentStats, error: statsError } = await supabase
       .from("github_stats")
-      .select("total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, last_sync_at")
+      .select(
+        "total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, baseline_issues, baseline_reviews, last_sync_at"
+      )
       .eq("user_id", userData.id)
-      .maybeSingle(); // Usar maybeSingle() ao invés de single() para não dar erro se não existir
+      .maybeSingle();
 
     // Se não existe registro de stats, criar um vazio primeiro
     if (!currentStats) {
@@ -72,6 +75,8 @@ export async function POST(request: NextRequest) {
         total_reviews: 0,
         baseline_commits: 0,
         baseline_prs: 0,
+        baseline_issues: 0,
+        baseline_reviews: 0,
         last_sync_at: null,
       });
     }
@@ -95,8 +100,11 @@ export async function POST(request: NextRequest) {
         .update({
           total_commits: githubStats.totalCommits,
           total_prs: githubStats.totalPRs,
-          baseline_commits: githubStats.totalCommits, // Histórico = baseline
-          baseline_prs: githubStats.totalPRs, // Histórico = baseline
+          total_issues: githubStats.totalIssues,
+          baseline_commits: githubStats.totalCommits,
+          baseline_prs: githubStats.totalPRs,
+          baseline_issues: githubStats.totalIssues,
+          baseline_reviews: 0, // GitHub não retorna reviews no getUserStats
           last_sync_at: new Date().toISOString(),
         })
         .eq("user_id", userData.id)
@@ -134,29 +142,38 @@ export async function POST(request: NextRequest) {
     // Calcular apenas as NOVAS atividades desde a última sync
     const newCommits = githubStats.totalCommits - (currentStats?.total_commits || 0);
     const newPRs = githubStats.totalPRs - (currentStats?.total_prs || 0);
+    const newIssues = githubStats.totalIssues - (currentStats?.total_issues || 0);
+    // Reviews não disponível no getUserStats, só via getWeeklyXp
 
     console.log(`[Sync] Novas atividades desde último sync:`, {
       newCommits,
       newPRs,
-      github_total: githubStats.totalCommits,
-      baseline: currentStats?.total_commits || 0,
+      newIssues,
+      github_total_commits: githubStats.totalCommits,
+      baseline_commits: currentStats?.total_commits || 0,
     });
 
     // Aplicar multiplicadores de classe
     const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
     const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
+    const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
 
+    // XP base: 5 por commit, 40 por PR, 15 por issue
     const xpFromCommits = Math.floor(newCommits * 5 * commitMultiplier);
     const xpFromPRs = Math.floor(newPRs * 40 * prMultiplier);
-    const totalXpGained = xpFromCommits + xpFromPRs;
+    const xpFromIssues = Math.floor(newIssues * 15 * issueMultiplier);
+    const totalXpGained = xpFromCommits + xpFromPRs + xpFromIssues;
 
     console.log(`[Sync] XP calculado (com bônus de classe ${character.class.toUpperCase()}):`, {
       newCommits,
       newPRs,
+      newIssues,
       commitMultiplier: `${commitMultiplier}x`,
       prMultiplier: `${prMultiplier}x`,
+      issueMultiplier: `${issueMultiplier}x`,
       xpFromCommits,
       xpFromPRs,
+      xpFromIssues,
       totalXpGained,
     });
 
@@ -165,6 +182,7 @@ export async function POST(request: NextRequest) {
       .update({
         total_commits: githubStats.totalCommits,
         total_prs: githubStats.totalPRs,
+        total_issues: githubStats.totalIssues,
         last_sync_at: new Date().toISOString(),
       })
       .eq("user_id", userData.id);
@@ -176,6 +194,7 @@ export async function POST(request: NextRequest) {
     console.log(`[Sync] github_stats atualizado com:`, {
       total_commits: githubStats.totalCommits,
       total_prs: githubStats.totalPRs,
+      total_issues: githubStats.totalIssues,
       user_id: userData.id,
     });
 
@@ -201,7 +220,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `+${totalXpGained} XP | ${newCommits + newPRs} atividades sincronizadas`,
+        message: `+${totalXpGained} XP | ${newCommits + newPRs + newIssues} atividades sincronizadas`,
         data: {
           xp_gained: totalXpGained,
           new_total_xp: newTotalXp,

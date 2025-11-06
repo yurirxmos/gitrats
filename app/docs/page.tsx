@@ -81,6 +81,19 @@ export default function Docs() {
                 Cada classe tem multiplicadores únicos de XP baseados em seu estilo de desenvolvimento.
               </p>
 
+              <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mb-4">
+                <p className="text-sm font-bold text-blue-400 mb-2">✅ Sistema Implementado</p>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>✅ <strong>Commits</strong> - Multiplicador funcionando</li>
+                  <li>✅ <strong>Pull Requests</strong> - Multiplicador funcionando</li>
+                  <li>✅ <strong>Issues Resolvidas</strong> - Multiplicador funcionando</li>
+                  <li>⏳ <strong>Code Reviews</strong> - EM DESENVOLVIMENTO (API GitHub limitada)</li>
+                  <li>⏳ <strong>Stars/Forks</strong> - EM DESENVOLVIMENTO</li>
+                  <li>⏳ <strong>Large Commits (>100 linhas)</strong> - EM DESENVOLVIMENTO</li>
+                  <li>⏳ <strong>Releases</strong> - EM DESENVOLVIMENTO</li>
+                </ul>
+              </div>
+
               <div className="grid md:grid-cols-3 gap-6">
                 {(["orc", "warrior", "mage"] as const).map((characterClass) => {
                   const classInfo = CLASS_DESCRIPTIONS[characterClass];
@@ -96,15 +109,24 @@ export default function Docs() {
                       <p className="text-xs text-muted-foreground mb-4">{classInfo.description}</p>
 
                       <div className="space-y-2">
-                        <h4 className="text-sm font-bold text-orange-500">Principais Bônus:</h4>
-                        {classInfo.strengths.map((strength, idx) => (
-                          <div
-                            key={idx}
-                            className="text-xs bg-muted/50 p-2 rounded"
-                          >
-                            {strength}
-                          </div>
-                        ))}
+                        <h4 className="text-sm font-bold text-green-500">Bônus Ativos:</h4>
+                        <div className="text-xs bg-green-500/10 p-2 rounded border border-green-500/30">
+                          Commits: {multipliers.commits}x ✅
+                        </div>
+                        <div className="text-xs bg-green-500/10 p-2 rounded border border-green-500/30">
+                          Pull Requests: {multipliers.pullRequests}x ✅
+                        </div>
+                        <div className="text-xs bg-green-500/10 p-2 rounded border border-green-500/30">
+                          Issues: {multipliers.issuesResolved}x ✅
+                        </div>
+                        
+                        <h4 className="text-sm font-bold text-orange-500 mt-4">Em Desenvolvimento:</h4>
+                        <div className="text-xs bg-muted/50 p-2 rounded opacity-50">
+                          Code Reviews: {multipliers.codeReviews}x ⏳
+                        </div>
+                        <div className="text-xs bg-muted/50 p-2 rounded opacity-50">
+                          Stars/Forks: {multipliers.starsAndForks}x ⏳
+                        </div>
                       </div>
 
                       <div className="mt-4 pt-4 border-t border-border">
@@ -122,6 +144,7 @@ export default function Docs() {
                   <li>Multiplicadores acima de 1.0 aumentam o XP ganho</li>
                   <li>Multiplicadores abaixo de 1.0 reduzem o XP ganho</li>
                   <li>Escolha a classe que combina com seu estilo de desenvolvimento!</li>
+                  <li><strong className="text-orange-500">XP Base Atual:</strong> 5 XP/commit, 40 XP/PR, 15 XP/issue</li>
                 </ul>
               </div>
             </CardContent>
