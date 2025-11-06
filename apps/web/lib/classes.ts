@@ -20,45 +20,46 @@ export interface ClassMultipliers {
 /**
  * Multiplicadores de XP por classe
  * 1.0 = normal, >1.0 = bônus, <1.0 = penalidade
+ * BALANCEADO para evitar exploits
  */
 export const CLASS_XP_MULTIPLIERS: Record<CharacterClass, ClassMultipliers> = {
   // Orc: Força bruta, commits grandes, releases frequentes
   orc: {
-    commits: 1.5, // +50% em commits
-    largeCommits: 1.75, // +75% em commits grandes
+    commits: 1.3, // Reduzido de 1.5
+    largeCommits: 1.4, // Reduzido de 1.75
     pullRequests: 1.0, // normal
-    codeReviews: 0.8, // -20% (não é o forte)
-    issuesResolved: 0.9, // -10%
+    codeReviews: 0.9, // Reduzido penalidade de 0.8
+    issuesResolved: 0.95, // Reduzido penalidade de 0.9
     achievements: 1.0, // normal
-    starsAndForks: 0.75, // -25% (foca menos em popularidade)
-    releases: 1.25, // +25% em releases
-    externalRepos: 0.9, // -10% (prefere dominar seus próprios repos)
+    starsAndForks: 0.85, // Reduzido penalidade de 0.75
+    releases: 1.2, // Reduzido de 1.25
+    externalRepos: 0.95, // Reduzido penalidade de 0.9
   },
 
   // Warrior: Colaboração, code review, trabalho em equipe
   warrior: {
     commits: 1.0, // normal
     largeCommits: 1.0, // normal
-    pullRequests: 1.5, // +50% em PRs
-    codeReviews: 1.5, // +50% em code reviews
-    issuesResolved: 1.25, // +25%
+    pullRequests: 1.25, // Reduzido de 1.5
+    codeReviews: 1.3, // Reduzido de 1.5
+    issuesResolved: 1.15, // Reduzido de 1.25
     achievements: 1.0, // normal
     starsAndForks: 1.0, // normal
     releases: 1.0, // normal
-    externalRepos: 1.25, // +25% em repos externos (guerreiro em múltiplas frentes)
+    externalRepos: 1.15, // Reduzido de 1.25
   },
 
   // Mage: Inteligência, planejamento, impacto estratégico
   mage: {
-    commits: 0.9, // -10% (foca em qualidade, não quantidade)
-    largeCommits: 0.8, // -20% (prefere commits menores e precisos)
-    pullRequests: 1.25, // +25%
-    codeReviews: 1.25, // +25%
-    issuesResolved: 1.75, // +75% em resolver issues
-    achievements: 1.5, // +50% em achievements especiais
-    starsAndForks: 2.0, // +100% em stars/forks (impacto na comunidade)
-    releases: 1.25, // +25%
-    externalRepos: 1.1, // +10%
+    commits: 0.95, // Reduzido penalidade de 0.9
+    largeCommits: 0.9, // Reduzido penalidade de 0.8
+    pullRequests: 1.15, // Reduzido de 1.25
+    codeReviews: 1.15, // Reduzido de 1.25
+    issuesResolved: 1.4, // Reduzido de 1.75
+    achievements: 1.3, // Reduzido de 1.5
+    starsAndForks: 1.3, // Reduzido de 2.0 (maior nerf)
+    releases: 1.15, // Reduzido de 1.25
+    externalRepos: 1.05, // Reduzido de 1.1
   },
 };
 
@@ -87,7 +88,7 @@ export const CLASS_DESCRIPTIONS: Record<
     title: "Brute Force Developer",
     description:
       "Desenvolvedores que preferem ação direta, commits grandes e entregas rápidas. Dominam seus projetos com força e determinação.",
-    strengths: ["+50% XP em commits normais", "+75% XP em commits grandes (>100 linhas)", "+25% XP em releases"],
+    strengths: ["+30% XP em commits normais", "+40% XP em commits grandes (>100 linhas)", "+20% XP em releases"],
     playstyle: "Agressivo, direto, focado em produtividade bruta",
   },
 
@@ -96,7 +97,7 @@ export const CLASS_DESCRIPTIONS: Record<
     title: "Full-Stack Warrior",
     description:
       "Guerreiros colaborativos que lutam em múltiplas frentes. Mestres em pull requests, code reviews e trabalho em equipe.",
-    strengths: ["+50% XP em Pull Requests", "+50% XP em Code Reviews", "+25% XP em contribuições externas"],
+    strengths: ["+25% XP em Pull Requests", "+30% XP em Code Reviews", "+15% XP em contribuições externas"],
     playstyle: "Colaborativo, versátil, trabalho em equipe",
   },
 
@@ -105,7 +106,7 @@ export const CLASS_DESCRIPTIONS: Record<
     title: "Code Architect/Wizard",
     description:
       "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em resolver problemas complexos e criar projetos influentes.",
-    strengths: ["+75% XP em issues resolvidas", "+100% XP em stars e forks", "+50% XP em achievements especiais"],
+    strengths: ["+40% XP em issues resolvidas", "+30% XP em stars e forks", "+30% XP em achievements especiais"],
     playstyle: "Estratégico, focado em impacto e qualidade",
   },
 };

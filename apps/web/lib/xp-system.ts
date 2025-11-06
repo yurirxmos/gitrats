@@ -10,8 +10,12 @@ import { getClassXpMultiplier } from "./classes";
 // Constantes do sistema
 export const XP_CONSTANTS = {
   // Caps diários para prevenir grinding excessivo
-  MAX_XP_PER_DAY: 1000,
-  MAX_COMMIT_XP_PER_DAY: 50,
+  MAX_XP_PER_DAY: 500,
+  MAX_COMMIT_XP_PER_DAY: 200,
+  MAX_PR_XP_PER_DAY: 150,
+  MAX_STARS_XP_PER_DAY: 50,
+  MAX_REVIEWS_XP_PER_DAY: 100,
+  MAX_ISSUES_XP_PER_DAY: 100,
 
   // Valores base de XP por atividade
   COMMIT: {
@@ -78,13 +82,13 @@ export const XP_CONSTANTS = {
 
 /**
  * Calcula XP total necessário para alcançar um nível
- * Fórmula inspirada em GitMon: XP = Level³ × 4 - 15 × Level² + 100 × Level - 140
+ * Fórmula balanceada: XP = Level² × 100 + Level × 50
+ * Progressão mais suave e linear
  */
 export function getXpForLevel(level: number): number {
   if (level <= 1) return 0;
 
-  const l = level;
-  const xp = Math.pow(l, 3) * 4 - 15 * Math.pow(l, 2) + 100 * l - 140;
+  const xp = Math.pow(level, 2) * 100 + level * 50;
 
   return Math.max(0, Math.floor(xp));
 }
@@ -110,7 +114,7 @@ export function getCurrentXp(totalXp: number, level: number): number {
 
 /**
  * Calcula XP ganho por commit baseado no número de linhas alteradas
- * Aplica multiplicador de classe
+ * Aplica apenas o MAIOR multiplicador (não stacking)
  */
 export function calculateCommitXp(
   linesChanged: number,
@@ -131,28 +135,39 @@ export function calculateCommitXp(
     baseXp = XP_CONSTANTS.COMMIT.MEGA;
   }
 
-  // Penalidade menor para repos próprios (incentiva contribuições externas)
+  // Coletar todos os multiplicadores aplicáveis e usar APENAS o maior
+  const multipliers: number[] = [1.0]; // Base multiplier
+
+  // Multiplicador de repo externo
   if (!isOwnRepo) {
-    baseXp *= XP_CONSTANTS.MULTIPLIERS.EXTERNAL_REPO;
-    // Aplicar multiplicador de classe para repos externos
-    if (characterClass) {
-      baseXp *= getClassXpMultiplier(characterClass, "externalRepos");
+    multipliers.push(XP_CONSTANTS.MULTIPLIERS.EXTERNAL_REPO); // 1.5
+  }
+
+  // Multiplicadores de classe
+  if (characterClass) {
+    const isLargeCommit = linesChanged >= 100;
+
+    // Multiplicador de commits
+    const commitMultiplier = getClassXpMultiplier(characterClass, isLargeCommit ? "largeCommits" : "commits");
+    multipliers.push(commitMultiplier);
+
+    // Multiplicador de repos externos (apenas se aplicável)
+    if (!isOwnRepo) {
+      const externalMultiplier = getClassXpMultiplier(characterClass, "externalRepos");
+      multipliers.push(externalMultiplier);
     }
   }
 
-  // Aplicar multiplicador de classe
-  if (characterClass) {
-    const isLargeCommit = linesChanged >= 100;
-    const multiplierType = isLargeCommit ? "largeCommits" : "commits";
-    baseXp *= getClassXpMultiplier(characterClass, multiplierType);
-  }
+  // Aplicar APENAS o maior multiplicador (previne stacking)
+  const maxMultiplier = Math.max(...multipliers);
+  baseXp *= maxMultiplier;
 
   return Math.floor(baseXp);
 }
 
 /**
  * Calcula XP de Pull Request baseado em status e popularidade do repo
- * Aplica multiplicador de classe
+ * Aplica apenas o MAIOR multiplicador (não stacking)
  */
 export function calculatePullRequestXp(
   status: "opened" | "merged" | "closed",
@@ -174,25 +189,33 @@ export function calculatePullRequestXp(
       break;
   }
 
-  // Aplicar penalidade para repos próprios
+  // Coletar todos os multiplicadores aplicáveis e usar APENAS o maior
+  const multipliers: number[] = [1.0]; // Base multiplier
+
+  // Penalidade para repos próprios OU bônus para externos
   if (isOwnRepo) {
-    baseXp *= XP_CONSTANTS.PULL_REQUEST.OWN_REPO_PENALTY;
+    multipliers.push(XP_CONSTANTS.PULL_REQUEST.OWN_REPO_PENALTY); // 0.5
   } else if (characterClass) {
-    // Aplicar bônus de classe para repos externos
-    baseXp *= getClassXpMultiplier(characterClass, "externalRepos");
+    const externalMultiplier = getClassXpMultiplier(characterClass, "externalRepos");
+    multipliers.push(externalMultiplier);
   }
 
   // Bônus por popularidade do repo
   if (repoStars >= 10000) {
-    baseXp *= 2; // +100% bonus
+    multipliers.push(1.5); // Reduzido de 2.0 para 1.5
   } else if (repoStars >= 1000) {
-    baseXp *= 1.5; // +50% bonus
+    multipliers.push(1.3); // Reduzido de 1.5 para 1.3
   }
 
-  // Aplicar multiplicador de classe para PRs
+  // Multiplicador de classe para PRs
   if (characterClass) {
-    baseXp *= getClassXpMultiplier(characterClass, "pullRequests");
+    const prMultiplier = getClassXpMultiplier(characterClass, "pullRequests");
+    multipliers.push(prMultiplier);
   }
+
+  // Aplicar APENAS o maior multiplicador
+  const maxMultiplier = Math.max(...multipliers);
+  baseXp *= maxMultiplier;
 
   return Math.floor(baseXp);
 }

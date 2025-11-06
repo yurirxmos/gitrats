@@ -99,8 +99,7 @@ export default function Leaderboard() {
         return;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(`${apiUrl}/api/github/sync`, {
+      const response = await fetch("/api/github/sync", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -111,6 +110,9 @@ export default function Leaderboard() {
         if (response.status === 429) {
           // Cooldown ativo - silenciosamente ignorar
           console.log("⏳ Sync: Cooldown ativo");
+        } else if (response.status === 400 && data.error === "Token do GitHub não encontrado") {
+          // Usuário ainda não completou onboarding - silencioso
+          console.log("⚠️ Sync: GitHub não conectado (complete o onboarding)");
         } else {
           console.error("❌ Sync error:", data.error);
         }
@@ -131,8 +133,7 @@ export default function Leaderboard() {
 
   const loadLeaderboard = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(`${apiUrl}/api/leaderboard?limit=50`);
+      const response = await fetch("/api/leaderboard?limit=50");
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -176,12 +177,10 @@ export default function Leaderboard() {
         return;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-
       console.log("🔍 Buscando personagem para user:", user.id);
 
       // Buscar personagem do usuário
-      const characterResponse = await fetch(`${apiUrl}/api/character`, {
+      const characterResponse = await fetch("/api/character", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -209,7 +208,7 @@ export default function Leaderboard() {
       console.log("✅ Dados do personagem:", characterData);
 
       // Buscar posição no ranking
-      const rankResponse = await fetch(`${apiUrl}/api/leaderboard/${user.id}`);
+      const rankResponse = await fetch(`/api/leaderboard/${user.id}`);
       const { data: rankData } = rankResponse.ok ? await rankResponse.json() : { data: null };
 
       console.log("🏆 Rank data:", rankData);

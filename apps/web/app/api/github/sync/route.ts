@@ -1,7 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { calculateCommitXp, calculatePullRequestXp, getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
+import {
+  calculateCommitXp,
+  calculatePullRequestXp,
+  getLevelFromXp,
+  getCurrentXp,
+  validateDailyXpCap,
+  XP_CONSTANTS,
+} from "@/lib/xp-system";
 import type { CharacterClass } from "@/lib/classes";
+
+/**
+ * Calcula XP diário total do usuário
+ */
+async function getDailyXp(supabase: any, userId: string): Promise<number> {
+  const today = new Date().toISOString().split("T")[0];
+
+  const { data } = await supabase
+    .from("activity_log")
+    .select("xp_gained")
+    .eq("user_id", userId)
+    .gte("created_at", `${today}T00:00:00.000Z`)
+    .lt("created_at", `${today}T23:59:59.999Z`);
+
+  return data?.reduce((sum: number, row: any) => sum + (row.xp_gained || 0), 0) || 0;
+}
+
+/**
+ * Calcula XP diário por tipo de atividade
+ */
+async function getDailyXpByType(supabase: any, userId: string, activityType: string): Promise<number> {
+  const today = new Date().toISOString().split("T")[0];
+
+  const { data } = await supabase
+    .from("activity_log")
+    .select("xp_gained")
+    .eq("user_id", userId)
+    .eq("activity_type", activityType)
+    .gte("created_at", `${today}T00:00:00.000Z`)
+    .lt("created_at", `${today}T23:59:59.999Z`);
+
+  return data?.reduce((sum: number, row: any) => sum + (row.xp_gained || 0), 0) || 0;
+}
 
 /**
  * Endpoint de sincronização manual do GitHub
@@ -88,6 +128,11 @@ export async function POST(request: NextRequest) {
 
     let totalXpGained = 0;
     const activities: any[] = [];
+    let skippedDuplicates = 0;
+    let cappedActivities = 0;
+
+    // Obter XP diário atual
+    const currentDailyXp = await getDailyXp(supabase, userData.id);
 
     // Buscar commits recentes (últimos 7 dias)
     const since = new Date();
@@ -108,22 +153,46 @@ export async function POST(request: NextRequest) {
       const commits = commitsData.items || [];
 
       for (const commit of commits) {
-        // Verificar se commit já foi processado
+        // Verificar se commit já foi processado (usando SHA como chave única)
+        const commitSha = commit.sha;
+
         const { data: existingActivity } = await supabase
           .from("activity_log")
           .select("id")
           .eq("user_id", userData.id)
-          .eq("description", `Commit em ${commit.repository?.name || "unknown"}`)
-          .eq("created_at", new Date(commit.commit.committer.date).toISOString())
+          .eq("commit_sha", commitSha)
           .single();
 
-        if (existingActivity) continue;
+        if (existingActivity) {
+          skippedDuplicates++;
+          continue;
+        }
 
         const stats = commit.stats || { additions: 0, deletions: 0 };
         const linesChanged = stats.additions + stats.deletions;
         const isOwnRepo = commit.repository?.owner?.login === userData.github_username;
 
-        const xp = calculateCommitXp(linesChanged, isOwnRepo, characterClass);
+        let xp = calculateCommitXp(linesChanged, isOwnRepo, characterClass);
+
+        // Validar caps diários
+        const dailyCommitXp = await getDailyXpByType(supabase, userData.id, "commit");
+        const totalAfterThis = currentDailyXp + totalXpGained + xp;
+
+        // Cap geral de XP diário
+        if (totalAfterThis > XP_CONSTANTS.MAX_XP_PER_DAY) {
+          const allowedXp = Math.max(0, XP_CONSTANTS.MAX_XP_PER_DAY - (currentDailyXp + totalXpGained));
+          if (allowedXp <= 0) break; // Stop processing if daily cap reached
+          xp = allowedXp;
+          cappedActivities++;
+        }
+
+        // Cap de commits diário
+        if (dailyCommitXp + xp > XP_CONSTANTS.MAX_COMMIT_XP_PER_DAY) {
+          xp = Math.max(0, XP_CONSTANTS.MAX_COMMIT_XP_PER_DAY - dailyCommitXp);
+          if (xp <= 0) continue;
+          cappedActivities++;
+        }
+
         totalXpGained += xp;
 
         activities.push({
@@ -131,6 +200,7 @@ export async function POST(request: NextRequest) {
           description: `Commit em ${commit.repository?.name || "unknown"}`,
           xp,
           date: commit.commit.committer.date,
+          commit_sha: commitSha,
         });
       }
     }
@@ -151,16 +221,20 @@ export async function POST(request: NextRequest) {
       const prs = prsData.items || [];
 
       for (const pr of prs) {
-        // Verificar se PR já foi processado
+        // Verificar se PR já foi processado (usando número da PR como chave única)
+        const prNumber = pr.number;
+
         const { data: existingActivity } = await supabase
           .from("activity_log")
           .select("id")
           .eq("user_id", userData.id)
-          .eq("description", `PR em ${pr.repository_url?.split("/").pop() || "unknown"}`)
-          .eq("created_at", new Date(pr.created_at).toISOString())
+          .eq("pr_number", prNumber)
           .single();
 
-        if (existingActivity) continue;
+        if (existingActivity) {
+          skippedDuplicates++;
+          continue;
+        }
 
         const repoName = pr.repository_url?.split("/").pop() || "unknown";
         const isOwnRepo = pr.user?.login === userData.github_username;
@@ -180,7 +254,27 @@ export async function POST(request: NextRequest) {
         }
 
         const status = pr.state === "closed" ? (pr.pull_request?.merged_at ? "merged" : "closed") : "opened";
-        const xp = calculatePullRequestXp(status as any, isOwnRepo, repoStars, characterClass);
+        let xp = calculatePullRequestXp(status as any, isOwnRepo, repoStars, characterClass);
+
+        // Validar caps diários
+        const dailyPrXp = await getDailyXpByType(supabase, userData.id, "pull_request");
+        const totalAfterThis = currentDailyXp + totalXpGained + xp;
+
+        // Cap geral de XP diário
+        if (totalAfterThis > XP_CONSTANTS.MAX_XP_PER_DAY) {
+          const allowedXp = Math.max(0, XP_CONSTANTS.MAX_XP_PER_DAY - (currentDailyXp + totalXpGained));
+          if (allowedXp <= 0) break; // Stop processing if daily cap reached
+          xp = allowedXp;
+          cappedActivities++;
+        }
+
+        // Cap de PRs diário
+        if (dailyPrXp + xp > XP_CONSTANTS.MAX_PR_XP_PER_DAY) {
+          xp = Math.max(0, XP_CONSTANTS.MAX_PR_XP_PER_DAY - dailyPrXp);
+          if (xp <= 0) continue;
+          cappedActivities++;
+        }
+
         totalXpGained += xp;
 
         activities.push({
@@ -188,6 +282,7 @@ export async function POST(request: NextRequest) {
           description: `PR ${status} em ${repoName}`,
           xp,
           date: pr.created_at,
+          pr_number: prNumber,
         });
       }
     }
@@ -217,6 +312,8 @@ export async function POST(request: NextRequest) {
           xp_gained: activity.xp,
           total_xp_after: character.total_xp + activity.xp,
           level_after: getLevelFromXp(character.total_xp + activity.xp),
+          commit_sha: activity.commit_sha || null,
+          pr_number: activity.pr_number || null,
         });
       }
     }
@@ -230,9 +327,13 @@ export async function POST(request: NextRequest) {
       data: {
         xp_gained: totalXpGained,
         activities_synced: activities.length,
+        duplicates_skipped: skippedDuplicates,
+        activities_capped: cappedActivities,
         new_total_xp: character.total_xp + totalXpGained,
         new_level: getLevelFromXp(character.total_xp + totalXpGained),
         next_sync_available: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        daily_xp_used: currentDailyXp + totalXpGained,
+        daily_xp_remaining: Math.max(0, XP_CONSTANTS.MAX_XP_PER_DAY - (currentDailyXp + totalXpGained)),
       },
     });
   } catch (error) {

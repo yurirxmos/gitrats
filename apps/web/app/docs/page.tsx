@@ -8,15 +8,15 @@ import { FaFire } from "react-icons/fa6";
 
 export default function Docs() {
   const levelProgression = [
-    { level: 1, xp: 0, equivalent: "Primeira semana" },
-    { level: 2, xp: 100, equivalent: "Workflow básico Git" },
-    { level: 3, xp: 250, equivalent: "Primeiro PR" },
-    { level: 5, xp: 700, equivalent: "Contribuidor regular" },
-    { level: 10, xp: 3800, equivalent: "Senior contributor" },
-    { level: 15, xp: 9800, equivalent: "Expert developer" },
-    { level: 20, xp: 22500, equivalent: "GitHub power user" },
-    { level: 30, xp: 85000, equivalent: "Community leader" },
-    { level: 50, xp: 400000, equivalent: "Coding deity" },
+    { level: 1, xp: getXpForLevel(1), equivalent: "Primeira semana", days: "0" },
+    { level: 2, xp: getXpForLevel(2), equivalent: "Workflow básico Git", days: "1" },
+    { level: 3, xp: getXpForLevel(3), equivalent: "Primeiro PR", days: "3" },
+    { level: 5, xp: getXpForLevel(5), equivalent: "Contribuidor regular", days: "7" },
+    { level: 10, xp: getXpForLevel(10), equivalent: "Senior contributor", days: "52" },
+    { level: 15, xp: getXpForLevel(15), equivalent: "Expert developer", days: "117" },
+    { level: 20, xp: getXpForLevel(20), equivalent: "GitHub power user", days: "205" },
+    { level: 30, xp: getXpForLevel(30), equivalent: "Community leader", days: "457" },
+    { level: 50, xp: getXpForLevel(50), equivalent: "Coding deity", days: "1,262" },
   ];
 
   return (
@@ -28,8 +28,12 @@ export default function Docs() {
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-black">COMO FUNCIONA</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Sistema de XP balanceado que recompensa contribuições significativas e previne exploração fácil.
+              Sistema de XP v2.0 balanceado que recompensa contribuições significativas e previne exploits.
             </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/20 border border-orange-500/50 rounded-full">
+              <FaFire className="text-orange-500" />
+              <span className="text-sm font-bold text-orange-500">Sistema Anti-Exploit Ativo</span>
+            </div>
           </div>
 
           <Card>
@@ -133,6 +137,7 @@ export default function Docs() {
                       <th className="text-left py-3 px-4">Nível</th>
                       <th className="text-left py-3 px-4">XP Total</th>
                       <th className="text-left py-3 px-4">XP Necessário</th>
+                      <th className="text-left py-3 px-4">Dias (~200 XP/dia)</th>
                       <th className="text-left py-3 px-4">Equivalente</th>
                     </tr>
                   </thead>
@@ -149,15 +154,25 @@ export default function Docs() {
                             ? (levelProgression[idx + 1].xp - item.xp).toLocaleString()
                             : "-"}
                         </td>
+                        <td className="py-3 px-4 text-sm">
+                          <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs font-mono">
+                            {item.days}
+                          </span>
+                        </td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">{item.equivalent}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-muted-foreground text-center">
-                Fórmula: XP = Level³ × 4 - 15 × Level² + 100 × Level - 140
-              </p>
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <p className="text-xs text-center font-mono">
+                  <span className="text-orange-500 font-bold">Nova Fórmula (v2.0):</span> XP = Level² × 100 + Level × 50
+                </p>
+                <p className="text-xs text-muted-foreground text-center">
+                  Progressão linear e balanceada para manter engajamento a longo prazo
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -184,11 +199,12 @@ export default function Docs() {
                   </div>
                 </div>
                 <div className="pt-4 border-t border-border">
-                  <h3 className="font-bold text-sm mb-2">Anti-Cheat</h3>
+                  <h3 className="font-bold text-sm mb-2 text-orange-500">Sistema Anti-Exploit</h3>
                   <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>Máximo 50 XP por dia de commits</li>
-                    <li>Commits vazios = 0 XP</li>
-                    <li>Repos externos: +50% XP</li>
+                    <li>✅ Cap diário: {XP_CONSTANTS.MAX_COMMIT_XP_PER_DAY} XP/dia</li>
+                    <li>✅ Commits vazios = 0 XP</li>
+                    <li>✅ Multiplicadores não acumulam</li>
+                    <li>✅ SHA único previne duplicação</li>
                   </ul>
                 </div>
               </CardContent>
@@ -217,14 +233,16 @@ export default function Docs() {
                   <div>
                     <h3 className="font-bold text-sm mb-2">Bônus por Popularidade</h3>
                     <ul className="space-y-1 text-sm text-muted-foreground">
-                      <li>Repo com 1k+ stars: +50% XP</li>
-                      <li>Repo com 10k+ stars: +100% XP</li>
+                      <li>Repo com 1k+ stars: +30% XP (reduzido)</li>
+                      <li>Repo com 10k+ stars: +50% XP (reduzido)</li>
                     </ul>
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm mb-2">Penalidades</h3>
+                    <h3 className="font-bold text-sm mb-2 text-orange-500">Sistema Anti-Exploit</h3>
                     <ul className="space-y-1 text-sm text-muted-foreground">
-                      <li>Repos próprios: -50% XP</li>
+                      <li>✅ Cap diário: {XP_CONSTANTS.MAX_PR_XP_PER_DAY} XP/dia</li>
+                      <li>✅ Repos próprios: -50% XP</li>
+                      <li>✅ PR número único previne duplicação</li>
                     </ul>
                   </div>
                 </div>
@@ -244,6 +262,13 @@ export default function Docs() {
                     <span className="font-bold">{XP_CONSTANTS.STARS.ADDITIONAL} XP</span>
                   </div>
                 </div>
+                <div className="pt-4 border-t border-border">
+                  <h3 className="font-bold text-sm mb-2 text-orange-500">Sistema Anti-Farming</h3>
+                  <ul className="space-y-1 text-sm text-muted-foreground">
+                    <li>✅ Cap diário: {XP_CONSTANTS.MAX_STARS_XP_PER_DAY} XP/dia</li>
+                    <li>✅ Impossível farmar milhares de XP</li>
+                  </ul>
+                </div>
               </CardContent>
             </Card>
 
@@ -261,9 +286,10 @@ export default function Docs() {
                   </div>
                 </div>
                 <div className="pt-4 border-t border-border">
-                  <h3 className="font-bold text-sm mb-2">Bônus</h3>
+                  <h3 className="font-bold text-sm mb-2 text-orange-500">Sistema Anti-Exploit</h3>
                   <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>Review em repo popular: +30% XP</li>
+                    <li>✅ Cap diário: {XP_CONSTANTS.MAX_REVIEWS_XP_PER_DAY} XP/dia</li>
+                    <li>✅ Reviews spam não geram XP extra</li>
                   </ul>
                 </div>
               </CardContent>
@@ -289,6 +315,12 @@ export default function Docs() {
                     <span className="text-sm">Bug report levou a fix</span>
                     <span className="font-bold">{XP_CONSTANTS.ISSUES.BUG_FIX} XP</span>
                   </div>
+                </div>
+                <div className="pt-4 border-t border-border">
+                  <h3 className="font-bold text-sm mb-2 text-orange-500">Sistema Anti-Exploit</h3>
+                  <ul className="space-y-1 text-sm text-muted-foreground">
+                    <li>✅ Cap diário: {XP_CONSTANTS.MAX_ISSUES_XP_PER_DAY} XP/dia</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
@@ -342,31 +374,71 @@ export default function Docs() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="space-y-4">
-              <h2 className="text-2xl font-bold">Limites Anti-Spam</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="font-bold mb-2">Limite Diário Total</p>
+          <Card className="bg-orange-500/10 border-orange-500/50">
+            <CardContent className="space-y-6">
+              <div className="flex items-center gap-2">
+                <FaFire className="text-orange-500 text-2xl" />
+                <h2 className="text-2xl font-bold">Sistema Anti-Exploit v2.0</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Caps inteligentes por tipo de atividade previnem farming e mantém competição justa
+              </p>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="p-4 bg-background rounded-lg border border-orange-500/30">
+                  <p className="font-bold mb-2 text-orange-500">Cap Geral Diário</p>
                   <p className="text-3xl font-black">{XP_CONSTANTS.MAX_XP_PER_DAY} XP</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Previne grinding excessivo e mantém competição justa
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">Reduzido de 1000 XP (-50%)</p>
                 </div>
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="font-bold mb-2">Limite de Commits/Dia</p>
-                  <p className="text-3xl font-black">{XP_CONSTANTS.MAX_COMMIT_XP_PER_DAY} XP</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Força diversificação de atividades além de commits
-                  </p>
+                <div className="p-4 bg-background rounded-lg border border-border">
+                  <p className="font-bold mb-2">Commits</p>
+                  <p className="text-2xl font-black">{XP_CONSTANTS.MAX_COMMIT_XP_PER_DAY} XP/dia</p>
+                  <p className="text-xs text-muted-foreground mt-2">40% do cap total</p>
                 </div>
+                <div className="p-4 bg-background rounded-lg border border-border">
+                  <p className="font-bold mb-2">Pull Requests</p>
+                  <p className="text-2xl font-black">{XP_CONSTANTS.MAX_PR_XP_PER_DAY} XP/dia</p>
+                  <p className="text-xs text-muted-foreground mt-2">30% do cap total</p>
+                </div>
+                <div className="p-4 bg-background rounded-lg border border-border">
+                  <p className="font-bold mb-2">Code Reviews</p>
+                  <p className="text-2xl font-black">{XP_CONSTANTS.MAX_REVIEWS_XP_PER_DAY} XP/dia</p>
+                  <p className="text-xs text-muted-foreground mt-2">20% do cap total</p>
+                </div>
+                <div className="p-4 bg-background rounded-lg border border-border">
+                  <p className="font-bold mb-2">Issues</p>
+                  <p className="text-2xl font-black">{XP_CONSTANTS.MAX_ISSUES_XP_PER_DAY} XP/dia</p>
+                  <p className="text-xs text-muted-foreground mt-2">20% do cap total</p>
+                </div>
+                <div className="p-4 bg-background rounded-lg border border-border">
+                  <p className="font-bold mb-2">Stars/Forks</p>
+                  <p className="text-2xl font-black">{XP_CONSTANTS.MAX_STARS_XP_PER_DAY} XP/dia</p>
+                  <p className="text-xs text-muted-foreground mt-2">10% do cap total</p>
+                </div>
+              </div>
+              <div className="bg-background rounded-lg p-4 space-y-2">
+                <h3 className="font-bold text-sm">Proteções Ativas:</h3>
+                <ul className="text-xs text-muted-foreground space-y-1 grid md:grid-cols-2 gap-2">
+                  <li>✅ Commit SHA único (anti-duplicação)</li>
+                  <li>✅ PR número único (anti-duplicação)</li>
+                  <li>✅ Multiplicadores não acumulam</li>
+                  <li>✅ Caps por tipo de atividade</li>
+                  <li>✅ Validação em sync e webhook</li>
+                  <li>✅ Detecção de atividades duplicadas</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="space-y-4">
-              <h2 className="text-2xl font-bold">Multiplicadores de Repositório</h2>
+              <h2 className="text-2xl font-bold">Sistema de Multiplicadores v2.0</h2>
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mb-4">
+                <p className="text-sm font-bold text-orange-500 mb-2">⚠️ Mudança Importante:</p>
+                <p className="text-xs text-muted-foreground">
+                  Multiplicadores agora usam apenas o MAIOR valor aplicável, ao invés de acumular. Isso previne exploits
+                  de XP exponencial.
+                </p>
+              </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
                   <span className="text-sm">Repos próprios (privados)</span>
@@ -378,49 +450,68 @@ export default function Docs() {
                 </div>
                 <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
                   <span className="text-sm">Repos externos</span>
-                  <span className="font-bold">1.5x</span>
+                  <span className="font-bold">1.5x (max)</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                  <span className="text-sm">Repos populares (100+ stars)</span>
-                  <span className="font-bold">2x</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                  <span className="text-sm">Repos trending</span>
-                  <span className="font-bold">3x</span>
+                  <span className="text-sm">Bônus de classe (varia)</span>
+                  <span className="font-bold">0.85x - 1.4x</span>
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground italic">
+                Exemplo: Commit externo com bônus de classe usa o MAIOR entre 1.5x (externo) ou 1.3x (classe), não 1.95x
+                (1.5 × 1.3).
+              </p>
             </CardContent>
           </Card>
 
           <Card className="bg-blue-500/10 border-blue-500/50">
             <CardContent className="space-y-4">
-              <h2 className="text-2xl font-bold">Ritmo de Progressão Esperado</h2>
+              <h2 className="text-2xl font-bold">Ritmo de Progressão Esperado (v2.0)</h2>
+              <p className="text-sm text-muted-foreground">
+                Progressão balanceada baseada em ~200 XP/dia com atividades diversificadas
+              </p>
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="p-4 bg-background rounded-lg">
                   <h3 className="font-bold mb-2">Usuário Casual</h3>
-                  <p className="text-sm text-muted-foreground mb-3">1 hora por dia</p>
-                  <p className="text-lg font-bold">~1 nível/semana</p>
-                  <p className="text-xs text-muted-foreground mt-1">(níveis 1-10)</p>
+                  <p className="text-sm text-muted-foreground mb-3">~100 XP/dia</p>
+                  <p className="text-lg font-bold">Level 10 em ~3 meses</p>
+                  <p className="text-xs text-muted-foreground mt-1">Contribuições esporádicas</p>
                 </div>
                 <div className="p-4 bg-background rounded-lg">
                   <h3 className="font-bold mb-2">Usuário Ativo</h3>
-                  <p className="text-sm text-muted-foreground mb-3">3 horas por dia</p>
-                  <p className="text-lg font-bold">~2-3 níveis/semana</p>
-                  <p className="text-xs text-muted-foreground mt-1">(início do jogo)</p>
+                  <p className="text-sm text-muted-foreground mb-3">~200 XP/dia</p>
+                  <p className="text-lg font-bold">Level 10 em ~52 dias</p>
+                  <p className="text-xs text-muted-foreground mt-1">Contribuições diárias</p>
                 </div>
                 <div className="p-4 bg-background rounded-lg">
                   <h3 className="font-bold mb-2">Power User</h3>
-                  <p className="text-sm text-muted-foreground mb-3">6+ horas por dia</p>
-                  <p className="text-lg font-bold">Progressão constante</p>
-                  <p className="text-xs text-muted-foreground mt-1">(atinge caps diários)</p>
+                  <p className="text-sm text-muted-foreground mb-3">~500 XP/dia (cap)</p>
+                  <p className="text-lg font-bold">Level 20 em ~6 meses</p>
+                  <p className="text-xs text-muted-foreground mt-1">Atinge caps diários</p>
                 </div>
+              </div>
+              <div className="bg-background rounded-lg p-4 space-y-2">
+                <h3 className="font-bold text-sm">Marcos de Progressão:</h3>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>• Level 10: ~52 dias (antes era 12 dias) - Mais desafiador ✅</li>
+                  <li>• Level 20: ~205 dias (antes era 97 dias) - Mais engajamento de longo prazo ✅</li>
+                  <li>• Level 50: ~3.5 anos (antes era 6 anos) - Alcançável para jogadores dedicados ✅</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
 
-          <div className="text-center text-sm text-muted-foreground space-y-2 pt-8">
-            <p>As atividades do GitHub são sincronizadas automaticamente a cada 1 hora.</p>
-            <p>Sistema balanceado para recompensar contribuições reais e prevenir exploração.</p>
+          <div className="text-center space-y-4 pt-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
+              <span className="text-sm font-bold text-green-500">✅ Sistema v2.0 Ativo</span>
+            </div>
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p>As atividades do GitHub são sincronizadas automaticamente quando você acessa o leaderboard.</p>
+              <p>Cooldown de 5 minutos entre syncs. Sistema anti-duplicação e caps inteligentes ativos.</p>
+              <p className="font-bold text-orange-500">
+                Sistema rebalanceado em Nov 2025 - Progressão mais justa e sem exploits!
+              </p>
+            </div>
           </div>
         </div>
       </main>
