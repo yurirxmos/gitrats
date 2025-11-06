@@ -78,9 +78,8 @@ export default function Home() {
 
         if (response.ok) {
           setHasCharacter(true);
-          if (isOnboardingOpen) {
-            window.location.href = "/leaderboard";
-          }
+          // Redirecionar automaticamente para leaderboard se já tiver personagem
+          window.location.href = "/leaderboard";
         } else {
           setHasCharacter(false);
         }
@@ -92,7 +91,7 @@ export default function Home() {
     };
 
     checkCharacter();
-  }, [user, isOnboardingOpen]);
+  }, [user]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
