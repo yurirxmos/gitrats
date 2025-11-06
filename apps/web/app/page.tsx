@@ -46,6 +46,28 @@ export default function Home() {
           setCheckingCharacter(false);
           return;
         }
+
+        // Atualizar token do GitHub no banco (se ainda não tiver)
+        try {
+          await fetch("/api/user", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              githubId: user.user_metadata?.provider_id || user.id,
+              githubUsername: user.user_metadata?.user_name || user.email?.split("@")[0],
+              githubAvatarUrl: user.user_metadata?.avatar_url,
+              name: user.user_metadata?.full_name || user.user_metadata?.name,
+              email: user.email,
+            }),
+          });
+          console.log("✅ Token do GitHub atualizado");
+        } catch (error) {
+          console.error("Erro ao atualizar token:", error);
+        }
+
         const response = await fetch("/api/character", {
           headers: {
             Authorization: `Bearer ${session.access_token}`,

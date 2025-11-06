@@ -13,6 +13,37 @@ export function GitHubConnectStep({ onNext }: GitHubConnectStepProps) {
   const supabase = createClient();
   const { user, loading } = useUser();
 
+  const handleNext = async () => {
+    if (!user) return;
+
+    // Salvar/atualizar token do GitHub antes de prosseguir
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (token) {
+        await fetch("/api/user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            githubId: user.user_metadata?.provider_id || user.id,
+            githubUsername: user.user_metadata?.user_name || user.email?.split("@")[0],
+            githubAvatarUrl: user.user_metadata?.avatar_url,
+            name: user.user_metadata?.full_name || user.user_metadata?.name,
+            email: user.email,
+          }),
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao salvar token:", error);
+    }
+
+    onNext();
+  };
+
   const handleGitHubLogin = async () => {
     // Salvar que estava no onboarding antes de redirecionar
     localStorage.setItem("onboarding_in_progress", "true");
@@ -45,7 +76,7 @@ export function GitHubConnectStep({ onNext }: GitHubConnectStepProps) {
             Conectado como <strong>@{user.user_metadata?.user_name || user.email}</strong>
           </p>
           <Button
-            onClick={onNext}
+            onClick={handleNext}
             className="w-full bg-foreground hover:opacity-90 text-background font-bold"
           >
             Prosseguir

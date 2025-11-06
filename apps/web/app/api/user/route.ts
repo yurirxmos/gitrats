@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-export async function POST(request: NextRequest) {
+/**
+ * GET - Buscar dados do usuário logado
+ */
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Obter usuário autenticado
     const {
       data: { user },
       error: authError,
@@ -14,6 +16,42 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
+
+    const { data: userData } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    return NextResponse.json({ data: userData });
+  } catch (error) {
+    console.error("Erro ao buscar usuário:", error);
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+  }
+}
+
+/**
+ * POST - Criar/atualizar usuário com token do GitHub
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    // Obter usuário autenticado e sessão
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    // Obter token do GitHub da sessão
+    const { data: sessionData } = await supabase.auth.getSession();
+    const githubAccessToken = sessionData.session?.provider_token || null;
+
+    console.log("🔑 GitHub token presente:", !!githubAccessToken);
 
     const body = await request.json();
     const { githubId, githubUsername, githubAvatarUrl, name, email } = body;
@@ -32,6 +70,7 @@ export async function POST(request: NextRequest) {
         .update({
           github_username: githubUsername,
           github_avatar_url: githubAvatarUrl,
+          github_access_token: githubAccessToken,
           name,
           email,
         })
@@ -57,6 +96,7 @@ export async function POST(request: NextRequest) {
         github_id: githubId,
         github_username: githubUsername,
         github_avatar_url: githubAvatarUrl,
+        github_access_token: githubAccessToken,
         name,
         email,
       })
