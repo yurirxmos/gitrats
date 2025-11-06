@@ -3,7 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { OnboardingModal } from "@/components/onboarding-modal";
-import { FaTrophy, FaMedal, FaGithub, FaShareFromSquare, FaSpinner } from "react-icons/fa6";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { FaTrophy, FaMedal, FaGithub, FaShareFromSquare, FaSpinner, FaStarHalfStroke } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
@@ -18,6 +19,7 @@ import { Select, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { SelectContent } from "@radix-ui/react-select";
 import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
 import { GiBoltShield } from "react-icons/gi";
+import { Star } from "lucide-react";
 
 interface LeaderboardEntry {
   rank: number;
@@ -52,6 +54,7 @@ export default function Leaderboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [hasCharacter, setHasCharacter] = useState<boolean | null>(null);
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
 
   // Sync automático a cada 10 minutos (só se tiver personagem)
   useAutoSync(hasCharacter === true);
@@ -79,13 +82,22 @@ export default function Leaderboard() {
 
       setIsLoading(false);
       hasLoadedRef.current = true;
+
+      // Verificar se é primeira vez do usuário
+      if (user && !userLoading && hasCharacter) {
+        const hasSeenWelcome = localStorage.getItem("has_seen_welcome");
+        if (!hasSeenWelcome) {
+          setShowWelcomeDialog(true);
+          localStorage.setItem("has_seen_welcome", "true");
+        }
+      }
     };
 
     if (!userLoading) {
       loadAllData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, userLoading]);
+  }, [user, userLoading, hasCharacter]);
 
   const syncGitHubData = async (silent = false) => {
     if (!user) return;
@@ -643,6 +655,51 @@ export default function Leaderboard() {
         }}
         initialStep={2}
       />
+
+      {/* Dialog de Boas-Vindas */}
+      <Dialog
+        open={showWelcomeDialog}
+        onOpenChange={setShowWelcomeDialog}
+      >
+        <DialogContent className="max-w-md">
+          <div className="space-y-4 py-4">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">Bem-vindo ao Gitrats!</h2>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground text-center">
+                Ganhe <strong>XP</strong> automaticamente com suas atividades no GitHub:
+              </p>
+
+              <ul className="space-y-2 pl-4">
+                <li>
+                  - <strong>10 XP</strong> por commit
+                </li>
+                <li>
+                  - <strong>50 XP</strong> por pull request
+                </li>
+                <li>
+                  - <strong>25 XP</strong> por issue resolvida
+                </li>
+              </ul>
+
+              <p className="text-muted-foreground text-xs">
+                Sua classe {userProfile?.character_class} tem <strong>bônus especiais</strong> em certas atividades.
+                Suba de nível, evolua e domine o leaderboard!
+              </p>
+
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                Quer saber mais? Acesse <strong>/docs</strong> para detalhes completos.
+              </p>
+            </div>
+
+            <div className="flex justify-center pt-2">
+              <Button onClick={() => setShowWelcomeDialog(false)}>Entendi, vamos lá!</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

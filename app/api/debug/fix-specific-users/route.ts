@@ -164,31 +164,31 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Calcular quantos commits/prs/issues foram adicionados ao baseline (proteção contra XP duplicado)
-        const baselineDiff = {
-          commits: stats.baseline_commits - newBaselineCommits,
-          prs: stats.baseline_prs - newBaselinePRs,
-          issues: stats.baseline_issues - newBaselineIssues,
+        // Calcular quanto XP deve ser dado pelos últimos 7 dias
+        // Usamos weeklyStats (que já foi buscado) para saber exatamente quantos commits/prs/issues temos nos últimos 7 dias
+        const xpToGiveFromWeekly = {
+          commits: weeklyStats.commits,
+          prs: weeklyStats.prs,
+          issues: weeklyStats.issues,
         };
 
-        console.log(`[Fix Specific] ${username} - Diferença no baseline:`, baselineDiff);
+        console.log(`[Fix Specific] ${username} - XP a dar (últimos 7 dias):`, xpToGiveFromWeekly);
 
         // Aplicar multiplicadores de classe
         const commitsMultiplier = getClassXpMultiplier(character.class, "commits");
         const prsMultiplier = getClassXpMultiplier(character.class, "pullRequests");
         const issuesMultiplier = getClassXpMultiplier(character.class, "issuesResolved");
 
-        // Calcular XP APENAS da diferença do baseline (não dos últimos 7 dias completos)
-        // Isso garante que mesmo rodando 2x, não dá XP duplicado
-        const commitsXp = baselineDiff.commits * 10 * commitsMultiplier;
-        const prsXp = baselineDiff.prs * 50 * prsMultiplier;
-        const issuesXp = baselineDiff.issues * 25 * issuesMultiplier;
+        // Calcular XP dos últimos 7 dias
+        const commitsXp = xpToGiveFromWeekly.commits * 10 * commitsMultiplier;
+        const prsXp = xpToGiveFromWeekly.prs * 50 * prsMultiplier;
+        const issuesXp = xpToGiveFromWeekly.issues * 25 * issuesMultiplier;
         const totalXpToAdd = Math.round(commitsXp + prsXp + issuesXp);
 
-        console.log(`[Fix Specific] ${username} - XP calculado (baseado na diferença):`, {
-          commits: `${baselineDiff.commits} × 10 × ${commitsMultiplier} = ${commitsXp}`,
-          prs: `${baselineDiff.prs} × 50 × ${prsMultiplier} = ${prsXp}`,
-          issues: `${baselineDiff.issues} × 25 × ${issuesMultiplier} = ${issuesXp}`,
+        console.log(`[Fix Specific] ${username} - XP calculado (últimos 7 dias):`, {
+          commits: `${xpToGiveFromWeekly.commits} × 10 × ${commitsMultiplier} = ${commitsXp}`,
+          prs: `${xpToGiveFromWeekly.prs} × 50 × ${prsMultiplier} = ${prsXp}`,
+          issues: `${xpToGiveFromWeekly.issues} × 25 × ${issuesMultiplier} = ${issuesXp}`,
           total: totalXpToAdd,
         });
 
