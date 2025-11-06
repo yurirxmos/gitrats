@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Buscar personagem do usuário
     const { data: character, error: characterError } = await supabase
       .from("characters")
-      .select("id, name, class, level, current_xp, total_xp")
+      .select("id, name, class, level, current_xp, total_xp, created_at")
       .eq("user_id", user.id)
       .single();
 
@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
         level: character.level,
         current_xp: character.current_xp,
         total_xp: character.total_xp,
+        created_at: character.created_at,
         github_stats: {
           total_commits: commitsAfterJoin, // Apenas após entrar na plataforma
           total_prs: prsAfterJoin, // Apenas após entrar na plataforma

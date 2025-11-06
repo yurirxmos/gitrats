@@ -55,14 +55,11 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
         });
 
         if (response.ok) {
-          // Já tem personagem, redirecionar para leaderboard
           window.location.href = "/leaderboard";
         } else {
-          // Não tem personagem, ir para step 2
           setStep(2);
         }
       } catch (err) {
-        console.error("Erro ao verificar personagem:", err);
         setStep(2);
       }
     };
@@ -128,7 +125,6 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
 
       setStep(3);
     } catch (err) {
-      console.error("Erro ao criar personagem:", err);
       setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setIsCreating(false);

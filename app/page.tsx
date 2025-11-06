@@ -66,9 +66,8 @@ export default function Home() {
               email: user.email,
             }),
           });
-          console.log("✅ Token do GitHub atualizado");
         } catch (error) {
-          console.error("Erro ao atualizar token:", error);
+          // Silencioso
         }
 
         const response = await fetch("/api/character", {
@@ -79,7 +78,6 @@ export default function Home() {
 
         if (response.ok) {
           setHasCharacter(true);
-          // Se já tem personagem e o modal está aberto, redirecionar
           if (isOnboardingOpen) {
             window.location.href = "/leaderboard";
           }
@@ -87,7 +85,6 @@ export default function Home() {
           setHasCharacter(false);
         }
       } catch (error) {
-        console.error("Erro ao verificar personagem:", error);
         setHasCharacter(false);
       } finally {
         setCheckingCharacter(false);

@@ -82,15 +82,32 @@ export default function Docs() {
               </p>
 
               <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mb-4">
-                <p className="text-sm font-bold text-blue-400 mb-2">✅ Sistema Implementado</p>
+                <p className="text-sm font-bold text-blue-400 mb-2">Sistema Implementado</p>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>✅ <strong>Commits</strong> - Multiplicador funcionando</li>
-                  <li>✅ <strong>Pull Requests</strong> - Multiplicador funcionando</li>
-                  <li>✅ <strong>Issues Resolvidas</strong> - Multiplicador funcionando</li>
-                  <li>⏳ <strong>Code Reviews</strong> - EM DESENVOLVIMENTO (API GitHub limitada)</li>
-                  <li>⏳ <strong>Stars/Forks</strong> - EM DESENVOLVIMENTO</li>
-                  <li>⏳ <strong>Large Commits (>100 linhas)</strong> - EM DESENVOLVIMENTO</li>
-                  <li>⏳ <strong>Releases</strong> - EM DESENVOLVIMENTO</li>
+                  <li>
+                    <strong>Commits</strong> - 10 XP base × multiplicador de classe
+                  </li>
+                  <li>
+                    <strong>Pull Requests</strong> - 50 XP base × multiplicador de classe
+                  </li>
+                  <li>
+                    <strong>Issues Resolvidas</strong> - 25 XP base × multiplicador de classe
+                  </li>
+                </ul>
+                <p className="text-sm font-bold text-orange-400 mt-3 mb-2">Em Desenvolvimento</p>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>
+                    <strong>Code Reviews</strong> - Aguardando API do GitHub
+                  </li>
+                  <li>
+                    <strong>Large Commits (&gt;100 linhas)</strong> - Bônus extra para commits grandes
+                  </li>
+                  <li>
+                    <strong>Stars/Forks nos seus repos</strong> - Reconhecimento da comunidade
+                  </li>
+                  <li>
+                    <strong>Releases</strong> - XP por publicar versões
+                  </li>
                 </ul>
               </div>
 
@@ -111,21 +128,27 @@ export default function Docs() {
                       <div className="space-y-2">
                         <h4 className="text-sm font-bold text-green-500">Bônus Ativos:</h4>
                         <div className="text-xs bg-green-500/10 p-2 rounded border border-green-500/30">
-                          Commits: {multipliers.commits}x ✅
+                          Commits: {multipliers.commits}x
                         </div>
                         <div className="text-xs bg-green-500/10 p-2 rounded border border-green-500/30">
-                          Pull Requests: {multipliers.pullRequests}x ✅
+                          Pull Requests: {multipliers.pullRequests}x
                         </div>
                         <div className="text-xs bg-green-500/10 p-2 rounded border border-green-500/30">
-                          Issues: {multipliers.issuesResolved}x ✅
+                          Issues: {multipliers.issuesResolved}x
                         </div>
-                        
+
                         <h4 className="text-sm font-bold text-orange-500 mt-4">Em Desenvolvimento:</h4>
                         <div className="text-xs bg-muted/50 p-2 rounded opacity-50">
-                          Code Reviews: {multipliers.codeReviews}x ⏳
+                          Code Reviews: {multipliers.codeReviews}x
                         </div>
                         <div className="text-xs bg-muted/50 p-2 rounded opacity-50">
-                          Stars/Forks: {multipliers.starsAndForks}x ⏳
+                          Large Commits: {multipliers.largeCommits}x
+                        </div>
+                        <div className="text-xs bg-muted/50 p-2 rounded opacity-50">
+                          Stars/Forks: {multipliers.starsAndForks}x
+                        </div>
+                        <div className="text-xs bg-muted/50 p-2 rounded opacity-50">
+                          Releases: {multipliers.releases}x
                         </div>
                       </div>
 
@@ -144,7 +167,9 @@ export default function Docs() {
                   <li>Multiplicadores acima de 1.0 aumentam o XP ganho</li>
                   <li>Multiplicadores abaixo de 1.0 reduzem o XP ganho</li>
                   <li>Escolha a classe que combina com seu estilo de desenvolvimento!</li>
-                  <li><strong className="text-orange-500">XP Base Atual:</strong> 10 XP/commit, 50 XP/PR, 25 XP/issue</li>
+                  <li>
+                    <strong className="text-orange-500">XP Base Atual:</strong> 10 XP/commit, 50 XP/PR, 25 XP/issue
+                  </li>
                 </ul>
               </div>
             </CardContent>
@@ -199,36 +224,22 @@ export default function Docs() {
             </CardContent>
           </Card>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             <Card>
               <CardContent className="space-y-4">
                 <h2 className="text-xl font-bold">Commits</h2>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Small (menos de 10 linhas)</span>
-                    <span className="font-bold">{XP_CONSTANTS.COMMIT.SMALL} XP</span>
+                  <div className="flex justify-between items-center p-3 bg-green-500/10 border border-green-500/30 rounded">
+                    <span className="text-sm font-bold text-green-400">XP Base</span>
+                    <span className="font-bold text-2xl text-green-400">10 XP</span>
                   </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Medium (10-100 linhas)</span>
-                    <span className="font-bold">{XP_CONSTANTS.COMMIT.MEDIUM} XP</span>
+                  <p className="text-xs text-muted-foreground">
+                    Cada commit conta igualmente. Multiplicado pela classe do personagem.
+                  </p>
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Orc (+30%):</p>
+                    <p className="text-xs text-muted-foreground">1 commit = 10 × 1.3 = 13 XP</p>
                   </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Large (100-500 linhas)</span>
-                    <span className="font-bold">{XP_CONSTANTS.COMMIT.LARGE} XP</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Mega (500+ linhas)</span>
-                    <span className="font-bold">{XP_CONSTANTS.COMMIT.MEGA} XP</span>
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-border">
-                  <h3 className="font-bold text-sm mb-2 text-orange-500">Sistema Anti-Exploit</h3>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>✅ Cap diário: {XP_CONSTANTS.MAX_COMMIT_XP_PER_DAY} XP/dia</li>
-                    <li>✅ Commits vazios = 0 XP</li>
-                    <li>✅ Multiplicadores não acumulam</li>
-                    <li>✅ SHA único previne duplicação</li>
-                  </ul>
                 </div>
               </CardContent>
             </Card>
@@ -237,36 +248,16 @@ export default function Docs() {
               <CardContent className="space-y-4">
                 <h2 className="text-xl font-bold">Pull Requests</h2>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">PR aberto</span>
-                    <span className="font-bold">{XP_CONSTANTS.PULL_REQUEST.OPENED} XP</span>
+                  <div className="flex justify-between items-center p-3 bg-blue-500/10 border border-blue-500/30 rounded">
+                    <span className="text-sm font-bold text-blue-400">XP Base</span>
+                    <span className="font-bold text-2xl text-blue-400">50 XP</span>
                   </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">PR merged (total)</span>
-                    <span className="font-bold">
-                      {XP_CONSTANTS.PULL_REQUEST.OPENED + XP_CONSTANTS.PULL_REQUEST.MERGED} XP
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">PR fechado sem merge</span>
-                    <span className="font-bold">{XP_CONSTANTS.PULL_REQUEST.CLOSED} XP</span>
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-border space-y-4">
-                  <div>
-                    <h3 className="font-bold text-sm mb-2">Bônus por Popularidade</h3>
-                    <ul className="space-y-1 text-sm text-muted-foreground">
-                      <li>Repo com 1k+ stars: +30% XP (reduzido)</li>
-                      <li>Repo com 10k+ stars: +50% XP (reduzido)</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm mb-2 text-orange-500">Sistema Anti-Exploit</h3>
-                    <ul className="space-y-1 text-sm text-muted-foreground">
-                      <li>✅ Cap diário: {XP_CONSTANTS.MAX_PR_XP_PER_DAY} XP/dia</li>
-                      <li>✅ Repos próprios: -50% XP</li>
-                      <li>✅ PR número único previne duplicação</li>
-                    </ul>
+                  <p className="text-xs text-muted-foreground">
+                    Cada PR aberto ou merged. Multiplicado pela classe do personagem.
+                  </p>
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Warrior (+25%):</p>
+                    <p className="text-xs text-muted-foreground">1 PR = 50 × 1.25 = 62 XP</p>
                   </div>
                 </div>
               </CardContent>
@@ -274,99 +265,18 @@ export default function Docs() {
 
             <Card>
               <CardContent className="space-y-4">
-                <h2 className="text-xl font-bold">Stars Recebidas</h2>
+                <h2 className="text-xl font-bold">Issues Resolvidas</h2>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Primeira star no repo</span>
-                    <span className="font-bold">{XP_CONSTANTS.STARS.FIRST} XP</span>
+                  <div className="flex justify-between items-center p-3 bg-purple-500/10 border border-purple-500/30 rounded">
+                    <span className="text-sm font-bold text-purple-400">XP Base</span>
+                    <span className="font-bold text-2xl text-purple-400">25 XP</span>
                   </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Cada star adicional</span>
-                    <span className="font-bold">{XP_CONSTANTS.STARS.ADDITIONAL} XP</span>
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-border">
-                  <h3 className="font-bold text-sm mb-2 text-orange-500">Sistema Anti-Farming</h3>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>✅ Cap diário: {XP_CONSTANTS.MAX_STARS_XP_PER_DAY} XP/dia</li>
-                    <li>✅ Impossível farmar milhares de XP</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="space-y-4">
-                <h2 className="text-xl font-bold">Code Reviews</h2>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Review submetido</span>
-                    <span className="font-bold">{XP_CONSTANTS.CODE_REVIEW.SUBMITTED} XP</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Review com mudanças</span>
-                    <span className="font-bold">{XP_CONSTANTS.CODE_REVIEW.WITH_CHANGES} XP</span>
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-border">
-                  <h3 className="font-bold text-sm mb-2 text-orange-500">Sistema Anti-Exploit</h3>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>✅ Cap diário: {XP_CONSTANTS.MAX_REVIEWS_XP_PER_DAY} XP/dia</li>
-                    <li>✅ Reviews spam não geram XP extra</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="space-y-4">
-                <h2 className="text-xl font-bold">Issues</h2>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Issue criada</span>
-                    <span className="font-bold">{XP_CONSTANTS.ISSUES.CREATED} XP</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Resolvida pelo autor</span>
-                    <span className="font-bold">{XP_CONSTANTS.ISSUES.RESOLVED_BY_AUTHOR} XP</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Resolvida pela comunidade</span>
-                    <span className="font-bold">{XP_CONSTANTS.ISSUES.RESOLVED_BY_COMMUNITY} XP</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Bug report levou a fix</span>
-                    <span className="font-bold">{XP_CONSTANTS.ISSUES.BUG_FIX} XP</span>
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-border">
-                  <h3 className="font-bold text-sm mb-2 text-orange-500">Sistema Anti-Exploit</h3>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>✅ Cap diário: {XP_CONSTANTS.MAX_ISSUES_XP_PER_DAY} XP/dia</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="space-y-4">
-                <h2 className="text-xl font-bold">Releases</h2>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Primeiro release</span>
-                    <span className="font-bold">{XP_CONSTANTS.RELEASE.FIRST} XP</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Major version (v1.0)</span>
-                    <span className="font-bold">{XP_CONSTANTS.RELEASE.MAJOR} XP</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Minor version (v1.1)</span>
-                    <span className="font-bold">{XP_CONSTANTS.RELEASE.MINOR} XP</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span className="text-sm">Patch version (v1.1.1)</span>
-                    <span className="font-bold">{XP_CONSTANTS.RELEASE.PATCH} XP</span>
+                  <p className="text-xs text-muted-foreground">
+                    Cada issue fechada. Multiplicado pela classe do personagem.
+                  </p>
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Mage (+40%):</p>
+                    <p className="text-xs text-muted-foreground">1 issue = 25 × 1.4 = 35 XP</p>
                   </div>
                 </div>
               </CardContent>
@@ -375,7 +285,85 @@ export default function Docs() {
 
           <Card>
             <CardContent className="space-y-4">
-              <h2 className="text-2xl font-bold">Bônus de Streak</h2>
+              <h2 className="text-xl font-bold">Sistema de Baseline (Anti-Histórico)</h2>
+              <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-4">
+                <p className="text-sm font-bold text-orange-400 mb-2">Como Funciona</p>
+                <ul className="text-xs text-muted-foreground space-y-2">
+                  <li>
+                    <strong>Primeira sincronização:</strong> Salva seu histórico atual como "baseline" (0 XP)
+                  </li>
+                  <li>
+                    <strong>Syncs seguintes:</strong> Apenas atividades NOVAS após entrar na plataforma geram XP
+                  </li>
+                  <li>
+                    <strong>Exemplo:</strong> Se você tem 500 commits, eles viram baseline. Apenas commits 501+ ganham
+                    XP
+                  </li>
+                  <li>
+                    <strong>Justo:</strong> Todos começam do zero, independente do histórico no GitHub
+                  </li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="space-y-4">
+              <h2 className="text-xl font-bold">Sincronização Automática</h2>
+              <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4">
+                <p className="text-sm font-bold text-blue-400 mb-2">Auto-Sync</p>
+                <ul className="text-xs text-muted-foreground space-y-2">
+                  <li>
+                    <strong>Intervalo:</strong> A cada 10 minutos em background
+                  </li>
+                  <li>
+                    <strong>Silencioso:</strong> Não interrompe seu fluxo de trabalho
+                  </li>
+                  <li>
+                    <strong>Eficiente:</strong> Só sincroniza se houver novas atividades
+                  </li>
+                  <li>
+                    <strong>Cooldown:</strong> Previne spam de requisições ao GitHub
+                  </li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="space-y-4">
+              <h2 className="text-2xl font-bold">Funcionalidades Futuras</h2>
+              <div className="space-y-4">
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h3 className="font-bold text-sm mb-2 text-orange-500">Em Desenvolvimento</h3>
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    <li>
+                      <strong>Code Reviews:</strong> XP por revisar PRs de outros devs
+                    </li>
+                    <li>
+                      <strong>Large Commits:</strong> Bônus extra para commits grandes (&gt;100 linhas)
+                    </li>
+                    <li>
+                      <strong>Stars/Forks:</strong> Reconhecimento da comunidade nos seus repos
+                    </li>
+                    <li>
+                      <strong>Releases:</strong> XP por publicar versões de projetos
+                    </li>
+                    <li>
+                      <strong>Guilds:</strong> Sistema de grupos e competições entre times
+                    </li>
+                    <li>
+                      <strong>Achievements:</strong> Conquistas especiais e badges
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="space-y-4">
+              <h2 className="text-2xl font-bold">Bônus de Streak (Em Desenvolvimento)</h2>
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="p-4 bg-muted rounded-lg text-center">
                   <p className="text-2xl font-bold">+10%</p>
@@ -438,15 +426,15 @@ export default function Docs() {
                   <p className="text-xs text-muted-foreground mt-2">10% do cap total</p>
                 </div>
               </div>
-              <div className="bg-background rounded-lg p-4 space-y-2">
-                <h3 className="font-bold text-sm">Proteções Ativas:</h3>
-                <ul className="text-xs text-muted-foreground space-y-1 grid md:grid-cols-2 gap-2">
-                  <li>✅ Commit SHA único (anti-duplicação)</li>
-                  <li>✅ PR número único (anti-duplicação)</li>
-                  <li>✅ Multiplicadores não acumulam</li>
-                  <li>✅ Caps por tipo de atividade</li>
-                  <li>✅ Validação em sync e webhook</li>
-                  <li>✅ Detecção de atividades duplicadas</li>
+              <div className="bg-background rounded-lg p-4 space-y-3">
+                <h3 className="font-bold text-sm mb-2">Sistema Anti-Exploit</h3>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>Commit SHA único (anti-duplicação)</li>
+                  <li>PR número único (anti-duplicação)</li>
+                  <li>Multiplicadores não acumulam</li>
+                  <li>Caps por tipo de atividade</li>
+                  <li>Validação em sync e webhook</li>
+                  <li>Detecção de atividades duplicadas</li>
                 </ul>
               </div>
             </CardContent>
@@ -455,11 +443,12 @@ export default function Docs() {
           <Card>
             <CardContent className="space-y-4">
               <h2 className="text-2xl font-bold">Sistema de Multiplicadores v2.0</h2>
-              <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mb-4">
-                <p className="text-sm font-bold text-orange-500 mb-2">⚠️ Mudança Importante:</p>
+              <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-4">
+                <p className="text-sm font-bold text-orange-500 mb-2">Mudança Importante:</p>
                 <p className="text-xs text-muted-foreground">
-                  Multiplicadores agora usam apenas o MAIOR valor aplicável, ao invés de acumular. Isso previne exploits
-                  de XP exponencial.
+                  A fórmula foi simplificada drasticamente. Agora é <strong>Level² × 15</strong> ao invés de Level² ×
+                  100 + Level × 50. Isso permite alcançar Level 10 em apenas 15 dias de atividade consistente (~10
+                  commits/dia ou 2 PRs/dia).
                 </p>
               </div>
               <div className="space-y-2">
@@ -516,10 +505,10 @@ export default function Docs() {
               <div className="bg-background rounded-lg p-4 space-y-2">
                 <h3 className="font-bold text-sm">Marcos de Progressão Acelerada:</h3>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• Level 5: ~4 dias (375 XP) - Contribuidor ativo ✅</li>
-                  <li>• Level 10: ~15 dias (1.500 XP) - Desenvolvedor experiente ✅</li>
-                  <li>• Level 20: ~60 dias (6.000 XP) - Expert developer ✅</li>
-                  <li>• Level 50: ~1 ano (37.500 XP) - Coding deity ✅</li>
+                  <li>• Level 5: ~4 dias (375 XP) - Contribuidor ativo</li>
+                  <li>• Level 10: ~15 dias (1.500 XP) - Desenvolvedor experiente</li>
+                  <li>• Level 20: ~60 dias (6.000 XP) - Expert developer</li>
+                  <li>• Level 50: ~1 ano (37.500 XP) - Coding deity</li>
                 </ul>
               </div>
             </CardContent>

@@ -180,7 +180,7 @@ export function CharacterCreationStep({ onNext, onBack, isLoading = false }: Cha
 
           <div className="space-y-1">
             {CLASS_DESCRIPTIONS[selectedClass].strengths.map((strength, index) => {
-              const isActive = strength.startsWith("✅");
+              const isActive = !strength.includes("EM BREVE");
               return (
                 <div
                   key={index}

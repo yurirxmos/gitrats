@@ -17,6 +17,7 @@ import { getCurrentRank, getNextRank, getLevelsUntilNextRank } from "@/lib/class
 import { Select, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { SelectContent } from "@radix-ui/react-select";
 import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
+import { GiBoltShield } from "react-icons/gi";
 
 interface LeaderboardEntry {
   rank: number;
@@ -41,6 +42,7 @@ interface UserProfile {
   total_commits: number;
   total_prs: number;
   github_username: string;
+  created_at?: string;
 }
 
 export default function Leaderboard() {
@@ -93,10 +95,7 @@ export default function Leaderboard() {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
 
-      if (!token) {
-        console.log("❌ Sync: Não autenticado");
-        return;
-      }
+      if (!token) return;
 
       const response = await fetch("/api/github/sync", {
         method: "POST",
@@ -105,26 +104,12 @@ export default function Leaderboard() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        if (response.status === 429) {
-          console.log("⏳ Sync: Cooldown ativo");
-        } else if (response.status === 400 && data.error === "Token do GitHub não encontrado") {
-          console.log("⚠️ Sync: GitHub não conectado (complete o onboarding)");
-        } else if (response.status === 404 && data.error === "Personagem não encontrado") {
-          console.log("⚠️ Sync: Personagem não criado ainda");
-        } else {
-          console.error("❌ Sync error:", data.error);
-        }
-        return;
-      }
-
-      // Sucesso
-      console.log("✅ Sync:", data.data.activities_synced, "atividades,", data.data.xp_gained, "XP");
+      if (!response.ok) return;
 
       await loadUserProfile();
       await loadLeaderboard();
     } catch (error) {
-      console.error("❌ Erro ao sincronizar:", error);
+      // Silencioso em produção
     }
   };
 
@@ -133,8 +118,6 @@ export default function Leaderboard() {
       const response = await fetch("/api/leaderboard?limit=50");
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Erro da API:", response.status, errorText);
         throw new Error("Erro ao carregar leaderboard");
       }
 
@@ -142,14 +125,13 @@ export default function Leaderboard() {
       setLeaderboard(data || []);
       setLastUpdate(updateTime || null);
     } catch (error) {
-      console.error("Erro ao carregar leaderboard:", error);
       setLeaderboard([]);
     }
   };
 
   const loadUserProfile = async () => {
     if (!user) {
-      return false; // Retorna false quando não há usuário
+      return false;
     }
 
     try {
@@ -158,42 +140,29 @@ export default function Leaderboard() {
       const token = sessionData.session?.access_token;
 
       if (!token) {
-        console.log("❌ Sem token de sessão");
-        // Usuário logado mas sem token
         setHasCharacter(false);
         setUserProfile(null);
         return false;
       }
-
-      console.log("🔍 Buscando personagem para user:", user.id);
 
       // Buscar personagem do usuário
       const characterResponse = await fetch("/api/character", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("📡 Status da resposta:", characterResponse.status);
-
       if (!characterResponse.ok) {
-        const errorText = await characterResponse.text();
-        console.log("❌ Erro ao buscar personagem:", errorText);
-        // Usuário sem personagem
         setHasCharacter(false);
         setUserProfile(null);
         return false;
       }
 
       const { data: characterData } = await characterResponse.json();
-      console.log("✅ Dados do personagem:", characterData);
 
-      // Tem personagem
       setHasCharacter(true);
 
       // Buscar posição no ranking
       const rankResponse = await fetch(`/api/leaderboard/${user.id}`);
       const { data: rankData } = rankResponse.ok ? await rankResponse.json() : { data: null };
-
-      console.log("🏆 Rank data:", rankData);
 
       setUserProfile({
         character_name: characterData.name,
@@ -205,11 +174,11 @@ export default function Leaderboard() {
         total_commits: characterData.github_stats?.total_commits || 0,
         total_prs: characterData.github_stats?.total_prs || 0,
         github_username: user.user_metadata?.user_name || user.email?.split("@")[0] || "User",
+        created_at: characterData.created_at,
       });
 
-      return true; // Retorna true quando tem personagem
+      return true;
     } catch (error) {
-      console.error("Erro ao carregar perfil:", error);
       setHasCharacter(false);
       setUserProfile(null);
       return false;
@@ -286,40 +255,52 @@ export default function Leaderboard() {
                         </div>
                         {(() => {
                           const nextRank = getNextRank(userProfile.character_class, userProfile.level);
-                          const levelsUntil = getLevelsUntilNextRank(userProfile.character_class, userProfile.level);
 
                           return (
                             <div className="pt-2 space-y-1">
                               {nextRank && (
-                                <p className="text-[9px] text-blue-400 text-center">
-                                  {userProfile.character_class.toUpperCase()} evolui para {nextRank.name.toUpperCase()}{" "}
-                                  em {levelsUntil} {levelsUntil === 1 ? "nível" : "níveis"}
-                                </p>
+                                <div className="flex justify-between">
+                                  <p className="text-xs text-muted-foreground">Evolução:</p>
+                                  <p className="font-bold text-xs">{nextRank.name.toUpperCase()}</p>
+                                </div>
                               )}
+                              {userProfile.created_at && (
+                                <div className="flex justify-between">
+                                  <p className="text-xs text-muted-foreground">Nascimento:</p>
+                                  <p className="font-bold text-xs">
+                                    {new Date(userProfile.created_at).toLocaleDateString("pt-BR")}
+                                  </p>
+                                </div>
+                              )}
+                              <div className="flex justify-between">
+                                <p className="text-xs text-muted-foreground">Guilda:</p>
+                                <p className="font-bold text-xs">{userProfile.guild_name || "-"}</p>
+                              </div>
                             </div>
                           );
                         })()}
                       </div>
 
-                      <div className="space-y-1 border-t border-border pt-4">
-                        <div className="mb-2">
-                          <span className="text-xs font-bold text-muted-foreground uppercase">Estatísticas</span>
-                        </div>
+                      <div className="flex flex-row items-center gap-1.5 mb-2">
+                        <GiBoltShield />
+                        <span className="text-xs font-bold text-muted-foreground uppercase">/GIT-STATS</span>
+                      </div>
 
+                      <div className="space-y-0.5 text-xs">
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Ranking</span>
+                          <span className=" text-muted-foreground">Ranking</span>
                           <span className="font-bold">#{userProfile.rank || "-"}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Total XP</span>
+                          <span className="text-muted-foreground">Total XP</span>
                           <span className="font-bold">{userProfile.total_xp.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Commits</span>
+                          <span className="text-muted-foreground">Commits</span>
                           <span className="font-bold">{userProfile.total_commits}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Pull Requests</span>
+                          <span className="text-muted-foreground">Pull Requests</span>
                           <span className="font-bold">{userProfile.total_prs}</span>
                         </div>
                       </div>
@@ -330,21 +311,6 @@ export default function Leaderboard() {
 
                       {/* Bônus de Classe */}
                       <ClassBonusIndicator characterClass={userProfile.character_class as "orc" | "warrior" | "mage"} />
-
-                      <div className="flex flex-row items-center justify-center gap-2">
-                        <Button
-                          className="w-fit bg-foreground hover:opacity-90 text-background"
-                          onClick={() => window.open(`https://github.com/${userProfile.github_username}`, "_blank")}
-                        >
-                          <FaGithub className="text-lg" />
-                        </Button>
-                        <Button
-                          className="w-fit bg-foreground hover:opacity-90 text-background"
-                          onClick={() => window.open(`https://github.com/${userProfile.github_username}`, "_blank")}
-                        >
-                          <FaShareFromSquare />
-                        </Button>
-                      </div>
                     </>
                   ) : (
                     <div className="text-center py-10">

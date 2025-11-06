@@ -27,41 +27,24 @@ export function useAutoSync(hasCharacter: boolean) {
     // Função para fazer sync
     const performSync = async () => {
       const now = Date.now();
-      const TEN_MINUTES = 10 * 60 * 1000; // 10 minutos em ms
+      const TEN_MINUTES = 10 * 60 * 1000;
 
-      // Verificar se já passou 10 minutos desde o último sync
-      if (now - lastSyncRef.current < TEN_MINUTES) {
-        console.log("[Auto Sync] Sync recente, pulando...");
-        return;
-      }
+      if (now - lastSyncRef.current < TEN_MINUTES) return;
 
       try {
-        console.log("[Auto Sync] Iniciando sincronização automática...");
-
         const response = await fetch("/api/github/sync", {
           method: "POST",
         });
 
         if (response.ok) {
-          const data = await response.json();
           lastSyncRef.current = now;
-
-          if (data.data?.xp_gained > 0) {
-            console.log(
-              `[Auto Sync] ✅ +${data.data.xp_gained} XP | ${data.data.stats?.commits || 0} commits, ${data.data.stats?.prs || 0} PRs`
-            );
-          } else {
-            console.log("[Auto Sync] ✅ Sincronizado - nenhuma atividade nova");
-          }
-        } else {
-          console.error("[Auto Sync] Erro ao sincronizar:", await response.text());
         }
       } catch (error) {
-        console.error("[Auto Sync] Erro:", error);
+        // Silencioso em produção
       }
     };
 
-    // Fazer sync inicial após 5 segundos (dar tempo do usuário carregar)
+    // Fazer sync inicial após 5 segundos
     const initialSyncTimeout = setTimeout(() => {
       performSync();
     }, 5000);
@@ -72,7 +55,7 @@ export function useAutoSync(hasCharacter: boolean) {
         performSync();
       },
       10 * 60 * 1000
-    ); // 10 minutos
+    );
 
     // Cleanup
     return () => {

@@ -74,7 +74,6 @@ export class GitHubService {
         totalIssues: contributionData.totalIssues,
       };
     } catch (error) {
-      console.error("Erro ao buscar stats do GitHub:", error);
       throw new Error("Failed to fetch GitHub statistics");
     }
   }
@@ -90,8 +89,6 @@ export class GitHubService {
     totalReviews: number;
   }> {
     try {
-      console.log(`[GitHub GraphQL] Buscando dados de contribuições para ${username}`);
-
       const currentYear = new Date().getFullYear();
       const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
 
@@ -130,7 +127,6 @@ export class GitHubService {
         throw new Error(`Usuário ${username} não encontrado`);
       }
 
-      // Somar contribuições de todos os anos
       const collections = ["contributionsCollection", ...years.map((y) => `contributionsCollection${y}`)];
 
       let totalCommits = 0;
@@ -148,12 +144,6 @@ export class GitHubService {
         }
       });
 
-      console.log(`[GitHub GraphQL] Dados encontrados para ${username}:`);
-      console.log(`  Total Commits: ${totalCommits}`);
-      console.log(`  Total PRs: ${totalPRs}`);
-      console.log(`  Total Issues: ${totalIssues}`);
-      console.log(`  Total Reviews: ${totalReviews}`);
-
       return {
         totalCommits,
         totalPRs,
@@ -161,10 +151,6 @@ export class GitHubService {
         totalReviews,
       };
     } catch (error) {
-      console.error("Erro ao buscar dados via GraphQL:", error);
-
-      // Fallback para REST API se GraphQL falhar
-      console.log(`[GitHub] Usando fallback REST API para ${username}`);
       const { data: events } = await this.octokit.rest.activity.listPublicEventsForUser({
         username,
         per_page: 100,
@@ -184,8 +170,6 @@ export class GitHubService {
    */
   async getWeeklyXp(username: string): Promise<{ commits: number; prs: number; issues: number; reviews: number }> {
     try {
-      console.log(`[GitHub Service] Buscando XP semanal para ${username} via GraphQL`);
-
       const now = new Date();
       const startDate = new Date(now);
       startDate.setDate(now.getDate() - 7);
@@ -223,18 +207,8 @@ export class GitHubService {
       const issues = Number(collection.totalIssueContributions) || 0;
       const reviews = Number(collection.totalPullRequestReviewContributions) || 0;
 
-      console.log(`[GitHub Service] Dados semanais para ${username}:`);
-      console.log(`  Commits: ${commits}`);
-      console.log(`  PRs: ${prs}`);
-      console.log(`  Issues: ${issues}`);
-      console.log(`  Reviews: ${reviews}`);
-
       return { commits, prs, issues, reviews };
     } catch (error) {
-      console.error("Erro ao calcular XP semanal via GraphQL:", error);
-      console.log("Usando fallback para eventos...");
-
-      // Fallback para Events API
       const { data: events } = await this.octokit.rest.activity.listPublicEventsForUser({
         username,
         per_page: 100,

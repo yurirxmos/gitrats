@@ -43,11 +43,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    // Obter token do GitHub da sessão
     const { data: sessionData } = await supabase.auth.getSession();
     const githubAccessToken = sessionData.session?.provider_token || null;
-
-    console.log("🔑 GitHub token presente:", !!githubAccessToken);
 
     const body = await request.json();
     const { githubId, githubUsername, githubAvatarUrl, name, email } = body;
@@ -56,11 +53,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "GitHub ID e username são obrigatórios" }, { status: 400 });
     }
 
-    // Verificar se usuário já existe
     const { data: existingUser } = await supabase.from("users").select("id").eq("id", user.id).single();
 
     if (existingUser) {
-      // Atualizar usuário existente
       const { data: updatedUser, error: updateError } = await supabase
         .from("users")
         .update({
@@ -84,7 +79,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Criar novo usuário
     const { data: newUser, error: createError } = await supabase
       .from("users")
       .insert({

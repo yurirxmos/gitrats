@@ -38,14 +38,13 @@ export function GitHubConnectStep({ onNext }: GitHubConnectStepProps) {
         });
       }
     } catch (error) {
-      console.error("Erro ao salvar token:", error);
+      // Silencioso
     }
 
     onNext();
   };
 
   const handleGitHubLogin = async () => {
-    // Salvar que estava no onboarding antes de redirecionar
     localStorage.setItem("onboarding_in_progress", "true");
 
     const { error } = await supabase.auth.signInWithOAuth({
@@ -56,7 +55,6 @@ export function GitHubConnectStep({ onNext }: GitHubConnectStepProps) {
     });
 
     if (error) {
-      console.error("Erro ao conectar com GitHub:", error);
       localStorage.removeItem("onboarding_in_progress");
     }
   };

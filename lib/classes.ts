@@ -85,9 +85,9 @@ export const CLASS_DESCRIPTIONS: Record<
     title: "Brute Force Developer",
     description: "Desenvolvedores que preferem ação direta, commits frequentes e entregas rápidas. Gostam de XGH.",
     strengths: [
-      "✅ +30% XP em commits",
-      "⏳ +40% XP em commits grandes (>100 linhas) - EM BREVE",
-      "⏳ +20% XP em releases - EM BREVE",
+      "+30% XP em commits",
+      "+40% XP em commits grandes (>100 linhas) - EM BREVE",
+      "+20% XP em releases - EM BREVE",
     ],
     playstyle: "Agressivo, direto, produtividade bruta",
   },
@@ -97,7 +97,7 @@ export const CLASS_DESCRIPTIONS: Record<
     title: "Full-Stack Warrior",
     description:
       "Guerreiros colaborativos que lutam em múltiplas frentes. Mestres em pull requests e trabalho em equipe.",
-    strengths: ["✅ +25% XP em Pull Requests", "⏳ +30% XP em Code Reviews - EM BREVE", "+15% XP em issues resolvidas"],
+    strengths: ["+25% XP em Pull Requests", "+30% XP em Code Reviews - EM BREVE", "+15% XP em issues resolvidas"],
     playstyle: "Colaborativo, versátil, trabalho em equipe",
   },
 
@@ -105,11 +105,7 @@ export const CLASS_DESCRIPTIONS: Record<
     name: "Mage",
     title: "Code Architect/Wizard",
     description: "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em problemas complexos.",
-    strengths: [
-      "✅ +40% XP em issues resolvidas",
-      "⏳ +30% XP em stars e forks - EM BREVE",
-      "+15% XP em Pull Requests",
-    ],
+    strengths: ["+40% XP em issues resolvidas", "+30% XP em stars e forks - EM BREVE", "-10% XP em commits"],
     playstyle: "Estratégico, impacto e qualidade",
   },
 };

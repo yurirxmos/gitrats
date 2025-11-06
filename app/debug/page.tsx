@@ -63,8 +63,8 @@ export default function DebugPage() {
 
   return (
     <div className="min-h-screen p-8 bg-background">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-3xl font-black">🔧 DEBUG - Sincronização GitHub</h1>
+      <div className="max-w-4xl mx-auto p-8 space-y-8">
+        <h1 className="text-3xl font-black">DEBUG - Sincronização GitHub</h1>
 
         <div className="flex gap-4 flex-wrap">
           <Button
@@ -85,36 +85,36 @@ export default function DebugPage() {
             disabled={loading}
             variant="outline"
           >
-            🔧 Corrigir Sync (Resetar last_sync_at)
+            Corrigir Sync (Resetar last_sync_at)
           </Button>
           <Button
             onClick={() => router.push("/leaderboard")}
             variant="secondary"
           >
-            ← Voltar ao Leaderboard
+            Voltar ao Leaderboard
           </Button>
         </div>
 
         {status?.diff && (
           <Card className="border-yellow-500">
             <CardContent className="pt-6">
-              <h2 className="text-xl font-bold mb-2">⚠️ Análise Rápida</h2>
+              <h2 className="text-xl font-bold mb-2">Análise Rápida</h2>
               {status.diff.commits_diff > 0 || status.diff.prs_diff > 0 ? (
                 <div className="space-y-2">
-                  <p className="text-yellow-500 font-bold">❌ Dados NÃO sincronizados!</p>
+                  <p className="text-yellow-500 font-bold">Dados NÃO sincronizados!</p>
                   <p className="text-sm">
                     Faltam <strong>{status.diff.commits_diff} commits</strong> e{" "}
                     <strong>{status.diff.prs_diff} PRs</strong> para serem salvos no banco.
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {status.github_stats_db?.last_sync_at
-                      ? "✅ last_sync_at está preenchido → Use o botão '🔧 Corrigir Sync' e depois 'Forçar Sincronização'"
-                      : "⏳ last_sync_at está null → Use o botão 'Forçar Sincronização'"}
+                      ? "last_sync_at está preenchido → Use o botão 'Corrigir Sync' e depois 'Forçar Sincronização'"
+                      : "last_sync_at está null → Use o botão 'Forçar Sincronização'"}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-green-500 font-bold">✅ Dados sincronizados!</p>
+                  <p className="text-green-500 font-bold">Dados sincronizados!</p>
                   <p className="text-sm">
                     Banco: <strong>{status.github_stats_db.total_commits} commits</strong>,{" "}
                     <strong>{status.github_stats_db.total_prs} PRs</strong>

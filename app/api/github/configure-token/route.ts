@@ -18,16 +18,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    // Pegar o provider_token da sessão
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
     const providerToken = session?.provider_token;
-
-    console.log("[Configure Token] Provider Token:", providerToken ? "presente" : "ausente");
-    console.log("[Configure Token] User ID:", user.id);
-    console.log("[Configure Token] Username:", user.user_metadata?.user_name);
 
     if (!providerToken) {
       return NextResponse.json(
@@ -39,7 +34,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Atualizar o token no banco
     const { error: updateError } = await supabase
       .from("users")
       .update({
@@ -53,8 +47,6 @@ export async function POST(request: NextRequest) {
       console.error("[Configure Token] Erro ao atualizar:", updateError);
       return NextResponse.json({ error: "Erro ao salvar token" }, { status: 500 });
     }
-
-    console.log("[Configure Token] ✅ Token salvo com sucesso");
 
     return NextResponse.json({
       success: true,

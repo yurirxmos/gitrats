@@ -43,18 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     const githubService = new GitHubService(userData.github_access_token || undefined);
-
-    console.log(`[Sync] Iniciando sincronização para ${userData.github_username}`);
-
     const githubStats = await githubService.getUserStats(userData.github_username);
-
-    console.log(`[Sync] Stats do GitHub:`, {
-      totalCommits: githubStats.totalCommits,
-      totalPRs: githubStats.totalPRs,
-      totalIssues: githubStats.totalIssues,
-      totalStars: githubStats.totalStars,
-      totalRepos: githubStats.totalRepos,
-    });
 
     const { data: currentStats, error: statsError } = await supabase
       .from("github_stats")
@@ -64,9 +53,7 @@ export async function POST(request: NextRequest) {
       .eq("user_id", userData.id)
       .maybeSingle();
 
-    // Se não existe registro de stats, criar um vazio primeiro
     if (!currentStats) {
-      console.log(`[Sync] Nenhum registro de github_stats encontrado. Criando...`);
       await supabase.from("github_stats").insert({
         user_id: userData.id,
         total_commits: 0,
@@ -81,20 +68,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[Sync] Stats atuais no banco:`, {
-      currentStats,
-      total_commits_db: currentStats?.total_commits || 0,
-      total_prs_db: currentStats?.total_prs || 0,
-      last_sync_at: currentStats?.last_sync_at,
-    });
-
-    // Se é a primeira sync (nunca sincronizou antes), apenas inicializar sem dar XP
-    // IMPORTANTE: Salva o baseline dos commits/PRs atuais, mas NÃO conta como atividade
     const isFirstSync = !currentStats || !currentStats?.last_sync_at;
 
     if (isFirstSync) {
-      console.log(`[Sync] PRIMEIRA SINCRONIZAÇÃO - Salvando baseline (histórico ignorado)`);
-
       const { data: updatedStats, error: upsertError } = await supabase
         .from("github_stats")
         .update({
@@ -104,7 +80,7 @@ export async function POST(request: NextRequest) {
           baseline_commits: githubStats.totalCommits,
           baseline_prs: githubStats.totalPRs,
           baseline_issues: githubStats.totalIssues,
-          baseline_reviews: 0, // GitHub não retorna reviews no getUserStats
+          baseline_reviews: 0,
           last_sync_at: new Date().toISOString(),
         })
         .eq("user_id", userData.id)
@@ -112,70 +88,39 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (upsertError) {
-        console.error(`[Sync] ERRO ao atualizar github_stats:`, upsertError);
+        console.error(`[Sync] Erro ao atualizar github_stats:`, upsertError);
         return NextResponse.json({ error: `Erro ao salvar stats: ${upsertError.message}` }, { status: 500 });
       }
-
-      console.log(`[Sync] Baseline salvo (histórico GitHub ignorado):`, {
-        baseline_commits: updatedStats?.baseline_commits,
-        baseline_prs: updatedStats?.baseline_prs,
-        mensagem: "A partir de agora, apenas NOVOS commits/PRs gerarão XP",
-      });
 
       return NextResponse.json({
         success: true,
         message:
-          "✅ Conta sincronizada! Seu histórico foi ignorado. A partir de agora você ganhará XP apenas por novas atividades.",
+          "Conta sincronizada! Seu histórico foi ignorado. A partir de agora você ganhará XP apenas por novas atividades.",
         data: {
           xp_gained: 0,
           activities_synced: 0,
           stats: {
-            commits: 0, // Zerado porque é baseline
-            prs: 0, // Zerado porque é baseline
-            total_commits: 0, // Mostra 0 pro usuário (histórico ignorado)
-            total_prs: 0, // Mostra 0 pro usuário (histórico ignorado)
+            commits: 0,
+            prs: 0,
+            total_commits: 0,
+            total_prs: 0,
           },
         },
       });
     }
 
-    // Calcular apenas as NOVAS atividades desde a última sync
     const newCommits = githubStats.totalCommits - (currentStats?.total_commits || 0);
     const newPRs = githubStats.totalPRs - (currentStats?.total_prs || 0);
     const newIssues = githubStats.totalIssues - (currentStats?.total_issues || 0);
-    // Reviews não disponível no getUserStats, só via getWeeklyXp
 
-    console.log(`[Sync] Novas atividades desde último sync:`, {
-      newCommits,
-      newPRs,
-      newIssues,
-      github_total_commits: githubStats.totalCommits,
-      baseline_commits: currentStats?.total_commits || 0,
-    });
-
-    // Aplicar multiplicadores de classe
     const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
     const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
     const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
 
-    // XP base AUMENTADO: 10 por commit, 50 por PR, 25 por issue
     const xpFromCommits = Math.floor(newCommits * 10 * commitMultiplier);
     const xpFromPRs = Math.floor(newPRs * 50 * prMultiplier);
     const xpFromIssues = Math.floor(newIssues * 25 * issueMultiplier);
     const totalXpGained = xpFromCommits + xpFromPRs + xpFromIssues;
-
-    console.log(`[Sync] XP calculado (com bônus de classe ${character.class.toUpperCase()}):`, {
-      newCommits,
-      newPRs,
-      newIssues,
-      commitMultiplier: `${commitMultiplier}x`,
-      prMultiplier: `${prMultiplier}x`,
-      issueMultiplier: `${issueMultiplier}x`,
-      xpFromCommits,
-      xpFromPRs,
-      xpFromIssues,
-      totalXpGained,
-    });
 
     const { error: updateStatsError } = await supabase
       .from("github_stats")
@@ -188,16 +133,8 @@ export async function POST(request: NextRequest) {
       .eq("user_id", userData.id);
 
     if (updateStatsError) {
-      console.error(`[Sync] ERRO ao atualizar github_stats:`, updateStatsError);
+      console.error(`[Sync] Erro ao atualizar github_stats:`, updateStatsError);
     }
-
-    console.log(`[Sync] github_stats atualizado com:`, {
-      total_commits: githubStats.totalCommits,
-      total_prs: githubStats.totalPRs,
-      total_issues: githubStats.totalIssues,
-      user_id: userData.id,
-    });
-
     if (totalXpGained > 0) {
       const newTotalXp = character.total_xp + totalXpGained;
       const newLevel = getLevelFromXp(newTotalXp);
