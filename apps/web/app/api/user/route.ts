@@ -17,11 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const { data: userData } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+    const { data: userData } = await supabase.from("users").select("*").eq("id", user.id).single();
 
     return NextResponse.json({ data: userData });
   } catch (error) {

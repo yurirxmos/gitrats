@@ -47,7 +47,7 @@ export function ClassBonusIndicator({ characterClass, compact = false }: ClassBo
 
   return (
     <Card className="border-orange-500/20 bg-orange-500/5">
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="space-y-2">
         <div className="flex items-center gap-2">
           <FaFire className="text-orange-500" />
           <h3 className="font-bold text-sm uppercase">Bônus Ativos</h3>

@@ -127,7 +127,7 @@ export default function Leaderboard() {
           console.error("❌ Sync error:", data.error);
           if (!silent) setSyncMessage(`❌ Erro: ${data.error}`);
         }
-        
+
         // Limpar mensagem após 5 segundos
         if (!silent) {
           setTimeout(() => setSyncMessage(null), 5000);
@@ -341,13 +341,13 @@ export default function Leaderboard() {
                             <FaArrowsRotate className={`text-xs ${isSyncing ? "animate-spin" : ""}`} />
                           </Button>
                         </div>
-                        
+
                         {syncMessage && (
                           <div className="mb-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-center">
                             {syncMessage}
                           </div>
                         )}
-                        
+
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Ranking</span>
                           <span className="font-bold">#{userProfile.rank || "-"}</span>
@@ -368,7 +368,9 @@ export default function Leaderboard() {
 
                       <div className="flex flex-row justify-center text-muted-foreground">
                         <small className="text-[8px] text-center">
-                          {isSyncing ? "Sincronizando..." : "Clique no botão ↻ para sincronizar suas atividades do GitHub"}
+                          {isSyncing
+                            ? "Sincronizando..."
+                            : "Clique no botão ↻ para sincronizar suas atividades do GitHub"}
                         </small>
                       </div>
 
