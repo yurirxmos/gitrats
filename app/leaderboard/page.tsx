@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUser } from "@/hooks/use-user";
+import { useAutoSync } from "@/hooks/use-auto-sync";
 import { createClient } from "@/lib/supabase/client";
 import { getCharacterAvatar } from "@/lib/character-assets";
 import { getXpForLevel } from "@/lib/xp-system";
@@ -49,6 +50,9 @@ export default function Leaderboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Sync automático a cada 10 minutos
+  useAutoSync();
   const [hasCharacter, setHasCharacter] = useState<boolean | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);

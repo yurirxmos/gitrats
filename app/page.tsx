@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { Navbar } from "@/components/navbar";
 import { useUser } from "@/hooks/use-user";
+import { useAutoSync } from "@/hooks/use-auto-sync";
 import Link from "next/link";
 
 export default function Home() {
@@ -16,6 +17,9 @@ export default function Home() {
   const [hasCharacter, setHasCharacter] = useState(false);
   const [checkingCharacter, setCheckingCharacter] = useState(true);
   const { user } = useUser();
+
+  // Sync automático a cada 10 minutos
+  useAutoSync();
 
   useEffect(() => {
     // Verificar se estava no onboarding antes do login

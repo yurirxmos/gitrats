@@ -7,6 +7,8 @@ import { useUser } from "@/hooks/use-user";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/theme-context";
+import { Avatar } from "./ui/avatar";
+import { Badge } from "./ui/badge";
 
 export function Navbar() {
   const { user, loading } = useUser();
@@ -93,6 +95,21 @@ export function Navbar() {
           >
             /login
           </button>
+        )}
+
+        {user && (
+          <div className="flex flex-row items-center gap-1">
+            <Badge className="text-[10px]">{user.user_metadata?.user_name || user.email}</Badge>
+            <Avatar>
+              <img
+                src={user.user_metadata?.avatar_url || "/default-avatar.png"}
+                alt="User Avatar"
+                width={32}
+                height={32}
+                className="rounded-full border border-foreground"
+              />
+            </Avatar>
+          </div>
         )}
       </div>
     </nav>

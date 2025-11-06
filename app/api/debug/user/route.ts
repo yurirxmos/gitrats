@@ -34,17 +34,9 @@ export async function GET(request: NextRequest) {
     // Buscar stats do GitHub
     const { data: githubStats } = await supabase
       .from("github_stats")
-      .select("total_commits, total_prs, last_sync_at")
+      .select("total_commits, total_prs, total_stars, total_repos, last_sync_at")
       .eq("user_id", user.id)
       .single();
-
-    // Buscar atividades recentes
-    const { data: activities } = await supabase
-      .from("activity_log")
-      .select("activity_type, xp_gained, created_at, commit_sha, pr_number")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(5);
 
     // Obter token da sessão
     const { data: sessionData } = await supabase.auth.getSession();
@@ -67,7 +59,6 @@ export async function GET(request: NextRequest) {
         },
         character,
         github_stats: githubStats,
-        recent_activities: activities,
       },
     });
   } catch (error) {
