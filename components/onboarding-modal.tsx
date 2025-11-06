@@ -133,6 +133,8 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
   const handleFinish = () => {
     onClose();
     setError(null);
+    // Redirecionar para leaderboard
+    window.location.href = "/leaderboard";
   };
 
   return (
@@ -142,9 +144,7 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
     >
       <DialogContent className="max-w-2xl font-sans">
         <DialogTitle className="sr-only">Onboarding</DialogTitle>
-        <DialogDescription className="sr-only">
-          Configure sua conta e crie seu personagem
-        </DialogDescription>
+        <DialogDescription className="sr-only">Configure sua conta e crie seu personagem</DialogDescription>
         <div className="w-full flex flex-row items-center justify-center">
           <div className="flex gap-2 w-100">
             {[1, 2, 3].map((i) => (
@@ -167,18 +167,12 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
             )}
             <CharacterCreationStep
               onNext={handleCharacterCreation}
-              onBack={() => setStep(1)}
               isLoading={isCreating}
             />
           </>
         )}
 
-        {step === 3 && (
-          <ReadyStep
-            onFinish={handleFinish}
-            onBack={() => setStep(2)}
-          />
-        )}
+        {step === 3 && <ReadyStep onFinish={handleFinish} />}
       </DialogContent>
     </Dialog>
   );

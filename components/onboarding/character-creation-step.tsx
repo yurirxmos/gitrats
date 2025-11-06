@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaArrowRight, FaArrowLeft, FaAnglesUp, FaFire, FaStar } from "react-icons/fa6";
+import { FaArrowRight, FaFire, FaStar } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
@@ -22,7 +22,6 @@ type CharacterClass = "warrior" | "mage" | "orc";
 
 interface CharacterCreationStepProps {
   onNext: (characterData: { name: string; class: CharacterClass }) => void;
-  onBack: () => void;
   isLoading?: boolean;
 }
 
@@ -59,7 +58,7 @@ const classes = [
   },
 ];
 
-export function CharacterCreationStep({ onNext, onBack, isLoading = false }: CharacterCreationStepProps) {
+export function CharacterCreationStep({ onNext, isLoading = false }: CharacterCreationStepProps) {
   const [characterName, setCharacterName] = useState("");
   const [selectedClass, setSelectedClass] = useState<CharacterClass>("warrior");
 
@@ -203,14 +202,7 @@ export function CharacterCreationStep({ onNext, onBack, isLoading = false }: Cha
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-2">
-        <Button
-          onClick={onBack}
-          variant="outline"
-          className="w-20"
-        >
-          <FaArrowLeft />
-        </Button>
+      <div className="flex items-center justify-end mt-2">
         <Button
           onClick={handleNext}
           disabled={!characterName.trim() || isLoading}

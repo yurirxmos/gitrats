@@ -1,12 +1,11 @@
-import { FaTrophy, FaArrowLeft } from "react-icons/fa6";
+import { FaTrophy } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 
 interface ReadyStepProps {
   onFinish: () => void;
-  onBack: () => void;
 }
 
-export function ReadyStep({ onFinish, onBack }: ReadyStepProps) {
+export function ReadyStep({ onFinish }: ReadyStepProps) {
   return (
     <div className="space-y-6 text-center">
       <div className="w-20 h-20 bg-foreground/10 rounded-full flex items-center justify-center mx-auto">
@@ -51,23 +50,13 @@ export function ReadyStep({ onFinish, onBack }: ReadyStepProps) {
         </div>
       </div>
 
-      <div className="flex gap-4">
-        <Button
-          onClick={onBack}
-          variant="outline"
-          className="flex-1"
-        >
-          <FaArrowLeft />
-          Voltar
-        </Button>
-        <Button
-          onClick={onFinish}
-          className="flex-1 bg-foreground hover:opacity-90 text-background font-bold"
-        >
-          Começar a Jogar!
-          <FaTrophy />
-        </Button>
-      </div>
+      <Button
+        onClick={onFinish}
+        className="w-full bg-foreground hover:opacity-90 text-background font-bold"
+      >
+        Começar a Jogar!
+        <FaTrophy />
+      </Button>
     </div>
   );
 }
