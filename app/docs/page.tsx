@@ -8,15 +8,15 @@ import { FaFire } from "react-icons/fa6";
 
 export default function Docs() {
   const levelProgression = [
-    { level: 1, xp: getXpForLevel(1), equivalent: "Primeira semana", days: "0" },
-    { level: 2, xp: getXpForLevel(2), equivalent: "Workflow básico Git", days: "1" },
-    { level: 3, xp: getXpForLevel(3), equivalent: "Primeiro PR", days: "3" },
-    { level: 5, xp: getXpForLevel(5), equivalent: "Contribuidor regular", days: "7" },
-    { level: 10, xp: getXpForLevel(10), equivalent: "Senior contributor", days: "52" },
-    { level: 15, xp: getXpForLevel(15), equivalent: "Expert developer", days: "117" },
-    { level: 20, xp: getXpForLevel(20), equivalent: "GitHub power user", days: "205" },
-    { level: 30, xp: getXpForLevel(30), equivalent: "Community leader", days: "457" },
-    { level: 50, xp: getXpForLevel(50), equivalent: "Coding deity", days: "1,262" },
+    { level: 1, xp: getXpForLevel(1), equivalent: "Começando", days: "0" },
+    { level: 2, xp: getXpForLevel(2), equivalent: "Primeiros commits", days: "1" },
+    { level: 3, xp: getXpForLevel(3), equivalent: "Contribuidor ativo", days: "2" },
+    { level: 5, xp: getXpForLevel(5), equivalent: "Dev consistente", days: "4" },
+    { level: 10, xp: getXpForLevel(10), equivalent: "Desenvolvedor experiente", days: "15" },
+    { level: 15, xp: getXpForLevel(15), equivalent: "Senior developer", days: "34" },
+    { level: 20, xp: getXpForLevel(20), equivalent: "Expert developer", days: "60" },
+    { level: 30, xp: getXpForLevel(30), equivalent: "Tech lead", days: "135" },
+    { level: 50, xp: getXpForLevel(50), equivalent: "Coding deity", days: "375" },
   ];
 
   return (
@@ -160,7 +160,7 @@ export default function Docs() {
                       <th className="text-left py-3 px-4">Nível</th>
                       <th className="text-left py-3 px-4">XP Total</th>
                       <th className="text-left py-3 px-4">XP Necessário</th>
-                      <th className="text-left py-3 px-4">Dias (~200 XP/dia)</th>
+                      <th className="text-left py-3 px-4">Dias (~10 commits/dia)</th>
                       <th className="text-left py-3 px-4">Equivalente</th>
                     </tr>
                   </thead>
@@ -190,10 +190,10 @@ export default function Docs() {
               </div>
               <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                 <p className="text-xs text-center font-mono">
-                  <span className="text-orange-500 font-bold">Nova Fórmula (v2.0):</span> XP = Level² × 100 + Level × 50
+                  <span className="text-orange-500 font-bold">Fórmula Acelerada (v3.0):</span> XP = Level² × 15
                 </p>
                 <p className="text-xs text-muted-foreground text-center">
-                  Progressão linear e balanceada para manter engajamento a longo prazo
+                  Progressão rápida: Level 10 em 15 dias (~10 commits/dia)
                 </p>
               </div>
             </CardContent>
@@ -489,36 +489,37 @@ export default function Docs() {
 
           <Card className="bg-blue-500/10 border-blue-500/50">
             <CardContent className="space-y-4">
-              <h2 className="text-2xl font-bold">Ritmo de Progressão Esperado (v2.0)</h2>
+              <h2 className="text-2xl font-bold">Ritmo de Progressão Esperado (v3.0 ACELERADO)</h2>
               <p className="text-sm text-muted-foreground">
-                Progressão balanceada baseada em ~200 XP/dia com atividades diversificadas
+                Progressão rápida baseada em ~100 XP/dia (~10 commits diários)
               </p>
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="p-4 bg-background rounded-lg">
                   <h3 className="font-bold mb-2">Usuário Casual</h3>
-                  <p className="text-sm text-muted-foreground mb-3">~100 XP/dia</p>
-                  <p className="text-lg font-bold">Level 10 em ~3 meses</p>
-                  <p className="text-xs text-muted-foreground mt-1">Contribuições esporádicas</p>
+                  <p className="text-sm text-muted-foreground mb-3">~50 XP/dia</p>
+                  <p className="text-lg font-bold">Level 10 em ~30 dias</p>
+                  <p className="text-xs text-muted-foreground mt-1">5 commits/dia</p>
                 </div>
                 <div className="p-4 bg-background rounded-lg">
                   <h3 className="font-bold mb-2">Usuário Ativo</h3>
-                  <p className="text-sm text-muted-foreground mb-3">~200 XP/dia</p>
-                  <p className="text-lg font-bold">Level 10 em ~52 dias</p>
-                  <p className="text-xs text-muted-foreground mt-1">Contribuições diárias</p>
+                  <p className="text-sm text-muted-foreground mb-3">~100 XP/dia</p>
+                  <p className="text-lg font-bold">Level 10 em ~15 dias</p>
+                  <p className="text-xs text-muted-foreground mt-1">10 commits/dia</p>
                 </div>
                 <div className="p-4 bg-background rounded-lg">
                   <h3 className="font-bold mb-2">Power User</h3>
-                  <p className="text-sm text-muted-foreground mb-3">~500 XP/dia (cap)</p>
-                  <p className="text-lg font-bold">Level 20 em ~6 meses</p>
-                  <p className="text-xs text-muted-foreground mt-1">Atinge caps diários</p>
+                  <p className="text-sm text-muted-foreground mb-3">~200 XP/dia</p>
+                  <p className="text-lg font-bold">Level 20 em ~30 dias</p>
+                  <p className="text-xs text-muted-foreground mt-1">20 commits/dia + PRs</p>
                 </div>
               </div>
               <div className="bg-background rounded-lg p-4 space-y-2">
-                <h3 className="font-bold text-sm">Marcos de Progressão:</h3>
+                <h3 className="font-bold text-sm">Marcos de Progressão Acelerada:</h3>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• Level 10: ~52 dias (antes era 12 dias) - Mais desafiador ✅</li>
-                  <li>• Level 20: ~205 dias (antes era 97 dias) - Mais engajamento de longo prazo ✅</li>
-                  <li>• Level 50: ~3.5 anos (antes era 6 anos) - Alcançável para jogadores dedicados ✅</li>
+                  <li>• Level 5: ~4 dias (375 XP) - Contribuidor ativo ✅</li>
+                  <li>• Level 10: ~15 dias (1.500 XP) - Desenvolvedor experiente ✅</li>
+                  <li>• Level 20: ~60 dias (6.000 XP) - Expert developer ✅</li>
+                  <li>• Level 50: ~1 ano (37.500 XP) - Coding deity ✅</li>
                 </ul>
               </div>
             </CardContent>

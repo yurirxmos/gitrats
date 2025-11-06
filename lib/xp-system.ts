@@ -82,13 +82,20 @@ export const XP_CONSTANTS = {
 
 /**
  * Calcula XP total necessário para alcançar um nível
- * Fórmula balanceada: XP = Level² × 100 + Level × 50
- * Progressão mais suave e linear
+ * Fórmula balanceada e acelerada: XP = Level² × 15
+ * Progressão rápida para manter engajamento
+ * 
+ * Progressão de níveis:
+ * - Level 2: 60 XP (6 commits)
+ * - Level 5: 375 XP (38 commits / 4 dias)
+ * - Level 10: 1.500 XP (150 commits / 15 dias)
+ * - Level 20: 6.000 XP (600 commits / 60 dias)
+ * - Level 50: 37.500 XP (3.750 commits / 1 ano)
  */
 export function getXpForLevel(level: number): number {
   if (level <= 1) return 0;
 
-  const xp = Math.pow(level, 2) * 100 + level * 50;
+  const xp = Math.pow(level, 2) * 15;
 
   return Math.max(0, Math.floor(xp));
 }
