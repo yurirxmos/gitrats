@@ -285,22 +285,26 @@ export default function Docs() {
 
           <Card>
             <CardContent className="space-y-4">
-              <h2 className="text-xl font-bold">Sistema de Baseline (Anti-Histórico)</h2>
-              <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-4">
-                <p className="text-sm font-bold text-orange-400 mb-2">Como Funciona</p>
+              <h2 className="text-xl font-bold">Sistema de Baseline (XP Inicial)</h2>
+              <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4">
+                <p className="text-sm font-bold text-green-400 mb-2">Como Funciona</p>
                 <ul className="text-xs text-muted-foreground space-y-2">
                   <li>
-                    <strong>Primeira sincronização:</strong> Salva seu histórico atual como "baseline" (0 XP)
+                    <strong>Primeira sincronização:</strong> Você recebe XP pelas atividades dos últimos 7 dias
+                  </li>
+                  <li>
+                    <strong>Histórico anterior:</strong> Tudo antes dos últimos 7 dias vira "baseline" (não gera XP)
                   </li>
                   <li>
                     <strong>Syncs seguintes:</strong> Apenas atividades NOVAS após entrar na plataforma geram XP
                   </li>
                   <li>
-                    <strong>Exemplo:</strong> Se você tem 500 commits, eles viram baseline. Apenas commits 501+ ganham
-                    XP
+                    <strong>Exemplo:</strong> Se você tem 500 commits totais e 10 nos últimos 7 dias, recebe XP pelos 10
+                    commits. Os 490 anteriores viram baseline
                   </li>
                   <li>
-                    <strong>Justo:</strong> Todos começam do zero, independente do histórico no GitHub
+                    <strong>Justo:</strong> Você começa com algum XP se foi ativo recentemente, mas não se beneficia de
+                    todo o histórico
                   </li>
                 </ul>
               </div>

@@ -70,40 +70,210 @@ export async function POST(request: NextRequest) {
 
     const isFirstSync = !currentStats || !currentStats?.last_sync_at;
 
-    if (isFirstSync) {
-      const { data: updatedStats, error: upsertError } = await supabase
+    // VERIFICAR SE PRECISA CORRIGIR XP INICIAL (usuários antigos)
+    // Se baseline = total, significa que não recebeu XP inicial dos últimos 7 dias
+    const needsInitialXpFix =
+      !isFirstSync &&
+      currentStats &&
+      currentStats.baseline_commits === currentStats.total_commits &&
+      currentStats.baseline_prs === currentStats.total_prs;
+
+    if (needsInitialXpFix) {
+      console.log(`[Sync - Fix] Detectado usuário antigo: ${userData.github_username}, aplicando XP retroativo...`);
+
+      // Buscar atividades dos últimos 7 dias
+      let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
+
+      try {
+        weeklyStats = await githubService.getWeeklyXp(userData.github_username);
+      } catch (error) {
+        console.error("[Sync - Fix] Erro ao buscar XP semanal, usando 0:", error);
+      }
+
+      // Calcular novo baseline (total - últimos 7 dias)
+      const newBaselineCommits = Math.max(0, githubStats.totalCommits - weeklyStats.commits);
+      const newBaselinePRs = Math.max(0, githubStats.totalPRs - weeklyStats.prs);
+      const newBaselineIssues = Math.max(0, githubStats.totalIssues - weeklyStats.issues);
+
+      // Aplicar multiplicadores de classe
+      const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
+      const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
+      const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
+
+      // Calcular XP retroativo
+      const xpFromCommits = Math.floor(weeklyStats.commits * 10 * commitMultiplier);
+      const xpFromPRs = Math.floor(weeklyStats.prs * 50 * prMultiplier);
+      const xpFromIssues = Math.floor(weeklyStats.issues * 25 * issueMultiplier);
+      const retroactiveXp = xpFromCommits + xpFromPRs + xpFromIssues;
+
+      // Atualizar baseline
+      await supabase
         .from("github_stats")
         .update({
           total_commits: githubStats.totalCommits,
           total_prs: githubStats.totalPRs,
           total_issues: githubStats.totalIssues,
-          baseline_commits: githubStats.totalCommits,
-          baseline_prs: githubStats.totalPRs,
-          baseline_issues: githubStats.totalIssues,
+          baseline_commits: newBaselineCommits,
+          baseline_prs: newBaselinePRs,
+          baseline_issues: newBaselineIssues,
+          last_sync_at: new Date().toISOString(),
+        })
+        .eq("user_id", userData.id);
+
+      // Adicionar XP retroativo se houver
+      if (retroactiveXp > 0) {
+        const newTotalXp = character.total_xp + retroactiveXp;
+        const newLevel = getLevelFromXp(newTotalXp);
+        const newCurrentXp = getCurrentXp(newTotalXp, newLevel);
+
+        await supabase
+          .from("characters")
+          .update({
+            total_xp: newTotalXp,
+            level: newLevel,
+            current_xp: newCurrentXp,
+          })
+          .eq("id", character.id);
+
+        console.log(
+          `[Sync - Fix] ${userData.github_username} recebeu ${retroactiveXp} XP retroativo! Level: ${character.level} → ${newLevel}`
+        );
+
+        return NextResponse.json({
+          success: true,
+          message: `Correção aplicada! Você ganhou ${retroactiveXp} XP pelas suas atividades da última semana`,
+          data: {
+            xp_gained: retroactiveXp,
+            new_total_xp: newTotalXp,
+            new_level: newLevel,
+            leveled_up: newLevel > character.level,
+            corrected: true,
+            stats: {
+              commits: weeklyStats.commits,
+              prs: weeklyStats.prs,
+              issues: weeklyStats.issues,
+              total_commits: githubStats.totalCommits,
+              total_prs: githubStats.totalPRs,
+            },
+          },
+        });
+      } else {
+        console.log(`[Sync - Fix] ${userData.github_username} não tinha atividades nos últimos 7 dias, baseline ajustado`);
+
+        return NextResponse.json({
+          success: true,
+          message: "Baseline corrigido, sem atividades nos últimos 7 dias",
+          data: {
+            xp_gained: 0,
+            corrected: true,
+            stats: {
+              commits: 0,
+              prs: 0,
+              total_commits: githubStats.totalCommits,
+              total_prs: githubStats.totalPRs,
+            },
+          },
+        });
+      }
+    }
+
+    if (isFirstSync) {
+      // PRIMEIRA SYNC: Pegar atividades dos últimos 7 dias para XP inicial
+      let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
+      
+      try {
+        weeklyStats = await githubService.getWeeklyXp(userData.github_username);
+      } catch (error) {
+        console.error("[Sync - First] Erro ao buscar XP semanal, usando 0:", error);
+        // Continua com 0, não falha a primeira sync
+      }
+
+      // Calcular baseline: total atual MENOS os últimos 7 dias
+      // Assim os últimos 7 dias vão gerar XP, mas o histórico anterior não
+      const baselineCommits = Math.max(0, githubStats.totalCommits - weeklyStats.commits);
+      const baselinePRs = Math.max(0, githubStats.totalPRs - weeklyStats.prs);
+      const baselineIssues = Math.max(0, githubStats.totalIssues - weeklyStats.issues);
+
+      // Aplicar multiplicadores de classe
+      const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
+      const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
+      const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
+
+      // Calcular XP inicial (últimos 7 dias)
+      const xpFromCommits = Math.floor(weeklyStats.commits * 10 * commitMultiplier);
+      const xpFromPRs = Math.floor(weeklyStats.prs * 50 * prMultiplier);
+      const xpFromIssues = Math.floor(weeklyStats.issues * 25 * issueMultiplier);
+      const initialXp = xpFromCommits + xpFromPRs + xpFromIssues;
+
+      // Atualizar stats com baseline ajustado
+      const { error: upsertError } = await supabase
+        .from("github_stats")
+        .update({
+          total_commits: githubStats.totalCommits,
+          total_prs: githubStats.totalPRs,
+          total_issues: githubStats.totalIssues,
+          baseline_commits: baselineCommits,
+          baseline_prs: baselinePRs,
+          baseline_issues: baselineIssues,
           baseline_reviews: 0,
           last_sync_at: new Date().toISOString(),
         })
-        .eq("user_id", userData.id)
-        .select()
-        .single();
+        .eq("user_id", userData.id);
 
       if (upsertError) {
         console.error(`[Sync] Erro ao atualizar github_stats:`, upsertError);
         return NextResponse.json({ error: `Erro ao salvar stats: ${upsertError.message}` }, { status: 500 });
       }
 
+      // Atualizar personagem com XP inicial
+      if (initialXp > 0) {
+        const newTotalXp = character.total_xp + initialXp;
+        const newLevel = getLevelFromXp(newTotalXp);
+        const newCurrentXp = getCurrentXp(newTotalXp, newLevel);
+
+        await supabase
+          .from("characters")
+          .update({
+            total_xp: newTotalXp,
+            level: newLevel,
+            current_xp: newCurrentXp,
+          })
+          .eq("id", character.id);
+
+        console.log(
+          `[Sync - First] ${userData.github_username} recebeu ${initialXp} XP inicial (últimos 7 dias)! Level: ${newLevel}`
+        );
+
+        return NextResponse.json({
+          success: true,
+          message: `Bem-vindo! Você ganhou ${initialXp} XP pelas suas atividades da última semana`,
+          data: {
+            xp_gained: initialXp,
+            new_total_xp: newTotalXp,
+            new_level: newLevel,
+            activities_synced: weeklyStats.commits + weeklyStats.prs + weeklyStats.issues,
+            stats: {
+              commits: weeklyStats.commits,
+              prs: weeklyStats.prs,
+              issues: weeklyStats.issues,
+              total_commits: githubStats.totalCommits,
+              total_prs: githubStats.totalPRs,
+            },
+          },
+        });
+      }
+
       return NextResponse.json({
         success: true,
-        message:
-          "Conta sincronizada! Seu histórico foi ignorado. A partir de agora você ganhará XP apenas por novas atividades.",
+        message: "Conta sincronizada! Seu histórico anterior foi ignorado.",
         data: {
           xp_gained: 0,
           activities_synced: 0,
           stats: {
             commits: 0,
             prs: 0,
-            total_commits: 0,
-            total_prs: 0,
+            total_commits: githubStats.totalCommits,
+            total_prs: githubStats.totalPRs,
           },
         },
       });
