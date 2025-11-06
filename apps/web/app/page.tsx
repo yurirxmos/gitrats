@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import logo from "@/assets/github.png";
-import { FaGithub, FaUser, FaTrophy, FaArrowRight, FaMoon } from "react-icons/fa6";
+import { FaGithub, FaUser, FaTrophy, FaArrowRight, FaMoon, FaCode } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { Navbar } from "@/components/navbar";
 import { useUser } from "@/hooks/use-user";
+import Link from "next/link";
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -217,13 +218,15 @@ export default function Home() {
             </div>
           </div>
 
-          <Button
-            onClick={() => setIsOnboardingOpen(true)}
-            disabled={hasCharacter || checkingCharacter}
-          >
-            <FaGithub className="text-xl" />
-            {checkingCharacter ? "Verificando..." : hasCharacter ? "Obrigado por jogar!" : "Quero jogar!"}
-          </Button>
+          {!hasCharacter && (
+            <Button
+              onClick={() => setIsOnboardingOpen(true)}
+              disabled={hasCharacter || checkingCharacter}
+            >
+              <FaGithub className="text-xl" />
+              Quero jogar!
+            </Button>
+          )}
         </div>
       </main>
 

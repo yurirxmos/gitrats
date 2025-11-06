@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
+import { OnboardingModal } from "@/components/onboarding-modal";
 import { FaTrophy, FaMedal, FaGithub, FaShareFromSquare, FaSpinner } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,8 @@ export default function Leaderboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [hasCharacter, setHasCharacter] = useState<boolean | null>(null);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const hasLoadedRef = useRef(false);
   const hasSyncedRef = useRef(false);
 
@@ -65,10 +68,10 @@ export default function Leaderboard() {
 
       // Carregar perfil se usuário estiver logado
       if (user && !userLoading) {
-        await loadUserProfile();
+        const userHasCharacter = await loadUserProfile();
 
-        // Auto-sync na primeira vez (se não tiver sincronizado ainda)
-        if (!hasSyncedRef.current) {
+        // Auto-sync na primeira vez (somente se tiver personagem)
+        if (!hasSyncedRef.current && userHasCharacter) {
           await syncGitHubData(true);
           hasSyncedRef.current = true;
         }
@@ -113,6 +116,9 @@ export default function Leaderboard() {
         } else if (response.status === 400 && data.error === "Token do GitHub não encontrado") {
           // Usuário ainda não completou onboarding - silencioso
           console.log("⚠️ Sync: GitHub não conectado (complete o onboarding)");
+        } else if (response.status === 404 && data.error === "Personagem não encontrado") {
+          // Usuário sem personagem - silencioso
+          console.log("⚠️ Sync: Personagem não criado ainda");
         } else {
           console.error("❌ Sync error:", data.error);
         }
@@ -152,7 +158,7 @@ export default function Leaderboard() {
 
   const loadUserProfile = async () => {
     if (!user) {
-      return;
+      return false; // Retorna false quando não há usuário
     }
 
     try {
@@ -162,19 +168,10 @@ export default function Leaderboard() {
 
       if (!token) {
         console.log("❌ Sem token de sessão");
-        // Usuário logado mas sem token - mostrar dados básicos
-        setUserProfile({
-          character_name: "Sem personagem",
-          character_class: "warrior",
-          level: 1,
-          current_xp: 0,
-          total_xp: 0,
-          rank: 0,
-          total_commits: 0,
-          total_prs: 0,
-          github_username: user.user_metadata?.user_name || user.email?.split("@")[0] || "User",
-        });
-        return;
+        // Usuário logado mas sem token
+        setHasCharacter(false);
+        setUserProfile(null);
+        return false;
       }
 
       console.log("🔍 Buscando personagem para user:", user.id);
@@ -189,23 +186,17 @@ export default function Leaderboard() {
       if (!characterResponse.ok) {
         const errorText = await characterResponse.text();
         console.log("❌ Erro ao buscar personagem:", errorText);
-        // Usuário sem personagem - mostrar dados básicos
-        setUserProfile({
-          character_name: "Sem personagem",
-          character_class: "warrior",
-          level: 1,
-          current_xp: 0,
-          total_xp: 0,
-          rank: 0,
-          total_commits: 0,
-          total_prs: 0,
-          github_username: user.user_metadata?.user_name || user.email?.split("@")[0] || "User",
-        });
-        return;
+        // Usuário sem personagem
+        setHasCharacter(false);
+        setUserProfile(null);
+        return false;
       }
 
       const { data: characterData } = await characterResponse.json();
       console.log("✅ Dados do personagem:", characterData);
+
+      // Tem personagem
+      setHasCharacter(true);
 
       // Buscar posição no ranking
       const rankResponse = await fetch(`/api/leaderboard/${user.id}`);
@@ -224,20 +215,13 @@ export default function Leaderboard() {
         total_prs: characterData.github_stats?.total_prs || 0,
         github_username: user.user_metadata?.user_name || user.email?.split("@")[0] || "User",
       });
+
+      return true; // Retorna true quando tem personagem
     } catch (error) {
       console.error("Erro ao carregar perfil:", error);
-      // Erro ao carregar - mostrar dados básicos
-      setUserProfile({
-        character_name: "Erro ao carregar",
-        character_class: "warrior",
-        level: 1,
-        current_xp: 0,
-        total_xp: 0,
-        rank: 0,
-        total_commits: 0,
-        total_prs: 0,
-        github_username: user.user_metadata?.user_name || user.email?.split("@")[0] || "User",
-      });
+      setHasCharacter(false);
+      setUserProfile(null);
+      return false;
     }
   };
 
@@ -265,7 +249,17 @@ export default function Leaderboard() {
             <aside className="w-80 shrink-0">
               <Card className="border-none shadow-none">
                 <CardContent className="space-y-6">
-                  {userProfile ? (
+                  {hasCharacter === false ? (
+                    <div className="text-center py-10 space-y-4">
+                      <p className="text-sm text-muted-foreground">Você ainda não criou seu personagem</p>
+                      <Button
+                        onClick={() => setIsOnboardingOpen(true)}
+                        className="w-full bg-foreground hover:opacity-90 text-background font-bold"
+                      >
+                        Criar Personagem
+                      </Button>
+                    </div>
+                  ) : userProfile ? (
                     <>
                       <div className="flex flex-col items-center text-center space-y-3">
                         <div className="relative w-32 h-32 bg-muted rounded-lg overflow-hidden">
@@ -699,6 +693,18 @@ export default function Leaderboard() {
           </main>
         </div>
       )}
+
+      {/* Onboarding Modal para criação de personagem */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => {
+          setIsOnboardingOpen(false);
+          // Recarregar dados após criar personagem
+          loadUserProfile();
+          loadLeaderboard();
+        }}
+        initialStep={2}
+      />
     </div>
   );
 }

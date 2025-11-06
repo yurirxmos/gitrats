@@ -87,7 +87,7 @@ export const CLASS_DESCRIPTIONS: Record<
     name: "Orc",
     title: "Brute Force Developer",
     description:
-      "Desenvolvedores que preferem ação direta, commits grandes e entregas rápidas. Dominam seus projetos com força e determinação.",
+      "Desenvolvedores que preferem ação direta, commits grandes e entregas rápidas. Gostam de XGH.",
     strengths: ["+30% XP em commits normais", "+40% XP em commits grandes (>100 linhas)", "+20% XP em releases"],
     playstyle: "Agressivo, direto, focado em produtividade bruta",
   },
@@ -105,7 +105,7 @@ export const CLASS_DESCRIPTIONS: Record<
     name: "Mage",
     title: "Code Architect/Wizard",
     description:
-      "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em resolver problemas complexos e criar projetos influentes.",
+      "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em problemas complexos e projetos influentes.",
     strengths: ["+40% XP em issues resolvidas", "+30% XP em stars e forks", "+30% XP em achievements especiais"],
     playstyle: "Estratégico, focado em impacto e qualidade",
   },

@@ -122,58 +122,64 @@ export function CharacterCreationStep({ onNext, onBack, isLoading = false }: Cha
         </div>
 
         {/* Character Preview with Evolution */}
-        <div className="rounded-lg p-3">
-          <div className="text-xs opacity-50 mb-4 flex flex-row items-center gap-2 justify-center">
-            <FaAnglesUp />
-            <h3 className="font-normal text-center">evolução da classe</h3>
-          </div>
 
-          <div className="flex flex-row items-center justify-center gap-4">
-            <div className="text-center">
-              <div className="relative w-15 h-15 mx-auto bg-muted rounded-lg overflow-hidden mb-2">
-                <Image
-                  src={currentClass.evolution.lvl1}
-                  alt="Level 1"
-                  fill
-                  className="object-contain"
-                />
-              </div>
+        <div className="flex flex-row items-center justify-center gap-4 mt-6">
+          <div className="text-center relative">
+            <div className="relative w-15 h-15 mx-auto bg-muted rounded-lg overflow-hidden">
+              <Image
+                src={currentClass.evolution.lvl1}
+                alt="Level 1"
+                fill
+                className="object-contain"
+              />
             </div>
-            <FaArrowRight className="self-center justify-self-center text-sm text-muted-foreground animate-caret-blink" />
-            <div className="text-center">
-              <div className="relative w-15 h-15 mx-auto bg-muted rounded-lg overflow-hidden mb-2">
-                <Image
-                  src={currentClass.evolution.lvl5}
-                  alt="Level 5"
-                  fill
-                  className="object-contain"
-                />
-              </div>
+            <p className="absolute bottom-[-15] left-1/2 transform -translate-x-1/2 text-foreground bg-secondary text-[9px] px-2 py-1 rounded-full w-fit border border-green-200">
+              1
+            </p>
+          </div>
+          <FaArrowRight className="self-center justify-self-center text-sm text-muted-foreground animate-caret-blink" />
+          <div className="text-center relative">
+            <div className="relative w-15 h-15 mx-auto bg-muted rounded-lg overflow-hidden">
+              <Image
+                src={currentClass.evolution.lvl5}
+                alt="Level 5"
+                fill
+                className="object-contain"
+              />
             </div>
-            <FaArrowRight className="self-center justify-self-center text-sm text-muted-foreground animate-caret-blink" />
-            <div className="text-center">
-              <div className="relative w-15 h-15 mx-auto bg-muted rounded-lg overflow-hidden mb-2">
-                <Image
-                  src={currentClass.evolution.lvl10}
-                  alt="Level 10"
-                  fill
-                  className="object-contain"
-                />
-              </div>
+            <p className="absolute bottom-[-15] left-1/2 transform -translate-x-1/2 text-foreground bg-secondary text-[9px] px-2 py-1 rounded-full w-fit border border-amber-500">
+              5
+            </p>
+          </div>
+          <FaArrowRight className="self-center justify-self-center text-sm text-muted-foreground animate-caret-blink" />
+          <div className="text-center relative">
+            <div className="relative w-15 h-15 mx-auto bg-muted rounded-lg overflow-hidden">
+              <Image
+                src={currentClass.evolution.lvl10}
+                alt="Level 10"
+                fill
+                className="object-contain"
+              />
             </div>
+            <p className="absolute bottom-[-15] left-1/2 transform -translate-x-1/2 text-foreground bg-secondary text-[9px] px-2 py-1 rounded-full w-fit border border-red-500">
+              10
+            </p>
           </div>
         </div>
 
         {/* Bônus de Classe */}
-        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+          <div className="flex items-center gap-2 border-b border-border/50 pb-2">
             <FaFire className="text-orange-500" />
             <h3 className="font-bold text-sm uppercase">Bônus de XP</h3>
+            <p className="ml-auto text-[10px] text-muted-foreground italic">
+              {CLASS_DESCRIPTIONS[selectedClass].playstyle}
+            </p>
           </div>
 
           <p className="text-xs text-muted-foreground mb-3">{CLASS_DESCRIPTIONS[selectedClass].description}</p>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             {CLASS_DESCRIPTIONS[selectedClass].strengths.map((strength, index) => (
               <div
                 key={index}
@@ -184,16 +190,10 @@ export function CharacterCreationStep({ onNext, onBack, isLoading = false }: Cha
               </div>
             ))}
           </div>
-
-          <div className="pt-2 border-t border-border/50">
-            <p className="text-[10px] text-muted-foreground italic">
-              Estilo: {CLASS_DESCRIPTIONS[selectedClass].playstyle}
-            </p>
-          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mt-2">
         <Button
           onClick={onBack}
           variant="outline"

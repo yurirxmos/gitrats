@@ -501,17 +501,9 @@ export default function Docs() {
             </CardContent>
           </Card>
 
-          <div className="text-center space-y-4 pt-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
-              <span className="text-sm font-bold text-green-500">✅ Sistema v2.0 Ativo</span>
-            </div>
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p>As atividades do GitHub são sincronizadas automaticamente quando você acessa o leaderboard.</p>
-              <p>Cooldown de 5 minutos entre syncs. Sistema anti-duplicação e caps inteligentes ativos.</p>
-              <p className="font-bold text-orange-500">
-                Sistema rebalanceado em Nov 2025 - Progressão mais justa e sem exploits!
-              </p>
-            </div>
+          <div className="text-xs text-center text-muted-foreground space-y-2">
+            <p>As atividades do GitHub são sincronizadas automaticamente quando você acessa o leaderboard.</p>
+            <p>Cooldown de 5 minutos entre syncs. Sistema anti-duplicação e caps inteligentes ativos.</p>
           </div>
         </div>
       </main>

@@ -4,20 +4,29 @@ import { useState, useEffect } from "react";
 import { GitHubConnectStep } from "./onboarding/github-connect-step";
 import { CharacterCreationStep } from "./onboarding/character-creation-step";
 import { ReadyStep } from "./onboarding/ready-step";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { useUser } from "@/hooks/use-user";
 import { createClient } from "@/lib/supabase/client";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 interface OnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialStep?: number;
 }
 
-export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
+export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: OnboardingModalProps) {
   const { user } = useUser();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(initialStep);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Resetar step quando modal abre/fecha ou quando initialStep muda
+  useEffect(() => {
+    if (isOpen) {
+      setStep(initialStep);
+    }
+  }, [isOpen, initialStep]);
 
   // Verificar se usuário já tem personagem ao abrir modal
   useEffect(() => {
@@ -39,8 +48,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
           return;
         }
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-        const response = await fetch(`${apiUrl}/api/character`, {
+        const response = await fetch("/api/character", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -80,10 +88,8 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         throw new Error("Sessão não encontrada");
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-
       // 1. Criar/atualizar usuário no banco
-      const userResponse = await fetch(`${apiUrl}/api/user`, {
+      const userResponse = await fetch("/api/user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,7 +109,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
       }
 
       // 2. Criar personagem
-      const characterResponse = await fetch(`${apiUrl}/api/character`, {
+      const characterResponse = await fetch("/api/character", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -131,7 +137,6 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
   const handleFinish = () => {
     onClose();
-    setStep(1);
     setError(null);
   };
 
@@ -141,8 +146,9 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
       onOpenChange={onClose}
     >
       <DialogContent className="max-w-2xl font-sans">
+        <DialogTitle></DialogTitle>
         <div className="w-full flex flex-row items-center justify-center">
-          <div className="flex gap-2 mb-5 w-100">
+          <div className="flex gap-2 w-100">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}

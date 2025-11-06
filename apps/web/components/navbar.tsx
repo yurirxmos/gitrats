@@ -30,7 +30,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="w-full py-5 px-10 flex justify-between items-center">
+    <nav className="w-full py-5 px-10 flex justify-between items-center bg-background">
       <Link
         href="/"
         className="flex items-center gap-1"
