@@ -4,10 +4,9 @@ import { useState, useEffect } from "react";
 import { GitHubConnectStep } from "./onboarding/github-connect-step";
 import { CharacterCreationStep } from "./onboarding/character-creation-step";
 import { ReadyStep } from "./onboarding/ready-step";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useUser } from "@/hooks/use-user";
 import { createClient } from "@/lib/supabase/client";
-import { DialogTitle } from "@radix-ui/react-dialog";
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -142,7 +141,10 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
       onOpenChange={onClose}
     >
       <DialogContent className="max-w-2xl font-sans">
-        <DialogTitle></DialogTitle>
+        <DialogTitle className="sr-only">Onboarding</DialogTitle>
+        <DialogDescription className="sr-only">
+          Configure sua conta e crie seu personagem
+        </DialogDescription>
         <div className="w-full flex flex-row items-center justify-center">
           <div className="flex gap-2 w-100">
             {[1, 2, 3].map((i) => (

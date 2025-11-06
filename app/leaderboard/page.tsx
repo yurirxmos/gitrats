@@ -272,10 +272,6 @@ export default function Leaderboard() {
                                   </p>
                                 </div>
                               )}
-                              <div className="flex justify-between">
-                                <p className="text-xs text-muted-foreground">Guilda:</p>
-                                <p className="font-bold text-xs">{userProfile.guild_name || "-"}</p>
-                              </div>
                             </div>
                           );
                         })()}
