@@ -133,6 +133,42 @@ export default function DebugPage() {
     }
   };
 
+  const fixSpecificUsers = async () => {
+    const usernames = prompt("Digite os usernames separados por vírgula (ex: yurirxmos,kayossouza):");
+
+    if (!usernames) return;
+
+    const usernameArray = usernames.split(",").map((u) => u.trim()).filter(Boolean);
+
+    if (usernameArray.length === 0) {
+      alert("Nenhum username válido fornecido");
+      return;
+    }
+
+    if (!confirm(`Corrigir XP inicial para: ${usernameArray.join(", ")}?`)) {
+      return;
+    }
+
+    setLoading(true);
+    setSyncResult(null);
+
+    try {
+      const res = await fetch("/api/debug/fix-specific-users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usernames: usernameArray }),
+      });
+      const data = await res.json();
+      console.log("[Debug] Resultado da correção específica:", data);
+      setSyncResult(data);
+    } catch (error) {
+      console.error("Erro ao corrigir usuários específicos:", error);
+      setSyncResult({ error: String(error) });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen p-8 bg-background">
       <div className="max-w-4xl mx-auto p-8 space-y-8">
@@ -166,6 +202,14 @@ export default function DebugPage() {
             className="bg-purple-600 hover:bg-purple-700"
           >
             Corrigir TODOS Usuários
+          </Button>
+          <Button
+            onClick={fixSpecificUsers}
+            disabled={loading}
+            variant="default"
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            Corrigir Usuários Específicos
           </Button>
           <Button
             onClick={() => router.push("/leaderboard")}

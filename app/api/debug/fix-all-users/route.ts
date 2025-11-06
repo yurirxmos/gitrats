@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import GitHubService from "@/lib/github-service";
 import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import { getClassXpMultiplier } from "@/lib/classes";
@@ -7,7 +7,7 @@ import { getClassXpMultiplier } from "@/lib/classes";
 /**
  * Rota de DEBUG - Corrige XP inicial para TODOS os usuários
  * Detecta usuários com baseline = total e aplica XP dos últimos 7 dias
- * ATENÇÃO: Só funciona em localhost
+ * ATENÇÃO: Só funciona em localhost, usa SERVICE_ROLE para bypassar RLS
  */
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Esta rota só funciona em desenvolvimento local" }, { status: 403 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // Buscar TODOS os usuários que precisam de correção
     // (baseline_commits = total_commits = não receberam XP inicial)
@@ -170,7 +170,13 @@ export async function POST(request: NextRequest) {
         });
 
         // Atualizar baseline no github_stats
-        const { error: updateStatsError } = await supabase
+        console.log(`[Fix All] ${user.github_username} - Atualizando github_stats:`, {
+          user_id: user.id,
+          old_baseline: userStats.baseline_commits,
+          new_baseline: newBaselineCommits,
+        });
+
+        const { data: updatedStats, error: updateStatsError } = await supabase
           .from("github_stats")
           .update({
             total_commits: githubStats.totalCommits,
@@ -180,7 +186,13 @@ export async function POST(request: NextRequest) {
             baseline_prs: newBaselinePRs,
             baseline_issues: newBaselineIssues,
           })
-          .eq("user_id", user.id);
+          .eq("user_id", user.id)
+          .select();
+
+        console.log(`[Fix All] ${user.github_username} - Resultado update stats:`, {
+          error: updateStatsError,
+          data: updatedStats,
+        });
 
         if (updateStatsError) {
           console.error(`[Fix All] ${user.github_username} - Erro ao atualizar stats:`, updateStatsError);
@@ -198,14 +210,28 @@ export async function POST(request: NextRequest) {
           const newLevel = getLevelFromXp(newTotalXp);
           const newCurrentXp = getCurrentXp(newTotalXp, newLevel);
 
-          const { error: updateCharError } = await supabase
+          console.log(`[Fix All] ${user.github_username} - Atualizando character:`, {
+            character_id: character.id,
+            old_xp: character.total_xp,
+            new_xp: newTotalXp,
+            old_level: character.level,
+            new_level: newLevel,
+          });
+
+          const { data: updatedChar, error: updateCharError } = await supabase
             .from("characters")
             .update({
               total_xp: newTotalXp,
               level: newLevel,
               current_xp: newCurrentXp,
             })
-            .eq("id", character.id);
+            .eq("id", character.id)
+            .select();
+
+          console.log(`[Fix All] ${user.github_username} - Resultado update character:`, {
+            error: updateCharError,
+            data: updatedChar,
+          });
 
           if (updateCharError) {
             console.error(`[Fix All] ${user.github_username} - Erro ao atualizar personagem:`, updateCharError);
