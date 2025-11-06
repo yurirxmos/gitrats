@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import {
-  calculateCommitXp,
-  calculatePullRequestXp,
-  getLevelFromXp,
-  getCurrentXp,
-} from "@/lib/xp-system";
+import { calculateCommitXp, calculatePullRequestXp, getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import type { CharacterClass } from "@/lib/classes";
 
 /**
  * Endpoint de sincronização manual do GitHub
  * Busca commits e PRs recentes do usuário e atualiza XP
- * 
+ *
  * Cooldown: 5 minutos entre syncs
  */
 export async function POST(request: NextRequest) {
@@ -76,11 +71,17 @@ export async function POST(request: NextRequest) {
     }
 
     const characterClass = character.class as CharacterClass;
-    const githubToken = userData.github_access_token || process.env.GITHUB_TOKEN;
+
+    // Usar token OAuth do usuário (melhor para rate limits)
+    // Cada usuário tem sua própria quota de 5.000 req/hora
+    const githubToken = userData.github_access_token;
 
     if (!githubToken) {
       return NextResponse.json(
-        { error: "Token do GitHub não encontrado" },
+        {
+          error: "Token do GitHub não encontrado",
+          message: "Faça login novamente para sincronizar",
+        },
         { status: 400 }
       );
     }
@@ -221,10 +222,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Atualizar timestamp de última sincronização
-    await supabase
-      .from("github_stats")
-      .update({ last_sync_at: new Date().toISOString() })
-      .eq("user_id", userData.id);
+    await supabase.from("github_stats").update({ last_sync_at: new Date().toISOString() }).eq("user_id", userData.id);
 
     return NextResponse.json({
       success: true,

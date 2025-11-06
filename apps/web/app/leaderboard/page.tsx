@@ -66,7 +66,7 @@ export default function Leaderboard() {
       // Carregar perfil se usuário estiver logado
       if (user && !userLoading) {
         await loadUserProfile();
-        
+
         // Auto-sync na primeira vez (se não tiver sincronizado ainda)
         if (!hasSyncedRef.current) {
           await syncGitHubData(true);
@@ -119,7 +119,7 @@ export default function Leaderboard() {
 
       // Sucesso - recarregar dados silenciosamente
       console.log("✅ Sync:", data.data.activities_synced, "atividades,", data.data.xp_gained, "XP");
-      
+
       await loadUserProfile();
       await loadLeaderboard();
     } catch (error) {
