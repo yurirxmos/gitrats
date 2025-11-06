@@ -55,6 +55,7 @@ export default function Leaderboard() {
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [hasCharacter, setHasCharacter] = useState<boolean | null>(null);
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  const [totalCharacters, setTotalCharacters] = useState<number>(0);
 
   // Sync automático a cada 10 minutos (só se tiver personagem)
   useAutoSync(hasCharacter === true);
@@ -71,8 +72,8 @@ export default function Leaderboard() {
 
       setIsLoading(true);
 
-      // Carregar leaderboard e perfil em paralelo
-      const promises: Promise<any>[] = [loadLeaderboard()];
+      // Carregar leaderboard, perfil e estatísticas em paralelo
+      const promises: Promise<any>[] = [loadLeaderboard(), loadStats()];
 
       if (user && !userLoading) {
         promises.push(loadUserProfile());
@@ -138,6 +139,21 @@ export default function Leaderboard() {
       setLastUpdate(updateTime || null);
     } catch (error) {
       setLeaderboard([]);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const response = await fetch("/api/stats");
+
+      if (!response.ok) {
+        throw new Error("Erro ao carregar estatísticas");
+      }
+
+      const { data } = await response.json();
+      setTotalCharacters(data.total_characters || 0);
+    } catch (error) {
+      setTotalCharacters(0);
     }
   };
 
@@ -333,11 +349,15 @@ export default function Leaderboard() {
           {/* Main - Leaderboard */}
           <main className={user ? "flex-1 max-w-4xl" : "flex-1 max-w-6xl"}>
             <div className="space-y-8">
-              <div className="flex items-center justify-center lg:justify-start">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FaTrophy className="text-2xl text-foreground" />
                   <h1 className="text-2xl font-black">LEADERBOARD</h1>
                 </div>
+
+                <p className="text-xs text-muted-foreground">
+                  {totalCharacters} {totalCharacters === 1 ? "gitwarrior ativo" : "gitwarriors ativos"}.
+                </p>
               </div>
 
               {leaderboard.length === 0 ? (
