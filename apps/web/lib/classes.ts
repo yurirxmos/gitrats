@@ -65,10 +65,7 @@ export const CLASS_XP_MULTIPLIERS: Record<CharacterClass, ClassMultipliers> = {
 /**
  * Retorna o multiplicador de XP para uma atividade específica
  */
-export function getClassXpMultiplier(
-  characterClass: CharacterClass,
-  activityType: keyof ClassMultipliers
-): number {
+export function getClassXpMultiplier(characterClass: CharacterClass, activityType: keyof ClassMultipliers): number {
   return CLASS_XP_MULTIPLIERS[characterClass]?.[activityType] || 1.0;
 }
 
@@ -90,11 +87,7 @@ export const CLASS_DESCRIPTIONS: Record<
     title: "Brute Force Developer",
     description:
       "Desenvolvedores que preferem ação direta, commits grandes e entregas rápidas. Dominam seus projetos com força e determinação.",
-    strengths: [
-      "+50% XP em commits normais",
-      "+75% XP em commits grandes (>100 linhas)",
-      "+25% XP em releases",
-    ],
+    strengths: ["+50% XP em commits normais", "+75% XP em commits grandes (>100 linhas)", "+25% XP em releases"],
     playstyle: "Agressivo, direto, focado em produtividade bruta",
   },
 
@@ -103,11 +96,7 @@ export const CLASS_DESCRIPTIONS: Record<
     title: "Full-Stack Warrior",
     description:
       "Guerreiros colaborativos que lutam em múltiplas frentes. Mestres em pull requests, code reviews e trabalho em equipe.",
-    strengths: [
-      "+50% XP em Pull Requests",
-      "+50% XP em Code Reviews",
-      "+25% XP em contribuições externas",
-    ],
+    strengths: ["+50% XP em Pull Requests", "+50% XP em Code Reviews", "+25% XP em contribuições externas"],
     playstyle: "Colaborativo, versátil, trabalho em equipe",
   },
 
@@ -116,11 +105,7 @@ export const CLASS_DESCRIPTIONS: Record<
     title: "Code Architect/Wizard",
     description:
       "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em resolver problemas complexos e criar projetos influentes.",
-    strengths: [
-      "+75% XP em issues resolvidas",
-      "+100% XP em stars e forks",
-      "+50% XP em achievements especiais",
-    ],
+    strengths: ["+75% XP em issues resolvidas", "+100% XP em stars e forks", "+50% XP em achievements especiais"],
     playstyle: "Estratégico, focado em impacto e qualidade",
   },
 };

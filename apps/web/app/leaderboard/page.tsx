@@ -47,7 +47,9 @@ export default function Leaderboard() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   const hasLoadedRef = useRef(false);
+  const hasSyncedRef = useRef(false);
 
   useEffect(() => {
     const loadAllData = async () => {
@@ -64,6 +66,12 @@ export default function Leaderboard() {
       // Carregar perfil se usuário estiver logado
       if (user && !userLoading) {
         await loadUserProfile();
+        
+        // Auto-sync na primeira vez (se não tiver sincronizado ainda)
+        if (!hasSyncedRef.current) {
+          await syncGitHubData(true);
+          hasSyncedRef.current = true;
+        }
       }
 
       setIsLoading(false);
@@ -75,6 +83,51 @@ export default function Leaderboard() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, userLoading]);
+
+  const syncGitHubData = async (silent = false) => {
+    if (!user || isSyncing) return;
+
+    setIsSyncing(true);
+
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        console.log("❌ Sync: Não autenticado");
+        return;
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const response = await fetch(`${apiUrl}/api/github/sync`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          // Cooldown ativo - silenciosamente ignorar
+          console.log("⏳ Sync: Cooldown ativo");
+        } else {
+          console.error("❌ Sync error:", data.error);
+        }
+        return;
+      }
+
+      // Sucesso - recarregar dados silenciosamente
+      console.log("✅ Sync:", data.data.activities_synced, "atividades,", data.data.xp_gained, "XP");
+      
+      await loadUserProfile();
+      await loadLeaderboard();
+    } catch (error) {
+      console.error("❌ Erro ao sincronizar:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const loadLeaderboard = async () => {
     try {
@@ -285,7 +338,7 @@ export default function Leaderboard() {
 
                       <div className="flex flex-row justify-center text-muted-foreground ">
                         <small className="text-[8px] text-center">
-                          As atividades do GitHub são sincronizadas automaticamente a cada 1 hora.
+                          Sincronização automática a cada 5 minutos ao carregar a página.
                         </small>
                       </div>
 

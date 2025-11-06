@@ -59,6 +59,7 @@ vercel --prod
 ## 4️⃣ Configurar GitHub Webhook
 
 ### Importante: Sistema de Classes
+
 O webhook agora calcula XP baseado na classe do personagem (Orc, Warrior, Mage). Cada classe tem multiplicadores únicos!
 
 ### Configuração do Webhook
@@ -89,6 +90,7 @@ git push
 ```
 
 Verifique:
+
 - GitHub: Settings → Webhooks → Recent Deliveries (deve mostrar status 200)
 - Vercel: Logs em tempo real
 - Supabase: Tabela `activity_log` deve ter novo registro
@@ -98,7 +100,7 @@ Verifique:
 SELECT * FROM activity_log ORDER BY created_at DESC LIMIT 10;
 
 -- Ver XP ganho por usuário
-SELECT 
+SELECT
   u.github_username,
   c.name as character_name,
   c.class,

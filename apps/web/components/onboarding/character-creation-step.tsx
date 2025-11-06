@@ -171,9 +171,7 @@ export function CharacterCreationStep({ onNext, onBack, isLoading = false }: Cha
             <h3 className="font-bold text-sm uppercase">Bônus de XP</h3>
           </div>
 
-          <p className="text-xs text-muted-foreground mb-3">
-            {CLASS_DESCRIPTIONS[selectedClass].description}
-          </p>
+          <p className="text-xs text-muted-foreground mb-3">{CLASS_DESCRIPTIONS[selectedClass].description}</p>
 
           <div className="space-y-2">
             {CLASS_DESCRIPTIONS[selectedClass].strengths.map((strength, index) => (

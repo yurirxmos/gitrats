@@ -200,10 +200,7 @@ export function calculatePullRequestXp(
 /**
  * Calcula XP de Code Review com multiplicador de classe
  */
-export function calculateCodeReviewXp(
-  hasChanges: boolean = false,
-  characterClass?: CharacterClass
-): number {
+export function calculateCodeReviewXp(hasChanges: boolean = false, characterClass?: CharacterClass): number {
   let baseXp = hasChanges ? XP_CONSTANTS.CODE_REVIEW.WITH_CHANGES : XP_CONSTANTS.CODE_REVIEW.SUBMITTED;
 
   if (characterClass) {

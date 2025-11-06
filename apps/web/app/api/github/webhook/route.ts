@@ -93,9 +93,7 @@ export async function POST(request: NextRequest) {
           const commitXp = calculateCommitXp(linesChanged, isOwnRepo, characterClass);
           xpGained += commitXp;
 
-          console.log(
-            `✅ Commit de ${githubUsername} (${characterClass}): ${linesChanged} linhas = ${commitXp} XP`
-          );
+          console.log(`✅ Commit de ${githubUsername} (${characterClass}): ${linesChanged} linhas = ${commitXp} XP`);
         }
 
         activityDescription = `${commits.length} commit(s) em ${payload.repository?.name}`;

@@ -104,9 +104,7 @@ export default function Docs() {
                       </div>
 
                       <div className="mt-4 pt-4 border-t border-border">
-                        <p className="text-xs italic text-muted-foreground">
-                          Estilo: {classInfo.playstyle}
-                        </p>
+                        <p className="text-xs italic text-muted-foreground">Estilo: {classInfo.playstyle}</p>
                       </div>
                     </div>
                   );
