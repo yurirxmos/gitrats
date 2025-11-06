@@ -45,7 +45,14 @@ export async function POST(request: NextRequest) {
     const githubService = new GitHubService(userData.github_access_token || undefined);
     const githubStats = await githubService.getUserStats(userData.github_username);
 
-    const { data: currentStats, error: statsError } = await supabase
+    console.log(`[Sync] GitHub Stats para ${userData.github_username}:`, {
+      totalCommits: githubStats.totalCommits,
+      totalPRs: githubStats.totalPRs,
+      totalIssues: githubStats.totalIssues,
+    });
+
+    // Buscar ou criar registro de stats
+    let { data: currentStats } = await supabase
       .from("github_stats")
       .select(
         "total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, baseline_issues, baseline_reviews, last_sync_at"
@@ -53,8 +60,9 @@ export async function POST(request: NextRequest) {
       .eq("user_id", userData.id)
       .maybeSingle();
 
+    // Se não existir registro, criar e buscar novamente
     if (!currentStats) {
-      await supabase.from("github_stats").insert({
+      const { error: insertError } = await supabase.from("github_stats").insert({
         user_id: userData.id,
         total_commits: 0,
         total_prs: 0,
@@ -66,17 +74,50 @@ export async function POST(request: NextRequest) {
         baseline_reviews: 0,
         last_sync_at: null,
       });
+
+      if (insertError) {
+        console.error("[Sync] Erro ao criar github_stats:", insertError);
+        return NextResponse.json({ error: "Erro ao criar estatísticas" }, { status: 500 });
+      }
+
+      // Buscar o registro recém-criado
+      const { data: newStats, error: fetchError } = await supabase
+        .from("github_stats")
+        .select(
+          "total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, baseline_issues, baseline_reviews, last_sync_at"
+        )
+        .eq("user_id", userData.id)
+        .single();
+
+      if (fetchError || !newStats) {
+        console.error("[Sync] Erro ao buscar stats recém-criados:", fetchError);
+        return NextResponse.json({ error: "Erro ao buscar estatísticas" }, { status: 500 });
+      }
+
+      currentStats = newStats;
     }
 
-    const isFirstSync = !currentStats || !currentStats?.last_sync_at;
+    const isFirstSync = !currentStats.last_sync_at;
+
+    console.log(`[Sync] ${userData.github_username} - isFirstSync: ${isFirstSync}, currentStats:`, {
+      total_commits: currentStats.total_commits,
+      baseline_commits: currentStats.baseline_commits,
+      total_prs: currentStats.total_prs,
+      baseline_prs: currentStats.baseline_prs,
+      last_sync_at: currentStats.last_sync_at,
+    });
 
     // VERIFICAR SE PRECISA CORRIGIR XP INICIAL (usuários antigos)
     // Se baseline = total, significa que não recebeu XP inicial dos últimos 7 dias
     const needsInitialXpFix =
       !isFirstSync &&
-      currentStats &&
       currentStats.baseline_commits === currentStats.total_commits &&
-      currentStats.baseline_prs === currentStats.total_prs;
+      currentStats.baseline_prs === currentStats.total_prs &&
+      currentStats.total_commits > 0; // Só corrige se tiver commits
+
+    console.log(
+      `[Sync] ${userData.github_username} - needsInitialXpFix: ${needsInitialXpFix} (baseline=${currentStats.baseline_commits}, total=${currentStats.total_commits})`
+    );
 
     if (needsInitialXpFix) {
       console.log(`[Sync - Fix] Detectado usuário antigo: ${userData.github_username}, aplicando XP retroativo...`);
@@ -86,6 +127,7 @@ export async function POST(request: NextRequest) {
 
       try {
         weeklyStats = await githubService.getWeeklyXp(userData.github_username);
+        console.log(`[Sync - Fix] Stats dos últimos 7 dias:`, weeklyStats);
       } catch (error) {
         console.error("[Sync - Fix] Erro ao buscar XP semanal, usando 0:", error);
       }
@@ -94,6 +136,12 @@ export async function POST(request: NextRequest) {
       const newBaselineCommits = Math.max(0, githubStats.totalCommits - weeklyStats.commits);
       const newBaselinePRs = Math.max(0, githubStats.totalPRs - weeklyStats.prs);
       const newBaselineIssues = Math.max(0, githubStats.totalIssues - weeklyStats.issues);
+
+      console.log(`[Sync - Fix] Novo baseline:`, {
+        commits: `${currentStats.baseline_commits} → ${newBaselineCommits}`,
+        prs: `${currentStats.baseline_prs} → ${newBaselinePRs}`,
+        issues: `${currentStats.baseline_issues} → ${newBaselineIssues}`,
+      });
 
       // Aplicar multiplicadores de classe
       const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
@@ -105,6 +153,13 @@ export async function POST(request: NextRequest) {
       const xpFromPRs = Math.floor(weeklyStats.prs * 50 * prMultiplier);
       const xpFromIssues = Math.floor(weeklyStats.issues * 25 * issueMultiplier);
       const retroactiveXp = xpFromCommits + xpFromPRs + xpFromIssues;
+
+      console.log(`[Sync - Fix] XP Calculado:`, {
+        commits: `${weeklyStats.commits} × 10 × ${commitMultiplier} = ${xpFromCommits}`,
+        prs: `${weeklyStats.prs} × 50 × ${prMultiplier} = ${xpFromPRs}`,
+        issues: `${weeklyStats.issues} × 25 × ${issueMultiplier} = ${xpFromIssues}`,
+        total: retroactiveXp,
+      });
 
       // Atualizar baseline
       await supabase
@@ -158,7 +213,9 @@ export async function POST(request: NextRequest) {
           },
         });
       } else {
-        console.log(`[Sync - Fix] ${userData.github_username} não tinha atividades nos últimos 7 dias, baseline ajustado`);
+        console.log(
+          `[Sync - Fix] ${userData.github_username} não tinha atividades nos últimos 7 dias, baseline ajustado`
+        );
 
         return NextResponse.json({
           success: true,
@@ -180,7 +237,7 @@ export async function POST(request: NextRequest) {
     if (isFirstSync) {
       // PRIMEIRA SYNC: Pegar atividades dos últimos 7 dias para XP inicial
       let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
-      
+
       try {
         weeklyStats = await githubService.getWeeklyXp(userData.github_username);
       } catch (error) {
@@ -279,9 +336,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const newCommits = githubStats.totalCommits - (currentStats?.total_commits || 0);
-    const newPRs = githubStats.totalPRs - (currentStats?.total_prs || 0);
-    const newIssues = githubStats.totalIssues - (currentStats?.total_issues || 0);
+    const newCommits = githubStats.totalCommits - (currentStats.total_commits || 0);
+    const newPRs = githubStats.totalPRs - (currentStats.total_prs || 0);
+    const newIssues = githubStats.totalIssues - (currentStats.total_issues || 0);
 
     const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
     const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
