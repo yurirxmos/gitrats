@@ -18,7 +18,18 @@ import {
 } from "@radix-ui/react-dropdown-menu";
 import { Button } from "./ui/button";
 import { DropdownMenuLabel, DropdownMenuSeparator } from "./ui/dropdown-menu";
-import { FaArrowRight, FaBars, FaGithub, FaMoon, FaPowerOff, FaSun, FaXmark } from "react-icons/fa6";
+import {
+  FaArrowRight,
+  FaBars,
+  FaFileCode,
+  FaGithub,
+  FaMoon,
+  FaPaperPlane,
+  FaPowerOff,
+  FaSun,
+  FaTrophy,
+  FaXmark,
+} from "react-icons/fa6";
 
 export function Navbar() {
   const { user, loading } = useUser();
@@ -62,14 +73,24 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-8 text-xs">
           <Link
             href="/docs"
-            className="hover:underline"
+            className="flex flex-row items-center gap-2 hover:underline"
           >
+            <FaFileCode />
             /docs
           </Link>
           <Link
-            href="/leaderboard"
-            className="hover:underline"
+            href="/reports"
+            className="flex flex-row items-center gap-2 hover:underline"
           >
+            <FaPaperPlane />
+            /reports
+          </Link>
+
+          <Link
+            href="/leaderboard"
+            className="flex flex-row items-center gap-2 hover:underline"
+          >
+            <FaTrophy />
             /leaderboard
           </Link>
 
