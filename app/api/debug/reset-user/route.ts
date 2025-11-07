@@ -5,21 +5,13 @@ import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import { getClassXpMultiplier } from "@/lib/classes";
 
 /**
- * Rota de DEBUG - RESETA completamente os dados de um usuário
- * Busca dados reais do GitHub e recalcula tudo do zero
- * ATENÇÃO: Só funciona em localhost, usa SERVICE_ROLE para bypassar RLS
+ * Rota de ADMIN - RESETA completamente os dados de um usuário
+ * Busca dados reais do GitHub e recalcula tudo do zero baseado na data de registro
+ * Usado para corrigir usuários que abusaram de exploits
+ * ATENÇÃO: Usa SERVICE_ROLE para bypassar RLS
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verificar se está em localhost
-    const hostname = request.headers.get("host") || "";
-    const isLocalhost =
-      hostname.includes("localhost") || hostname.includes("127.0.0.1") || hostname.startsWith("192.168.");
-
-    if (!isLocalhost) {
-      return NextResponse.json({ error: "Esta rota só funciona em desenvolvimento local" }, { status: 403 });
-    }
-
     const body = await request.json();
     const { username, token: providedToken } = body;
 
@@ -37,6 +29,7 @@ export async function POST(request: NextRequest) {
         id,
         github_username,
         github_access_token,
+        created_at,
         github_stats!inner(
           total_commits,
           total_prs,
@@ -60,6 +53,10 @@ export async function POST(request: NextRequest) {
       console.error("[Reset] Erro ao buscar usuário:", userQueryError);
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
+
+    // Garantir que temos a data de criação do usuário
+    const userCreatedAt = userData.created_at ? new Date(userData.created_at) : new Date();
+    console.log(`[Reset] ${username} - Data de criação: ${userCreatedAt.toISOString()}`);
 
     console.log(`[Reset] Processando ${username}...`);
 
@@ -127,20 +124,25 @@ export async function POST(request: NextRequest) {
       level: character.level,
     });
 
-    // Buscar últimos 7 dias
-    const weeklyStats = await githubService.getWeeklyXp(username);
-    console.log(`[Reset] ${username} - Últimos 7 dias:`, weeklyStats);
+    // Buscar atividades desde a data de criação do usuário
+    const activitiesSinceJoin = await githubService.getActivitiesSince(username, userCreatedAt);
+    console.log(`[Reset] ${username} - Atividades desde ${userCreatedAt.toISOString()}:`, activitiesSinceJoin);
 
-    // Calcular baseline correto (total - últimos 7 dias)
-    const correctBaselineCommits = totalCommits - weeklyStats.commits;
-    const correctBaselinePRs = totalPRs - weeklyStats.prs;
-    const correctBaselineIssues = totalIssues - weeklyStats.issues;
+    // Calcular baseline correto (total - atividades desde o registro)
+    // Isso garante que apenas atividades após o registro sejam contabilizadas
+    const correctBaselineCommits = Math.max(0, totalCommits - activitiesSinceJoin.commits);
+    const correctBaselinePRs = Math.max(0, totalPRs - activitiesSinceJoin.prs);
+    const correctBaselineIssues = Math.max(0, totalIssues - activitiesSinceJoin.issues);
 
     console.log(`[Reset] ${username} - Baseline CORRETO:`, {
-      commits: correctBaselineCommits,
-      prs: correctBaselinePRs,
-      issues: correctBaselineIssues,
+      commits: `${totalCommits} - ${activitiesSinceJoin.commits} = ${correctBaselineCommits}`,
+      prs: `${totalPRs} - ${activitiesSinceJoin.prs} = ${correctBaselinePRs}`,
+      issues: `${totalIssues} - ${activitiesSinceJoin.issues} = ${correctBaselineIssues}`,
     });
+
+    // Para o XP, usar apenas os últimos 7 dias (não todas as atividades desde o registro)
+    const weeklyStats = await githubService.getWeeklyXp(username);
+    console.log(`[Reset] ${username} - Últimos 7 dias:`, weeklyStats);
 
     // Calcular XP dos últimos 7 dias com multiplicadores de classe
     const commitsMultiplier = getClassXpMultiplier(character.class, "commits");
@@ -152,11 +154,12 @@ export async function POST(request: NextRequest) {
     const issuesXp = weeklyStats.issues * 25 * issuesMultiplier;
     const totalXp = Math.round(commitsXp + prsXp + issuesXp);
 
-    console.log(`[Reset] ${username} - XP CORRETO (últimos 7 dias):`, {
+    console.log(`[Reset] ${username} - XP CORRETO (apenas últimos 7 dias):`, {
       commits: `${weeklyStats.commits} × 10 × ${commitsMultiplier} = ${commitsXp}`,
       prs: `${weeklyStats.prs} × 50 × ${prsMultiplier} = ${prsXp}`,
       issues: `${weeklyStats.issues} × 25 × ${issuesMultiplier} = ${issuesXp}`,
       total: totalXp,
+      note: "XP calculado APENAS dos últimos 7 dias, ignorando todo histórico anterior",
     });
 
     const correctLevel = getLevelFromXp(totalXp);
@@ -201,9 +204,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Usuário ${username} resetado com sucesso`,
+      message: `Usuário ${username} resetado com sucesso. XP recalculado apenas dos últimos 7 dias.`,
       data: {
         username,
+        user_created_at: userCreatedAt.toISOString(),
         old_data: {
           total_commits: stats.total_commits,
           baseline_commits: stats.baseline_commits,
@@ -215,8 +219,10 @@ export async function POST(request: NextRequest) {
           baseline_commits: correctBaselineCommits,
           total_xp: totalXp,
           level: correctLevel,
+          activities_since_join: activitiesSinceJoin.commits + activitiesSinceJoin.prs + activitiesSinceJoin.issues,
         },
         weekly_stats: weeklyStats,
+        note: "Baseline ajustado para ignorar todo histórico anterior ao registro. XP calculado apenas dos últimos 7 dias.",
       },
     });
   } catch (error) {

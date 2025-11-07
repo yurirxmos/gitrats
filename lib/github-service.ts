@@ -231,6 +231,56 @@ export class GitHubService {
     }
   }
 
+  /**
+   * Busca atividades desde uma data específica via GraphQL
+   * Útil para calcular XP apenas de atividades após o registro do usuário
+   */
+  async getActivitiesSince(
+    username: string,
+    startDate: Date
+  ): Promise<{ commits: number; prs: number; issues: number; reviews: number }> {
+    try {
+      const fromDate = startDate.toISOString();
+      const toDate = new Date().toISOString();
+
+      const query = `
+        query($username: String!, $from: DateTime!, $to: DateTime!) {
+          user(login: $username) {
+            contributionsCollection(from: $from, to: $to) {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+          }
+        }
+      `;
+
+      const response: Record<string, any> = await this.graphqlWithAuth(query, {
+        username,
+        from: fromDate,
+        to: toDate,
+      });
+
+      const collection = response.user?.contributionsCollection;
+
+      if (!collection) {
+        throw new Error("Dados de contribuição não encontrados");
+      }
+
+      const commits = Number(collection.totalCommitContributions) || 0;
+      const prs = Number(collection.totalPullRequestContributions) || 0;
+      const issues = Number(collection.totalIssueContributions) || 0;
+      const reviews = Number(collection.totalPullRequestReviewContributions) || 0;
+
+      return { commits, prs, issues, reviews };
+    } catch (error) {
+      console.error(`[GitHub Service] Erro ao buscar atividades desde ${startDate}:`, error);
+      // Fallback: retornar zeros em caso de erro
+      return { commits: 0, prs: 0, issues: 0, reviews: 0 };
+    }
+  }
+
   // Helpers para fallback REST API
   private countCommitsFromEvents(events: Record<string, any>[]): number {
     return events

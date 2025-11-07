@@ -24,13 +24,15 @@ export async function POST(request: NextRequest) {
 
     const { data: userData } = await supabase
       .from("users")
-      .select("id, github_username, github_access_token")
+      .select("id, github_username, github_access_token, created_at")
       .eq("id", user.id)
       .single();
 
     if (!userData || !userData.github_username) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
+
+    const userCreatedAt = userData.created_at ? new Date(userData.created_at) : new Date();
 
     const { data: character } = await supabase
       .from("characters")
@@ -235,28 +237,49 @@ export async function POST(request: NextRequest) {
     }
 
     if (isFirstSync) {
-      // PRIMEIRA SYNC: Pegar atividades dos últimos 7 dias para XP inicial
-      let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
+      // PRIMEIRA SYNC: Pegar atividades desde a data de criação do usuário
+      // Isso garante que apenas atividades após o registro sejam contabilizadas
+      let activitiesSinceJoin = { commits: 0, prs: 0, issues: 0, reviews: 0 };
 
       try {
-        weeklyStats = await githubService.getWeeklyXp(userData.github_username);
+        // Buscar atividades desde a data de criação do usuário
+        activitiesSinceJoin = await githubService.getActivitiesSince(userData.github_username, userCreatedAt);
+
+        console.log(
+          `[Sync - First] ${userData.github_username} - Atividades desde ${userCreatedAt.toISOString()}:`,
+          activitiesSinceJoin
+        );
       } catch (error) {
-        console.error("[Sync - First] Erro ao buscar XP semanal, usando 0:", error);
+        console.error("[Sync - First] Erro ao buscar atividades desde o registro:", error);
         // Continua com 0, não falha a primeira sync
       }
 
-      // Calcular baseline: total atual MENOS os últimos 7 dias
-      // Assim os últimos 7 dias vão gerar XP, mas o histórico anterior não
-      const baselineCommits = Math.max(0, githubStats.totalCommits - weeklyStats.commits);
-      const baselinePRs = Math.max(0, githubStats.totalPRs - weeklyStats.prs);
-      const baselineIssues = Math.max(0, githubStats.totalIssues - weeklyStats.issues);
+      // Calcular baseline: total atual MENOS as atividades desde o registro
+      // Assim apenas atividades após o registro vão gerar XP
+      const baselineCommits = Math.max(0, githubStats.totalCommits - activitiesSinceJoin.commits);
+      const baselinePRs = Math.max(0, githubStats.totalPRs - activitiesSinceJoin.prs);
+      const baselineIssues = Math.max(0, githubStats.totalIssues - activitiesSinceJoin.issues);
+
+      console.log(`[Sync - First] ${userData.github_username} - Baseline calculado:`, {
+        commits: `${githubStats.totalCommits} - ${activitiesSinceJoin.commits} = ${baselineCommits}`,
+        prs: `${githubStats.totalPRs} - ${activitiesSinceJoin.prs} = ${baselinePRs}`,
+      });
+
+      // Para o XP inicial, usar apenas os últimos 7 dias (não todas as atividades desde o registro)
+      let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
+      try {
+        weeklyStats = await githubService.getWeeklyXp(userData.github_username);
+        console.log(`[Sync - First] ${userData.github_username} - Últimos 7 dias:`, weeklyStats);
+      } catch (error) {
+        console.error("[Sync - First] Erro ao buscar XP semanal:", error);
+      }
 
       // Aplicar multiplicadores de classe
       const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
       const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
       const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
 
-      // Calcular XP inicial (últimos 7 dias)
+      // Calcular XP inicial (apenas últimos 7 dias)
       const xpFromCommits = Math.floor(weeklyStats.commits * 10 * commitMultiplier);
       const xpFromPRs = Math.floor(weeklyStats.prs * 50 * prMultiplier);
       const xpFromIssues = Math.floor(weeklyStats.issues * 25 * issueMultiplier);
@@ -315,6 +338,7 @@ export async function POST(request: NextRequest) {
               issues: weeklyStats.issues,
               total_commits: githubStats.totalCommits,
               total_prs: githubStats.totalPRs,
+              total_since_join: activitiesSinceJoin.commits + activitiesSinceJoin.prs + activitiesSinceJoin.issues,
             },
           },
         });
@@ -331,6 +355,7 @@ export async function POST(request: NextRequest) {
             prs: 0,
             total_commits: githubStats.totalCommits,
             total_prs: githubStats.totalPRs,
+            total_since_join: activitiesSinceJoin.commits + activitiesSinceJoin.prs,
           },
         },
       });

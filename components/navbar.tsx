@@ -56,15 +56,6 @@ export function Navbar() {
             className="w-5 h-5 dark:invert"
           />
           <h1 className="text-lg font-black uppercase">Gitrats</h1>
-          {loading ? (
-            <span className="opacity-50 hidden sm:inline">/loading...</span>
-          ) : (
-            user && (
-              <span className="opacity-70 text-xs ml-2 hidden sm:inline">
-                /{user.user_metadata?.user_name || user.email}
-              </span>
-            )
-          )}
         </Link>
 
         {/* Desktop Menu */}
