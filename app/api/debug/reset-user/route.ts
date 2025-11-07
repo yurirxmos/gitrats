@@ -74,14 +74,31 @@ export async function POST(request: NextRequest) {
     console.log(`[Reset] ${username} - Token fornecido:`, providedToken ? "SIM" : "NÃO");
 
     // Usar token fornecido ou do banco
-    const token = providedToken || userData.github_access_token;
+    let token = providedToken || userData.github_access_token;
+
+    // Se não tem token, tentar usar token de um admin disponível (para dados públicos)
+    if (!token) {
+      console.log(`[Reset] ${username} - Sem token, tentando buscar token de admin...`);
+      
+      // Buscar um usuário com token (preferencialmente yurirxmos)
+      const { data: adminUser } = await supabase
+        .from("users")
+        .select("github_access_token")
+        .eq("github_username", "yurirxmos")
+        .single();
+
+      if (adminUser?.github_access_token) {
+        token = adminUser.github_access_token;
+        console.log(`[Reset] ${username} - Usando token do admin para consulta pública`);
+      }
+    }
 
     if (!token) {
-      console.error(`[Reset] ${username} - Nenhum token disponível`);
+      console.error(`[Reset] ${username} - Nenhum token disponível (nem do usuário, nem de admin)`);
       return NextResponse.json(
         {
           error:
-            "Token GitHub não encontrado. Faça logout/login ou forneça um token manualmente via parâmetro 'token'.",
+            "Token GitHub não encontrado. O usuário precisa fazer logout/login, ou configure um token de admin.",
           username,
         },
         { status: 400 }
