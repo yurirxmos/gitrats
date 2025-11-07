@@ -2,9 +2,48 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
 
+// Base URL do site - altere usando a variável de ambiente NEXT_PUBLIC_SITE_URL em produção
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://example.com";
+
 export const metadata: Metadata = {
   title: "GitRats",
-  description: "GitRats - Gamified Git Experience",
+  description: "Transforme seus commits e pull requests em XP. Crie seu personagem e domine o leaderboard.",
+  // Open Graph padrão
+  openGraph: {
+    title: "GitRats",
+    description: "Transforme seus commits e pull requests em XP. Crie seu personagem e domine o leaderboard.",
+    url: siteUrl,
+    siteName: "GitRats",
+    // imagem social default (coloque um arquivo em /public/og-image.png ou ajuste)
+    images: [{ url: `${siteUrl}/og-image.png`, width: 802, height: 877, alt: "GitRats" }],
+    locale: "pt_BR",
+    type: "website",
+  },
+  // Twitter Card
+  twitter: {
+    card: "summary_large_image",
+    title: "GitRats",
+    description: "Transforme seus commits e pull requests em XP.",
+    images: [`${siteUrl}/og-image.png`],
+  },
+  // Controle para robôs (padrão) — robots meta será gerado automaticamente no build.
+  // Favicon e ícones simples
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
+};
+
+// Dados estruturados JSON-LD para melhor compatibilidade com rich results
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "GitRats",
+  url: siteUrl,
+  logo: `${siteUrl}/og-image.png`,
+  sameAs: [
+    // Adicione links sociais aqui se houver
+  ],
 };
 
 export default function RootLayout({
@@ -14,10 +53,11 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="pt-BR"
       suppressHydrationWarning
     >
       <head>
+        {/* Script para aplicar tema baseado em localStorage */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -27,6 +67,12 @@ export default function RootLayout({
               } catch (e) {}
             `,
           }}
+        />
+
+        {/* JSON-LD: structured data para SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
       <body>
