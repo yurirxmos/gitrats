@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { OnboardingModal } from "@/components/onboarding-modal";
+import { EvolutionModal } from "@/components/evolution-modal";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FaTrophy, FaMedal, FaGithub, FaShareFromSquare, FaSpinner, FaStarHalfStroke } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Navbar } from "@/components/navbar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUser } from "@/hooks/use-user";
 import { useAutoSync } from "@/hooks/use-auto-sync";
+import { useEvolutionDetector } from "@/hooks/use-evolution-detector";
 import { createClient } from "@/lib/supabase/client";
 import { getCharacterAvatar } from "@/lib/character-assets";
 import { getXpForLevel } from "@/lib/xp-system";
@@ -62,8 +64,27 @@ export default function Leaderboard() {
   // Sync automático a cada 10 minutos (só se tiver personagem)
   useAutoSync(hasCharacter === true);
 
+  // Detecção de evoluções
+  const { evolutionEvent, clearEvolutionEvent } = useEvolutionDetector(
+    userProfile
+      ? {
+          level: userProfile.level,
+          class: userProfile.character_class,
+          name: userProfile.character_name,
+        }
+      : null
+  );
+
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [showEvolutionModal, setShowEvolutionModal] = useState(false);
   const hasLoadedRef = useRef(false);
+
+  // Mostrar modal de evolução quando detectada
+  useEffect(() => {
+    if (evolutionEvent) {
+      setShowEvolutionModal(true);
+    }
+  }, [evolutionEvent]);
 
   useEffect(() => {
     const loadAllData = async () => {
@@ -373,9 +394,8 @@ export default function Leaderboard() {
                 </div>
               ) : (
                 <>
-                  {/* Pódio Top 3 - Só exibe se houver pelo menos 3 jogadores */}
                   {leaderboard.length >= 3 && (
-                    <div className="flex items-end justify-center gap-4 px-4">
+                    <div className="hidden md:flex items-end justify-center gap-4 px-4">
                       {/* 2º Lugar */}
                       {leaderboard[1] && (
                         <div className="flex flex-col items-center gap-3 flex-1">
@@ -538,152 +558,76 @@ export default function Leaderboard() {
                   )}
 
                   {/* Resto do Leaderboard */}
-                  {leaderboard.length >= 3 ? (
-                    leaderboard.length > 3 && (
-                      <div className="mb-10">
-                        <h2 className="text-lg font-black mb-4">RANKING GERAL</h2>
-                        <ScrollArea className="h-100 pr-4">
-                          <div className="space-y-2">
-                            {leaderboard.slice(3).map((player) => (
-                              <Card
-                                key={player.user_id}
-                                className="transition-all hover:opacity-60 border-none shadow-none"
-                              >
-                                <CardContent className="px-4 border-none shadow-none">
-                                  <div className="flex items-center gap-4">
-                                    <div className="w-12 flex items-center justify-center shrink-0">
-                                      {getRankIcon(player.rank)}
-                                    </div>
+                  <div className="mb-10">
+                    <ScrollArea className="h-100 pr-4">
+                      <div className="space-y-2">
+                        {leaderboard.map((player) => (
+                          <Card
+                            key={player.user_id}
+                            className="transition-all hover:opacity-60 border-none shadow-none"
+                          >
+                            <CardContent className="px-4 border-none shadow-none">
+                              <div className="flex items-center md:flex-row flex-col gap-4">
+                                <div className="w-12 flex items-center justify-center shrink-0">
+                                  {getRankIcon(player.rank)}
+                                </div>
 
-                                    <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
-                                      <Image
-                                        src={getCharacterAvatar(player.character_class, player.level)}
-                                        alt={player.character_name}
-                                        fill
-                                        className="object-contain"
-                                      />
-                                    </div>
+                                <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
+                                  <Image
+                                    src={getCharacterAvatar(player.character_class, player.level)}
+                                    alt={player.character_name}
+                                    fill
+                                    className="object-contain"
+                                  />
+                                </div>
 
-                                    <div className="flex-1 min-w-0">
-                                      <h3 className="font-bold text-base">{player.character_name}</h3>
-                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <span className="text-blue-400">
-                                          {getCurrentRank(player.character_class, player.level)}
-                                        </span>
-                                        <span>•</span>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            window.open(`https://github.com/${player.github_username}`, "_blank");
-                                          }}
-                                          className="flex items-center gap-1 hover:text-foreground transition-colors"
-                                        >
-                                          <FaGithub className="text-xs" />
-                                          <span>@{player.github_username}</span>
-                                        </button>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex gap-6 shrink-0">
-                                      <div className="text-center">
-                                        <p className="font-bold text-base">Level {player.level}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                          {player.total_xp.toLocaleString()} XP
-                                        </p>
-                                      </div>
-                                      <div className="text-center">
-                                        <p className="font-bold text-base">{player.total_commits}</p>
-                                        <p className="text-xs text-muted-foreground">Commits</p>
-                                      </div>
-                                      <div className="text-center">
-                                        <p className="font-bold text-base">{player.total_prs}</p>
-                                        <p className="text-xs text-muted-foreground">PRs</p>
-                                      </div>
-                                      <div className="text-center">
-                                        <p className="font-bold text-base">{player.total_issues}</p>
-                                        <p className="text-xs text-muted-foreground">Issues</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    )
-                  ) : (
-                    <div className="mb-10">
-                      <ScrollArea className="h-100 pr-4">
-                        <div className="space-y-2">
-                          {leaderboard.map((player) => (
-                            <Card
-                              key={player.user_id}
-                              className="transition-all hover:opacity-60 border-none shadow-none"
-                            >
-                              <CardContent className="px-4">
-                                <div className="flex md:flex-row flex-col items-center gap-4">
-                                  <div className="w-12 flex items-center justify-center shrink-0">
-                                    {getRankIcon(player.rank)}
-                                  </div>
-
-                                  <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
-                                    <Image
-                                      src={getCharacterAvatar(player.character_class, player.level)}
-                                      alt={player.character_name}
-                                      fill
-                                      className="object-contain"
-                                    />
-                                  </div>
-
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-base">{player.character_name}</h3>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                      <span className="text-blue-400">
-                                        {getCurrentRank(player.character_class, player.level)}
-                                      </span>
-                                      <span>•</span>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          window.open(`https://github.com/${player.github_username}`, "_blank");
-                                        }}
-                                        className="flex items-center gap-1 hover:text-foreground transition-colors"
-                                      >
-                                        <FaGithub className="text-xs" />
-                                        <span>@{player.github_username}</span>
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex gap-6 shrink-0">
-                                    <div className="text-center">
-                                      <p className="font-bold text-base">Level {player.level}</p>
-                                      <p className="text-xs text-muted-foreground">
-                                        {player.total_xp.toLocaleString()} XP
-                                      </p>
-                                    </div>
-                                    <div className="text-center">
-                                      <p className="font-bold text-base">{player.total_commits}</p>
-                                      <p className="text-xs text-muted-foreground">Commits</p>
-                                    </div>
-                                    <div className="text-center">
-                                      <p className="font-bold text-base">{player.total_prs}</p>
-                                      <p className="text-xs text-muted-foreground">PRs</p>
-                                    </div>
-                                    <div className="text-center">
-                                      <p className="font-bold text-base">{player.total_issues}</p>
-                                      <p className="text-xs text-muted-foreground">Issues</p>
-                                    </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-bold text-base">{player.character_name}</h3>
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className="text-blue-400">
+                                      {getCurrentRank(player.character_class, player.level)}
+                                    </span>
+                                    <span>•</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(`https://github.com/${player.github_username}`, "_blank");
+                                      }}
+                                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                    >
+                                      <FaGithub className="text-xs" />
+                                      <span>@{player.github_username}</span>
+                                    </button>
                                   </div>
                                 </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  )}
+
+                                <div className="flex gap-6 shrink-0">
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">Level {player.level}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {player.total_xp.toLocaleString()} XP
+                                    </p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_commits}</p>
+                                    <p className="text-xs text-muted-foreground">Commits</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_prs}</p>
+                                    <p className="text-xs text-muted-foreground">PRs</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_issues}</p>
+                                    <p className="text-xs text-muted-foreground">Issues</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
                 </>
               )}
             </div>
@@ -702,6 +646,18 @@ export default function Leaderboard() {
         }}
         initialStep={2}
       />
+
+      {/* Modal de Evolução */}
+      {evolutionEvent && (
+        <EvolutionModal
+          isOpen={showEvolutionModal}
+          onClose={() => {
+            setShowEvolutionModal(false);
+            clearEvolutionEvent();
+          }}
+          character={evolutionEvent.character}
+        />
+      )}
 
       {/* Dialog de Boas-Vindas */}
       <Dialog

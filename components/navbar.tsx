@@ -22,6 +22,8 @@ import {
   FaArrowRight,
   FaBars,
   FaFileCode,
+  FaGear,
+  FaGears,
   FaGithub,
   FaMoon,
   FaPaperPlane,
@@ -114,6 +116,13 @@ export function Navbar() {
                 align="end"
                 className="bg-foreground text-background p-1 rounded-md shadow-md mt-1 w-32 text-center gap-2 border-none"
               >
+                <DropdownMenuItem
+                  className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  onClick={() => router.push("/profile")}
+                >
+                  <FaGear />
+                  perfil
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
                   onClick={toggleTheme}

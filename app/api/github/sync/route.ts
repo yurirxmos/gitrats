@@ -61,12 +61,25 @@ export async function POST(request: NextRequest) {
         }
       } else {
         console.log(`[Sync] ${userData.github_username} - Nenhum token disponível (nem no banco, nem na sessão)`);
+
+        // Forçar logout quando não há token disponível
+        console.log(`[Sync] ${userData.github_username} - Forçando logout para renovar token...`);
+
+        try {
+          await supabase.auth.signOut();
+          console.log(`[Sync] ${userData.github_username} - Logout realizado com sucesso`);
+        } catch (logoutError) {
+          console.error(`[Sync] ${userData.github_username} - Erro ao fazer logout:`, logoutError);
+        }
+
         return NextResponse.json(
           {
-            error: "Token GitHub não encontrado. Faça logout e login novamente para obter o token.",
+            error: "Token GitHub expirado. Você foi desconectado para renovar o acesso.",
             username: userData.github_username,
+            action: "logout_required",
+            redirect_to: "/auth/login",
           },
-          { status: 400 }
+          { status: 401 }
         );
       }
     }
