@@ -5,7 +5,7 @@ import Image from "next/image";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { EvolutionModal } from "@/components/evolution-modal";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FaTrophy, FaMedal, FaGithub, FaShareFromSquare, FaSpinner, FaStarHalfStroke } from "react-icons/fa6";
+import { FaTrophy, FaMedal, FaGithub, FaSpinner, FaStarHalfStroke } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
@@ -16,12 +16,10 @@ import { useEvolutionDetector } from "@/hooks/use-evolution-detector";
 import { createClient } from "@/lib/supabase/client";
 import { getCharacterAvatar } from "@/lib/character-assets";
 import { getXpForLevel } from "@/lib/xp-system";
-import { getCurrentRank, getNextRank, getLevelsUntilNextRank } from "@/lib/class-evolution";
-import { Select, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { SelectContent } from "@radix-ui/react-select";
+import { getCurrentRank, getNextRank } from "@/lib/class-evolution";
 import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
+import { AchievementBadge } from "@/components/achievement-badge";
 import { GiBoltShield } from "react-icons/gi";
-import { Star } from "lucide-react";
 
 interface LeaderboardEntry {
   rank: number;
@@ -35,6 +33,7 @@ interface LeaderboardEntry {
   total_commits: number;
   total_prs: number;
   total_issues: number;
+  achievement_codes?: string[];
 }
 
 interface UserProfile {
@@ -49,6 +48,7 @@ interface UserProfile {
   total_issues: number;
   github_username: string;
   created_at?: string;
+  achievement_codes?: string[];
 }
 
 export default function Leaderboard() {
@@ -60,54 +60,32 @@ export default function Leaderboard() {
   const [hasCharacter, setHasCharacter] = useState<boolean | null>(null);
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [totalCharacters, setTotalCharacters] = useState<number>(0);
-
-  // Sync automático a cada 10 minutos (só se tiver personagem)
-  useAutoSync(hasCharacter === true);
-
-  // Detecção de evoluções
-  const { evolutionEvent, clearEvolutionEvent } = useEvolutionDetector(
-    userProfile
-      ? {
-          level: userProfile.level,
-          class: userProfile.character_class,
-          name: userProfile.character_name,
-        }
-      : null
-  );
-
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [showEvolutionModal, setShowEvolutionModal] = useState(false);
   const hasLoadedRef = useRef(false);
 
-  // Mostrar modal de evolução quando detectada
+  useAutoSync(hasCharacter === true);
+  const { evolutionEvent, clearEvolutionEvent } = useEvolutionDetector(
+    userProfile
+      ? { level: userProfile.level, class: userProfile.character_class, name: userProfile.character_name }
+      : null
+  );
+
+  // Exibe modal de evolução quando houver evento
   useEffect(() => {
-    if (evolutionEvent) {
-      setShowEvolutionModal(true);
-    }
+    if (evolutionEvent) setShowEvolutionModal(true);
   }, [evolutionEvent]);
 
+  // Carrega leaderboard, stats e perfil
   useEffect(() => {
     const loadAllData = async () => {
-      // Evitar recarregar se já carregou
-      if (hasLoadedRef.current) {
-        return;
-      }
-
+      if (hasLoadedRef.current) return;
       setIsLoading(true);
-
-      // Carregar leaderboard, perfil e estatísticas em paralelo
       const promises: Promise<any>[] = [loadLeaderboard(), loadStats()];
-
-      if (user && !userLoading) {
-        promises.push(loadUserProfile());
-      }
-
+      if (user && !userLoading) promises.push(loadUserProfile());
       await Promise.all(promises);
-
       setIsLoading(false);
       hasLoadedRef.current = true;
-
-      // Verificar se é primeira vez do usuário
       if (user && !userLoading && hasCharacter) {
         const hasSeenWelcome = localStorage.getItem("has_seen_welcome");
         if (!hasSeenWelcome) {
@@ -116,51 +94,35 @@ export default function Leaderboard() {
         }
       }
     };
-
-    if (!userLoading) {
-      loadAllData();
-    }
+    if (!userLoading) loadAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, userLoading, hasCharacter]);
 
-  const syncGitHubData = async (silent = false) => {
+  const syncGitHubData = async () => {
     if (!user) return;
-
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
-
       if (!token) return;
-
       const response = await fetch("/api/github/sync", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      const data = await response.json();
-
       if (!response.ok) return;
-
       await loadUserProfile();
       await loadLeaderboard();
-    } catch (error) {
-      // Silencioso em produção
-    }
+    } catch {}
   };
 
   const loadLeaderboard = async () => {
     try {
       const response = await fetch("/api/leaderboard?limit=50");
-
-      if (!response.ok) {
-        throw new Error("Erro ao carregar leaderboard");
-      }
-
+      if (!response.ok) throw new Error("Erro ao carregar leaderboard");
       const { data, lastUpdate: updateTime } = await response.json();
       setLeaderboard(data || []);
       setLastUpdate(updateTime || null);
-    } catch (error) {
+    } catch {
       setLeaderboard([]);
     }
   };
@@ -168,53 +130,35 @@ export default function Leaderboard() {
   const loadStats = async () => {
     try {
       const response = await fetch("/api/stats");
-
-      if (!response.ok) {
-        throw new Error("Erro ao carregar estatísticas");
-      }
-
+      if (!response.ok) throw new Error("Erro ao carregar estatísticas");
       const { data } = await response.json();
       setTotalCharacters(data.total_characters || 0);
-    } catch (error) {
+    } catch {
       setTotalCharacters(0);
     }
   };
 
   const loadUserProfile = async () => {
-    if (!user) {
-      return false;
-    }
-
+    if (!user) return false;
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
-
       if (!token) {
         setHasCharacter(false);
         setUserProfile(null);
         return false;
       }
-
-      // Buscar personagem do usuário
-      const characterResponse = await fetch("/api/character", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const characterResponse = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
       if (!characterResponse.ok) {
         setHasCharacter(false);
         setUserProfile(null);
         return false;
       }
-
       const { data: characterData } = await characterResponse.json();
-
       setHasCharacter(true);
-
-      // Buscar posição no ranking
       const rankResponse = await fetch(`/api/leaderboard/${user.id}`);
       const { data: rankData } = rankResponse.ok ? await rankResponse.json() : { data: null };
-
       setUserProfile({
         character_name: characterData.name,
         character_class: characterData.class,
@@ -227,10 +171,10 @@ export default function Leaderboard() {
         total_issues: characterData.github_stats?.total_issues || 0,
         github_username: user.user_metadata?.user_name || user.email?.split("@")[0] || "User",
         created_at: characterData.created_at,
+        achievement_codes: characterData.achievement_codes || [],
       });
-
       return true;
-    } catch (error) {
+    } catch {
       setHasCharacter(false);
       setUserProfile(null);
       return false;
@@ -247,7 +191,6 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen flex flex-col bg-background relative bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] animate-[grid-move_2s_linear_infinite]">
       <Navbar />
-
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
@@ -256,7 +199,6 @@ export default function Leaderboard() {
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10">
-          {/* Sidebar - Profile */}
           {user && (
             <aside className="w-80 shrink-0">
               <Card className="border-none shadow-none">
@@ -289,7 +231,6 @@ export default function Leaderboard() {
                           </p>
                         </div>
                       </div>
-
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
                           <span className="font-bold">Level {userProfile.level}</span>
@@ -307,7 +248,6 @@ export default function Leaderboard() {
                         </div>
                         {(() => {
                           const nextRank = getNextRank(userProfile.character_class, userProfile.level);
-
                           return (
                             <div className="pt-2 space-y-1">
                               {nextRank && (
@@ -328,12 +268,10 @@ export default function Leaderboard() {
                           );
                         })()}
                       </div>
-
                       <div className="flex flex-row items-center gap-1.5 mb-2">
                         <GiBoltShield />
-                        <span className="text-xs font-bold text-muted-foreground uppercase">/GIT-STATS</span>
+                        <span className="text-xs font-bold text-muted-foreground uppercase">/STATS</span>
                       </div>
-
                       <div className="space-y-0.5 text-xs">
                         <div className="flex justify-between">
                           <span className=" text-muted-foreground">Ranking</span>
@@ -356,12 +294,26 @@ export default function Leaderboard() {
                           <span className="font-bold">{userProfile.total_issues}</span>
                         </div>
                       </div>
-
+                      {userProfile.achievement_codes && userProfile.achievement_codes.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex flex-row items-center gap-1.5">
+                            <FaStarHalfStroke />
+                            <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {userProfile.achievement_codes.map((code) => (
+                              <AchievementBadge
+                                key={code}
+                                code={code}
+                                size="sm"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div className="flex flex-row justify-center text-muted-foreground">
                         <small className="text-[8px] text-center">Sincronização automática a cada 10 minutos</small>
                       </div>
-
-                      {/* Bônus de Classe */}
                       <ClassBonusIndicator characterClass={userProfile.character_class as "orc" | "warrior" | "mage"} />
                     </>
                   ) : (
@@ -373,8 +325,6 @@ export default function Leaderboard() {
               </Card>
             </aside>
           )}
-
-          {/* Main - Leaderboard */}
           <main className={user ? "flex-1 max-w-4xl" : "flex-1 max-w-6xl"}>
             <div className="space-y-8">
               <div className="flex items-center justify-between">
@@ -382,12 +332,10 @@ export default function Leaderboard() {
                   <FaTrophy className="text-2xl text-foreground" />
                   <h1 className="text-2xl font-black">LEADERBOARD</h1>
                 </div>
-
                 <p className="text-xs text-muted-foreground">
                   {totalCharacters} {totalCharacters === 1 ? "gitwarrior ativo" : "gitwarriors ativos"}.
                 </p>
               </div>
-
               {leaderboard.length === 0 ? (
                 <div className="text-center py-20">
                   <p className="text-muted-foreground">Nenhum jogador encontrado</p>
@@ -396,7 +344,6 @@ export default function Leaderboard() {
                 <>
                   {leaderboard.length >= 3 && (
                     <div className="hidden md:flex items-end justify-center gap-4 px-4">
-                      {/* 2º Lugar */}
                       {leaderboard[1] && (
                         <div className="flex flex-col items-center gap-3 flex-1">
                           <FaMedal className="text-gray-400 text-3xl" />
@@ -448,8 +395,6 @@ export default function Leaderboard() {
                           </div>
                         </div>
                       )}
-
-                      {/* 1º Lugar */}
                       {leaderboard[0] && (
                         <div className="flex flex-col items-center gap-3 flex-1">
                           <FaTrophy className="text-yellow-500 text-4xl animate-bounce" />
@@ -501,8 +446,6 @@ export default function Leaderboard() {
                           </div>
                         </div>
                       )}
-
-                      {/* 3º Lugar */}
                       {leaderboard[2] && (
                         <div className="flex flex-col items-center gap-3 flex-1">
                           <FaMedal className="text-amber-700 text-3xl" />
@@ -556,9 +499,8 @@ export default function Leaderboard() {
                       )}
                     </div>
                   )}
-
-                  {/* Resto do Leaderboard */}
-                  <div className="mb-10">
+                  {/* Mobile: lista completa */}
+                  <div className="mb-10 md:hidden">
                     <ScrollArea className="h-100 pr-4">
                       <div className="space-y-2">
                         {leaderboard.map((player) => (
@@ -571,7 +513,6 @@ export default function Leaderboard() {
                                 <div className="w-12 flex items-center justify-center shrink-0">
                                   {getRankIcon(player.rank)}
                                 </div>
-
                                 <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
                                   <Image
                                     src={getCharacterAvatar(player.character_class, player.level)}
@@ -580,7 +521,6 @@ export default function Leaderboard() {
                                     className="object-contain"
                                   />
                                 </div>
-
                                 <div className="flex-1 min-w-0">
                                   <h3 className="font-bold text-base">{player.character_name}</h3>
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -600,7 +540,6 @@ export default function Leaderboard() {
                                     </button>
                                   </div>
                                 </div>
-
                                 <div className="flex gap-6 shrink-0">
                                   <div className="text-center">
                                     <p className="font-bold text-base">Level {player.level}</p>
@@ -621,6 +560,96 @@ export default function Leaderboard() {
                                     <p className="text-xs text-muted-foreground">Issues</p>
                                   </div>
                                 </div>
+                                {player.achievement_codes && player.achievement_codes.length > 0 && (
+                                  <div className="w-full flex flex-wrap gap-2 pt-2">
+                                    {player.achievement_codes.map((code) => (
+                                      <AchievementBadge
+                                        key={code}
+                                        code={code}
+                                        size="sm"
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                  {/* Desktop: lista a partir do 4º */}
+                  <div className="mb-10 hidden md:block">
+                    <ScrollArea className="h-100 pr-4">
+                      <div className="space-y-2">
+                        {leaderboard.slice(3).map((player) => (
+                          <Card
+                            key={player.user_id}
+                            className="transition-all hover:opacity-60 border-none shadow-none"
+                          >
+                            <CardContent className="px-4 border-none shadow-none">
+                              <div className="flex items-center md:flex-row flex-col gap-4">
+                                <div className="w-12 flex items-center justify-center shrink-0">
+                                  {getRankIcon(player.rank)}
+                                </div>
+                                <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
+                                  <Image
+                                    src={getCharacterAvatar(player.character_class, player.level)}
+                                    alt={player.character_name}
+                                    fill
+                                    className="object-contain"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-bold text-base">{player.character_name}</h3>
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className="text-blue-400">
+                                      {getCurrentRank(player.character_class, player.level)}
+                                    </span>
+                                    <span>•</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(`https://github.com/${player.github_username}`, "_blank");
+                                      }}
+                                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                    >
+                                      <FaGithub className="text-xs" />
+                                      <span>@{player.github_username}</span>
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="flex gap-6 shrink-0">
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">Level {player.level}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {player.total_xp.toLocaleString()} XP
+                                    </p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_commits}</p>
+                                    <p className="text-xs text-muted-foreground">Commits</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_prs}</p>
+                                    <p className="text-xs text-muted-foreground">PRs</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_issues}</p>
+                                    <p className="text-xs text-muted-foreground">Issues</p>
+                                  </div>
+                                </div>
+                                {player.achievement_codes && player.achievement_codes.length > 0 && (
+                                  <div className="w-full flex flex-wrap gap-2 pt-2">
+                                    {player.achievement_codes.map((code) => (
+                                      <AchievementBadge
+                                        key={code}
+                                        code={code}
+                                        size="sm"
+                                      />
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </CardContent>
                           </Card>
@@ -634,20 +663,15 @@ export default function Leaderboard() {
           </main>
         </div>
       )}
-
-      {/* Onboarding Modal para criação de personagem */}
       <OnboardingModal
         isOpen={isOnboardingOpen}
         onClose={() => {
           setIsOnboardingOpen(false);
-          // Recarregar dados após criar personagem
           loadUserProfile();
           loadLeaderboard();
         }}
         initialStep={2}
       />
-
-      {/* Modal de Evolução */}
       {evolutionEvent && (
         <EvolutionModal
           isOpen={showEvolutionModal}
@@ -658,8 +682,6 @@ export default function Leaderboard() {
           character={evolutionEvent.character}
         />
       )}
-
-      {/* Dialog de Boas-Vindas */}
       <Dialog
         open={showWelcomeDialog}
         onOpenChange={setShowWelcomeDialog}
@@ -669,12 +691,10 @@ export default function Leaderboard() {
             <div className="text-center">
               <h2 className="text-2xl font-bold mb-2">Bem-vindo ao Gitrats!</h2>
             </div>
-
             <div className="space-y-3 text-sm">
               <p className="text-muted-foreground text-center">
                 Ganhe <strong>XP</strong> automaticamente com suas atividades no GitHub:
               </p>
-
               <ul className="space-y-2 pl-4">
                 <li>
                   - <strong>10 XP</strong> por commit
@@ -686,17 +706,14 @@ export default function Leaderboard() {
                   - <strong>25 XP</strong> por issue resolvida
                 </li>
               </ul>
-
               <p className="text-muted-foreground text-xs">
                 Sua classe {userProfile?.character_class} tem <strong>bônus especiais</strong> em certas atividades.
                 Suba de nível, evolua e domine o leaderboard!
               </p>
-
               <p className="text-xs text-muted-foreground text-center pt-2">
                 Quer saber mais? Acesse <strong>/docs</strong> para detalhes completos.
               </p>
             </div>
-
             <div className="flex justify-center pt-2">
               <Button onClick={() => setShowWelcomeDialog(false)}>Entendi, vamos lá!</Button>
             </div>

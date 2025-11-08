@@ -45,6 +45,17 @@ export async function GET(request: NextRequest) {
     const prsAfterJoin = githubStats ? (githubStats.total_prs || 0) - (githubStats.baseline_prs || 0) : 0;
     const issuesAfterJoin = githubStats ? (githubStats.total_issues || 0) - (githubStats.baseline_issues || 0) : 0;
 
+    // Buscar achievements do usuário (lista de códigos)
+    // Comentário: join via relacionamento para obter apenas o code e evitar N+1
+    const { data: achievementsRaw } = await supabase
+      .from("user_achievements")
+      .select("achievement:achievements(code)")
+      .eq("user_id", user.id);
+
+    const achievementCodes = (achievementsRaw || [])
+      .map((r: any) => r.achievement?.code)
+      .filter((c: string | undefined): c is string => Boolean(c));
+
     return NextResponse.json({
       data: {
         id: character.id,
@@ -54,6 +65,7 @@ export async function GET(request: NextRequest) {
         current_xp: character.current_xp,
         total_xp: character.total_xp,
         created_at: character.created_at,
+        achievement_codes: achievementCodes,
         github_stats: {
           total_commits: commitsAfterJoin, // Apenas após entrar na plataforma
           total_prs: prsAfterJoin, // Apenas após entrar na plataforma

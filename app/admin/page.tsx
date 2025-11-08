@@ -12,6 +12,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<any>(null);
   const [syncResult, setSyncResult] = useState<any>(null);
+  const [achievementResult, setAchievementResult] = useState<any>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
 
@@ -195,6 +196,35 @@ export default function AdminPage() {
     }
   };
 
+  const grantAchievement = async (achievementType: string) => {
+    const username = prompt(`Digite o username para conceder "${achievementType}":`);
+
+    if (!username) return;
+
+    if (!confirm(`Conceder achievement "${achievementType}" para ${username}?`)) {
+      return;
+    }
+
+    setLoading(true);
+    setAchievementResult(null);
+
+    try {
+      const res = await fetch("/api/admin/grant-achievement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, achievementType }),
+      });
+      const data = await res.json();
+      console.log("[Admin] Resultado do achievement:", data);
+      setAchievementResult(data);
+    } catch (error) {
+      console.error("Erro ao conceder achievement:", error);
+      setAchievementResult({ error: String(error) });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -278,6 +308,24 @@ export default function AdminPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardContent className="pt-6">
+            <h2 className="text-xl font-bold mb-4">🏆 Conceder Achievements</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Conceda achievements especiais para usuários que contribuíram de forma significativa.
+            </p>
+
+            <Button
+              onClick={() => grantAchievement("Contribuidor da Távola")}
+              disabled={loading}
+              variant="default"
+              className="bg-yellow-600 hover:bg-yellow-700"
+            >
+              ⚔️ Contribuidor da Távola (+10 XP)
+            </Button>
+          </CardContent>
+        </Card>
+
         {status?.diff && (
           <Card className="border-yellow-500">
             <CardContent className="pt-6">
@@ -323,12 +371,12 @@ export default function AdminPage() {
           </Card>
         )}
 
-        {syncResult && (
+        {achievementResult && (
           <Card>
             <CardContent className="pt-6">
-              <h2 className="text-xl font-bold mb-4">🔄 Resultado da Operação</h2>
+              <h2 className="text-xl font-bold mb-4">🏆 Resultado do Achievement</h2>
               <pre className="bg-muted p-4 rounded text-xs overflow-auto max-h-96">
-                {JSON.stringify(syncResult, null, 2)}
+                {JSON.stringify(achievementResult, null, 2)}
               </pre>
             </CardContent>
           </Card>

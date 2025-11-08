@@ -43,6 +43,24 @@ export async function GET(request: NextRequest) {
       .from("github_stats")
       .select("user_id, total_commits, total_prs, total_issues, baseline_commits, baseline_prs, baseline_issues")
       .in("user_id", userIds);
+    // Buscar achievements dos usuários (lista de códigos) - uma única batida
+    // Comentário: usamos duas tabelas para evitar N+1 (user_achievements + achievements)
+    const { data: achievementsRaw, error: achievementsError } = await supabase
+      .from("user_achievements")
+      .select("user_id, achievement:achievements(code)")
+      .in("user_id", userIds);
+
+    if (achievementsError) {
+      console.error("Erro ao buscar achievements:", achievementsError);
+    }
+
+    // Mapear codes por user_id
+    const achievementsMap = new Map<string, string[]>();
+    achievementsRaw?.forEach((row: any) => {
+      const arr = achievementsMap.get(row.user_id) || [];
+      if (row.achievement?.code) arr.push(row.achievement.code);
+      achievementsMap.set(row.user_id, arr);
+    });
 
     if (statsError) {
       console.error("Erro ao buscar stats:", statsError);
@@ -74,6 +92,7 @@ export async function GET(request: NextRequest) {
         total_commits: commitsAfterJoin, // Apenas atividade pós-plataforma
         total_prs: prsAfterJoin, // Apenas atividade pós-plataforma
         total_issues: issuesAfterJoin, // Apenas atividade pós-plataforma
+        achievement_codes: achievementsMap.get(character.user_id) || [],
       };
     });
 

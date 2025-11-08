@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     // Se não tem token, tentar usar token de um admin disponível (para dados públicos)
     if (!token) {
       console.log(`[Reset] ${username} - Sem token, tentando buscar token de admin...`);
-      
+
       // Buscar um usuário com token (preferencialmente yurirxmos)
       const { data: adminUser } = await supabase
         .from("users")
@@ -94,8 +94,7 @@ export async function POST(request: NextRequest) {
       console.error(`[Reset] ${username} - Nenhum token disponível (nem do usuário, nem de admin)`);
       return NextResponse.json(
         {
-          error:
-            "Token GitHub não encontrado. O usuário precisa fazer logout/login, ou configure um token de admin.",
+          error: "Token GitHub não encontrado. O usuário precisa fazer logout/login, ou configure um token de admin.",
           username,
         },
         { status: 400 }
@@ -129,7 +128,6 @@ export async function POST(request: NextRequest) {
     console.log(`[Reset] ${username} - Atividades desde ${userCreatedAt.toISOString()}:`, activitiesSinceJoin);
 
     // Calcular baseline correto (total - atividades desde o registro)
-    // Isso garante que apenas atividades após o registro sejam contabilizadas
     const correctBaselineCommits = Math.max(0, totalCommits - activitiesSinceJoin.commits);
     const correctBaselinePRs = Math.max(0, totalPRs - activitiesSinceJoin.prs);
     const correctBaselineIssues = Math.max(0, totalIssues - activitiesSinceJoin.issues);
@@ -140,26 +138,57 @@ export async function POST(request: NextRequest) {
       issues: `${totalIssues} - ${activitiesSinceJoin.issues} = ${correctBaselineIssues}`,
     });
 
-    // Para o XP, usar apenas os últimos 7 dias (não todas as atividades desde o registro)
-    const weeklyStats = await githubService.getWeeklyXp(username);
-    console.log(`[Reset] ${username} - Últimos 7 dias:`, weeklyStats);
-
-    // Calcular XP dos últimos 7 dias com multiplicadores de classe
+    // Calcular XP de TODAS as atividades desde o login até agora
+    // Isso preserva o histórico e progresso do usuário
     const commitsMultiplier = getClassXpMultiplier(character.class, "commits");
     const prsMultiplier = getClassXpMultiplier(character.class, "pullRequests");
     const issuesMultiplier = getClassXpMultiplier(character.class, "issuesResolved");
 
-    const commitsXp = weeklyStats.commits * 10 * commitsMultiplier;
-    const prsXp = weeklyStats.prs * 50 * prsMultiplier;
-    const issuesXp = weeklyStats.issues * 25 * issuesMultiplier;
-    const totalXp = Math.round(commitsXp + prsXp + issuesXp);
+    const commitsXp = activitiesSinceJoin.commits * 10 * commitsMultiplier;
+    const prsXp = activitiesSinceJoin.prs * 50 * prsMultiplier;
+    const issuesXp = activitiesSinceJoin.issues * 25 * issuesMultiplier;
+    const activityXp = Math.round(commitsXp + prsXp + issuesXp);
 
-    console.log(`[Reset] ${username} - XP CORRETO (apenas últimos 7 dias):`, {
-      commits: `${weeklyStats.commits} × 10 × ${commitsMultiplier} = ${commitsXp}`,
-      prs: `${weeklyStats.prs} × 50 × ${prsMultiplier} = ${prsXp}`,
-      issues: `${weeklyStats.issues} × 25 × ${issuesMultiplier} = ${issuesXp}`,
-      total: totalXp,
-      note: "XP calculado APENAS dos últimos 7 dias, ignorando todo histórico anterior",
+    console.log(`[Reset] ${username} - XP de atividades (desde a criação até agora):`, {
+      commits: `${activitiesSinceJoin.commits} × 10 × ${commitsMultiplier} = ${commitsXp}`,
+      prs: `${activitiesSinceJoin.prs} × 50 × ${prsMultiplier} = ${prsXp}`,
+      issues: `${activitiesSinceJoin.issues} × 25 × ${issuesMultiplier} = ${issuesXp}`,
+      total: activityXp,
+      period: `${userCreatedAt.toISOString()} até agora`,
+    });
+
+    // Buscar achievements do usuário e somar XP
+    const { data: achievementsData } = await supabase
+      .from("user_achievements")
+      .select("achievement:achievements(code, xp_reward)")
+      .eq("user_id", userData.id);
+
+    let achievementsXp = 0;
+    const achievementsList: Array<{ code: string; xp: number }> = [];
+
+    if (achievementsData && achievementsData.length > 0) {
+      achievementsData.forEach((item: any) => {
+        if (item.achievement?.xp_reward) {
+          achievementsXp += item.achievement.xp_reward;
+          achievementsList.push({
+            code: item.achievement.code,
+            xp: item.achievement.xp_reward,
+          });
+        }
+      });
+    }
+
+    console.log(`[Reset] ${username} - XP de achievements:`, {
+      total: achievementsXp,
+      achievements: achievementsList,
+    });
+
+    const totalXp = activityXp + achievementsXp;
+
+    console.log(`[Reset] ${username} - XP TOTAL:`, {
+      activity_xp: activityXp,
+      achievements_xp: achievementsXp,
+      total_xp: totalXp,
     });
 
     const correctLevel = getLevelFromXp(totalXp);
@@ -204,10 +233,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Usuário ${username} resetado com sucesso. XP recalculado apenas dos últimos 7 dias.`,
+      message: `Usuário ${username} resetado com sucesso. XP recalculado desde a criação + achievements.`,
       data: {
         username,
         user_created_at: userCreatedAt.toISOString(),
+        xp_calculation_period: {
+          from: userCreatedAt.toISOString(),
+          to: new Date().toISOString(),
+          description: "Desde a data de criação até agora (histórico completo preservado)",
+        },
         old_data: {
           total_commits: stats.total_commits,
           baseline_commits: stats.baseline_commits,
@@ -217,12 +251,15 @@ export async function POST(request: NextRequest) {
         new_data: {
           total_commits: totalCommits,
           baseline_commits: correctBaselineCommits,
+          activity_xp: activityXp,
+          achievements_xp: achievementsXp,
           total_xp: totalXp,
           level: correctLevel,
           activities_since_join: activitiesSinceJoin.commits + activitiesSinceJoin.prs + activitiesSinceJoin.issues,
+          achievements: achievementsList,
         },
-        weekly_stats: weeklyStats,
-        note: "Baseline ajustado para ignorar todo histórico anterior ao registro. XP calculado apenas dos últimos 7 dias.",
+        activity_breakdown: activitiesSinceJoin,
+        note: "Baseline ajustado para ignorar histórico anterior ao registro. XP = TODAS atividades desde criação + bônus de achievements.",
       },
     });
   } catch (error) {
