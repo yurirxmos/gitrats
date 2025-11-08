@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,14 +44,32 @@ export async function GET(request: NextRequest) {
       .select("user_id, total_commits, total_prs, total_issues, baseline_commits, baseline_prs, baseline_issues")
       .in("user_id", userIds);
     // Buscar achievements dos usuários (lista de códigos) - uma única batida
-    // Comentário: usamos duas tabelas para evitar N+1 (user_achievements + achievements)
-    const { data: achievementsRaw, error: achievementsError } = await supabase
-      .from("user_achievements")
-      .select("user_id, achievement:achievements(code)")
-      .in("user_id", userIds);
+    // Nota: user_achievements possui RLS que restringe leitura ao próprio usuário.
+    // Para exibir badges no leaderboard precisamos da lista completa — usar o
+    // cliente admin (service_role) apenas para esta query (somente códigos públicos).
+    let achievementsRaw: any[] | null = null;
+    try {
+      const admin = createAdminClient();
+      const { data, error } = await admin
+        .from("user_achievements")
+        .select("user_id, achievement:achievements(code)")
+        .in("user_id", userIds);
 
-    if (achievementsError) {
-      console.error("Erro ao buscar achievements:", achievementsError);
+      if (error) {
+        console.error("Erro ao buscar achievements com admin client:", error);
+      }
+
+      achievementsRaw = data || [];
+    } catch (err) {
+      console.error("Erro ao inicializar admin client para achievements:", err);
+      // Fallback: tentar via client padrão (poderá retornar apenas achievements do usuário logado)
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("user_achievements")
+        .select("user_id, achievement:achievements(code)")
+        .in("user_id", userIds);
+
+      if (fallbackError) console.error("Fallback achievements error:", fallbackError);
+      achievementsRaw = fallbackData || [];
     }
 
     // Mapear codes por user_id

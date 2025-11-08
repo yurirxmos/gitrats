@@ -294,23 +294,6 @@ export default function Leaderboard() {
                           <span className="font-bold">{userProfile.total_issues}</span>
                         </div>
                       </div>
-                      {userProfile.achievement_codes && userProfile.achievement_codes.length > 0 && (
-                        <div className="space-y-3">
-                          <div className="flex flex-row items-center gap-1.5">
-                            <FaStarHalfStroke />
-                            <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {userProfile.achievement_codes.map((code) => (
-                              <AchievementBadge
-                                key={code}
-                                code={code}
-                                size="sm"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
                       <div className="flex flex-row justify-center text-muted-foreground">
                         <small className="text-[8px] text-center">Sincronização automática a cada 10 minutos</small>
                       </div>
@@ -359,7 +342,19 @@ export default function Leaderboard() {
                             />
                           </div>
                           <div className="text-center">
-                            <h3 className="font-bold text-base">{leaderboard[1]?.character_name}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-base">{leaderboard[1]?.character_name}</h3>
+                              {/* Mostrar até 3 badges ao lado do nome */}
+                              <div className="flex items-center gap-1">
+                                {(leaderboard[1]?.achievement_codes || []).slice(0, 3).map((code) => (
+                                  <AchievementBadge
+                                    key={code}
+                                    code={code}
+                                    size="sm"
+                                  />
+                                ))}
+                              </div>
+                            </div>
                             <p className="text-xs text-blue-400">
                               {getCurrentRank(leaderboard[1]?.character_class || "orc", leaderboard[1]?.level || 1)}
                             </p>
@@ -410,7 +405,18 @@ export default function Leaderboard() {
                             />
                           </div>
                           <div className="text-center">
-                            <h3 className="font-bold text-lg">{leaderboard[0]?.character_name}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-lg">{leaderboard[0]?.character_name}</h3>
+                              <div className="flex items-center gap-1">
+                                {(leaderboard[0]?.achievement_codes || []).slice(0, 3).map((code) => (
+                                  <AchievementBadge
+                                    key={code}
+                                    code={code}
+                                    size="sm"
+                                  />
+                                ))}
+                              </div>
+                            </div>
                             <p className="text-sm text-blue-400">
                               {getCurrentRank(leaderboard[0]?.character_class || "orc", leaderboard[0]?.level || 1)}
                             </p>
@@ -461,7 +467,18 @@ export default function Leaderboard() {
                             />
                           </div>
                           <div className="text-center">
-                            <h3 className="font-bold text-base">{leaderboard[2]?.character_name}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-base">{leaderboard[2]?.character_name}</h3>
+                              <div className="flex items-center gap-1">
+                                {(leaderboard[2]?.achievement_codes || []).slice(0, 3).map((code) => (
+                                  <AchievementBadge
+                                    key={code}
+                                    code={code}
+                                    size="sm"
+                                  />
+                                ))}
+                              </div>
+                            </div>
                             <p className="text-xs text-blue-400">
                               {getCurrentRank(leaderboard[2]?.character_class || "orc", leaderboard[2]?.level || 1)}
                             </p>
@@ -522,7 +539,21 @@ export default function Leaderboard() {
                                   />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h3 className="font-bold text-base">{player.character_name}</h3>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="font-bold text-base">{player.character_name}</h3>
+                                      <div className="flex items-center gap-1">
+                                        {(player.achievement_codes || []).slice(0, 3).map((code) => (
+                                          <AchievementBadge
+                                            key={code}
+                                            code={code}
+                                            size="sm"
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <span className="text-blue-400">
                                       {getCurrentRank(player.character_class, player.level)}
@@ -560,17 +591,6 @@ export default function Leaderboard() {
                                     <p className="text-xs text-muted-foreground">Issues</p>
                                   </div>
                                 </div>
-                                {player.achievement_codes && player.achievement_codes.length > 0 && (
-                                  <div className="w-full flex flex-wrap gap-2 pt-2">
-                                    {player.achievement_codes.map((code) => (
-                                      <AchievementBadge
-                                        key={code}
-                                        code={code}
-                                        size="sm"
-                                      />
-                                    ))}
-                                  </div>
-                                )}
                               </div>
                             </CardContent>
                           </Card>
@@ -601,7 +621,18 @@ export default function Leaderboard() {
                                   />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h3 className="font-bold text-base">{player.character_name}</h3>
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-bold text-base">{player.character_name}</h3>
+                                    <div className="flex items-center gap-1">
+                                      {(player.achievement_codes || []).slice(0, 3).map((code) => (
+                                        <AchievementBadge
+                                          key={code}
+                                          code={code}
+                                          size="sm"
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <span className="text-blue-400">
                                       {getCurrentRank(player.character_class, player.level)}
@@ -639,17 +670,6 @@ export default function Leaderboard() {
                                     <p className="text-xs text-muted-foreground">Issues</p>
                                   </div>
                                 </div>
-                                {player.achievement_codes && player.achievement_codes.length > 0 && (
-                                  <div className="w-full flex flex-wrap gap-2 pt-2">
-                                    {player.achievement_codes.map((code) => (
-                                      <AchievementBadge
-                                        key={code}
-                                        code={code}
-                                        size="sm"
-                                      />
-                                    ))}
-                                  </div>
-                                )}
                               </div>
                             </CardContent>
                           </Card>
