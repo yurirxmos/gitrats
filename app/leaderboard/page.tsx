@@ -341,7 +341,7 @@ export default function Leaderboard() {
                               className="object-contain"
                             />
                           </div>
-                          <div className="text-center">
+                          <div className="flex flex-col items-center justify-center text-center">
                             <div className="flex items-center gap-2">
                               <h3 className="font-bold text-base">{leaderboard[1]?.character_name}</h3>
                               {/* Mostrar até 3 badges ao lado do nome */}
@@ -404,7 +404,7 @@ export default function Leaderboard() {
                               className="object-contain"
                             />
                           </div>
-                          <div className="text-center">
+                          <div className="flex flex-col items-center justify-center text-center">
                             <div className="flex items-center gap-2">
                               <h3 className="font-bold text-lg">{leaderboard[0]?.character_name}</h3>
                               <div className="flex items-center gap-1">
@@ -466,7 +466,7 @@ export default function Leaderboard() {
                               className="object-contain"
                             />
                           </div>
-                          <div className="text-center">
+                          <div className="flex flex-col items-center justify-center text-center">
                             <div className="flex items-center gap-2">
                               <h3 className="font-bold text-base">{leaderboard[2]?.character_name}</h3>
                               <div className="flex items-center gap-1">
