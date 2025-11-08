@@ -32,6 +32,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
 
+    // Se não há token no banco, tentar obter da sessão atual e salvar
+    if (!userData.github_access_token) {
+      console.log(`[Sync] ${userData.github_username} - Token não encontrado no banco, tentando obter da sessão...`);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const providerToken = session?.provider_token;
+
+      if (providerToken) {
+        console.log(`[Sync] ${userData.github_username} - Token encontrado na sessão, salvando no banco...`);
+
+        const { error: updateTokenError } = await supabase
+          .from("users")
+          .update({
+            github_access_token: providerToken,
+          })
+          .eq("id", user.id);
+
+        if (updateTokenError) {
+          console.error("[Sync] Erro ao salvar token:", updateTokenError);
+        } else {
+          console.log(`[Sync] ${userData.github_username} - Token salvo com sucesso`);
+          // Atualizar userData com o token
+          userData.github_access_token = providerToken;
+        }
+      } else {
+        console.log(`[Sync] ${userData.github_username} - Nenhum token disponível (nem no banco, nem na sessão)`);
+        return NextResponse.json(
+          {
+            error: "Token GitHub não encontrado. Faça logout e login novamente para obter o token.",
+            username: userData.github_username,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const userCreatedAt = userData.created_at ? new Date(userData.created_at) : new Date();
 
     const { data: character } = await supabase
