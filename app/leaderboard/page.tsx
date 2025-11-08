@@ -32,6 +32,7 @@ interface LeaderboardEntry {
   github_avatar_url: string | null;
   total_commits: number;
   total_prs: number;
+  total_issues: number;
 }
 
 interface UserProfile {
@@ -43,6 +44,7 @@ interface UserProfile {
   rank: number;
   total_commits: number;
   total_prs: number;
+  total_issues: number;
   github_username: string;
   created_at?: string;
 }
@@ -201,6 +203,7 @@ export default function Leaderboard() {
         rank: rankData?.rank || 0,
         total_commits: characterData.github_stats?.total_commits || 0,
         total_prs: characterData.github_stats?.total_prs || 0,
+        total_issues: characterData.github_stats?.total_issues || 0,
         github_username: user.user_metadata?.user_name || user.email?.split("@")[0] || "User",
         created_at: characterData.created_at,
       });
@@ -327,6 +330,10 @@ export default function Leaderboard() {
                           <span className="text-muted-foreground">Pull Requests</span>
                           <span className="font-bold">{userProfile.total_prs}</span>
                         </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Issues</span>
+                          <span className="font-bold">{userProfile.total_issues}</span>
+                        </div>
                       </div>
 
                       <div className="flex flex-row justify-center text-muted-foreground">
@@ -413,6 +420,10 @@ export default function Leaderboard() {
                                 <p className="font-bold">{leaderboard[1]?.total_prs || 0}</p>
                                 <p className="text-muted-foreground">PRs</p>
                               </div>
+                              <div>
+                                <p className="font-bold">{leaderboard[1]?.total_issues || 0}</p>
+                                <p className="text-muted-foreground">Issues</p>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -462,6 +473,10 @@ export default function Leaderboard() {
                                 <p className="font-bold">{leaderboard[0]?.total_prs || 0}</p>
                                 <p className="text-muted-foreground">PRs</p>
                               </div>
+                              <div>
+                                <p className="font-bold">{leaderboard[0]?.total_issues || 0}</p>
+                                <p className="text-muted-foreground">Issues</p>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -510,6 +525,10 @@ export default function Leaderboard() {
                               <div>
                                 <p className="font-bold">{leaderboard[2]?.total_prs || 0}</p>
                                 <p className="text-muted-foreground">PRs</p>
+                              </div>
+                              <div>
+                                <p className="font-bold">{leaderboard[2]?.total_issues || 0}</p>
+                                <p className="text-muted-foreground">Issues</p>
                               </div>
                             </div>
                           </div>
@@ -580,6 +599,10 @@ export default function Leaderboard() {
                                         <p className="font-bold text-base">{player.total_prs}</p>
                                         <p className="text-xs text-muted-foreground">PRs</p>
                                       </div>
+                                      <div className="text-center">
+                                        <p className="font-bold text-base">{player.total_issues}</p>
+                                        <p className="text-xs text-muted-foreground">Issues</p>
+                                      </div>
                                     </div>
                                   </div>
                                 </CardContent>
@@ -647,6 +670,10 @@ export default function Leaderboard() {
                                     <div className="text-center">
                                       <p className="font-bold text-base">{player.total_prs}</p>
                                       <p className="text-xs text-muted-foreground">PRs</p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="font-bold text-base">{player.total_issues}</p>
+                                      <p className="text-xs text-muted-foreground">Issues</p>
                                     </div>
                                   </div>
                                 </div>

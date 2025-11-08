@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     // Buscar estatísticas do GitHub
     const { data: githubStats, error: statsError } = await supabase
       .from("github_stats")
-      .select("user_id, total_commits, total_prs, baseline_commits, baseline_prs")
+      .select("user_id, total_commits, total_prs, total_issues, baseline_commits, baseline_prs, baseline_issues")
       .in("user_id", userIds);
 
     if (statsError) {
@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
       // Mostrar apenas atividades APÓS entrar na plataforma (total - baseline)
       const commitsAfterJoin = stats ? (stats.total_commits || 0) - (stats.baseline_commits || 0) : 0;
       const prsAfterJoin = stats ? (stats.total_prs || 0) - (stats.baseline_prs || 0) : 0;
+      const issuesAfterJoin = stats ? (stats.total_issues || 0) - (stats.baseline_issues || 0) : 0;
 
       return {
         rank: index + 1,
@@ -72,6 +73,7 @@ export async function GET(request: NextRequest) {
         github_avatar_url: user?.github_avatar_url || null,
         total_commits: commitsAfterJoin, // Apenas atividade pós-plataforma
         total_prs: prsAfterJoin, // Apenas atividade pós-plataforma
+        total_issues: issuesAfterJoin, // Apenas atividade pós-plataforma
       };
     });
 

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Buscar estatísticas do GitHub separadamente
     const { data: githubStats } = await supabase
       .from("github_stats")
-      .select("total_commits, total_prs, baseline_commits, baseline_prs")
+      .select("total_commits, total_prs, total_issues, baseline_commits, baseline_prs, baseline_issues")
       .eq("user_id", user.id)
       .single();
 
@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     // Diferença = atividades que geraram XP
     const commitsAfterJoin = githubStats ? (githubStats.total_commits || 0) - (githubStats.baseline_commits || 0) : 0;
     const prsAfterJoin = githubStats ? (githubStats.total_prs || 0) - (githubStats.baseline_prs || 0) : 0;
+    const issuesAfterJoin = githubStats ? (githubStats.total_issues || 0) - (githubStats.baseline_issues || 0) : 0;
 
     return NextResponse.json({
       data: {
@@ -56,6 +57,7 @@ export async function GET(request: NextRequest) {
         github_stats: {
           total_commits: commitsAfterJoin, // Apenas após entrar na plataforma
           total_prs: prsAfterJoin, // Apenas após entrar na plataforma
+          total_issues: issuesAfterJoin, // Apenas após entrar na plataforma
         },
       },
     });
@@ -121,6 +123,7 @@ export async function POST(request: NextRequest) {
       total_reviews: 0,
       baseline_commits: 0,
       baseline_prs: 0,
+      baseline_issues: 0,
       last_sync_at: null, // Marca que nunca foi sincronizado
     });
 
