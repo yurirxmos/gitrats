@@ -118,10 +118,10 @@ export function Navbar() {
               >
                 <DropdownMenuItem
                   className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
-                  onClick={() => router.push("/profile")}
+                  onClick={() => router.push("/configs")}
                 >
                   <FaGear />
-                  perfil
+                  configs
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"

@@ -20,36 +20,8 @@ import { getCurrentRank, getNextRank } from "@/lib/class-evolution";
 import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
 import { AchievementBadge } from "@/components/achievement-badge";
 import { GiBoltShield } from "react-icons/gi";
-
-interface LeaderboardEntry {
-  rank: number;
-  user_id: string;
-  character_name: string;
-  character_class: "warrior" | "mage" | "orc";
-  level: number;
-  total_xp: number;
-  github_username: string;
-  github_avatar_url: string | null;
-  total_commits: number;
-  total_prs: number;
-  total_issues: number;
-  achievement_codes?: string[];
-}
-
-interface UserProfile {
-  character_name: string;
-  character_class: "warrior" | "mage" | "orc";
-  level: number;
-  current_xp: number;
-  total_xp: number;
-  rank: number;
-  total_commits: number;
-  total_prs: number;
-  total_issues: number;
-  github_username: string;
-  created_at?: string;
-  achievement_codes?: string[];
-}
+import LeaderboardProfileCard from "@/components/leaderboard-profile-card";
+import type { LeaderboardEntry, UserProfile } from "@/lib/types";
 
 export default function Leaderboard() {
   const { user, loading: userLoading } = useUser();
@@ -200,113 +172,11 @@ export default function Leaderboard() {
       ) : (
         <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10">
           {user && (
-            <aside className="w-80 shrink-0">
-              <Card className="border-none shadow-none">
-                <CardContent className="space-y-6">
-                  {hasCharacter === false ? (
-                    <div className="text-center py-10 space-y-4">
-                      <p className="text-sm text-muted-foreground">Você ainda não criou seu personagem</p>
-                      <Button
-                        onClick={() => setIsOnboardingOpen(true)}
-                        className="w-full bg-foreground hover:opacity-90 text-background font-bold"
-                      >
-                        Criar Personagem
-                      </Button>
-                    </div>
-                  ) : userProfile ? (
-                    <>
-                      <div className="flex flex-col items-center text-center space-y-3">
-                        <div className="relative w-32 h-32 bg-muted rounded-lg overflow-hidden">
-                          <Image
-                            src={getCharacterAvatar(userProfile.character_class, userProfile.level)}
-                            alt={userProfile.character_name}
-                            fill
-                            className="object-contain"
-                          />
-                        </div>
-                        <div>
-                          <h3 className="font-black text-xl">{userProfile.character_name}</h3>
-                          <p className="text-sm text-blue-400">
-                            {getCurrentRank(userProfile.character_class, userProfile.level)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold">Level {userProfile.level}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {userProfile.current_xp} / {getXpForLevel(userProfile.level + 1)} XP
-                          </span>
-                        </div>
-                        <div className="bg-muted rounded-full h-3 overflow-hidden">
-                          <div
-                            className="bg-foreground h-full transition-all"
-                            style={{
-                              width: `${(userProfile.current_xp / getXpForLevel(userProfile.level + 1)) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        {(() => {
-                          const nextRank = getNextRank(userProfile.character_class, userProfile.level);
-                          return (
-                            <div className="pt-2 space-y-1">
-                              {nextRank && (
-                                <div className="flex justify-between">
-                                  <p className="text-xs text-muted-foreground">Evolução:</p>
-                                  <p className="font-bold text-xs">{nextRank.name.toUpperCase()}</p>
-                                </div>
-                              )}
-                              {userProfile.created_at && (
-                                <div className="flex justify-between">
-                                  <p className="text-xs text-muted-foreground">Nascimento:</p>
-                                  <p className="font-bold text-xs">
-                                    {new Date(userProfile.created_at).toLocaleDateString("pt-BR")}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      <div className="flex flex-row items-center gap-1.5 mb-2">
-                        <GiBoltShield />
-                        <span className="text-xs font-bold text-muted-foreground uppercase">/STATS</span>
-                      </div>
-                      <div className="space-y-0.5 text-xs">
-                        <div className="flex justify-between">
-                          <span className=" text-muted-foreground">Ranking</span>
-                          <span className="font-bold">#{userProfile.rank || "-"}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total XP</span>
-                          <span className="font-bold">{userProfile.total_xp.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Commits</span>
-                          <span className="font-bold">{userProfile.total_commits}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Pull Requests</span>
-                          <span className="font-bold">{userProfile.total_prs}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Issues</span>
-                          <span className="font-bold">{userProfile.total_issues}</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-row justify-center text-muted-foreground">
-                        <small className="text-[8px] text-center">Sincronização automática a cada 10 minutos</small>
-                      </div>
-                      <ClassBonusIndicator characterClass={userProfile.character_class as "orc" | "warrior" | "mage"} />
-                    </>
-                  ) : (
-                    <div className="text-center py-10">
-                      <p className="text-sm text-muted-foreground">Nenhum personagem criado</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </aside>
+            <LeaderboardProfileCard
+              userProfile={userProfile}
+              hasCharacter={hasCharacter}
+              onCreateCharacter={() => setIsOnboardingOpen(true)}
+            />
           )}
           <main className={user ? "flex-1 max-w-4xl" : "flex-1 max-w-6xl"}>
             <div className="space-y-8">

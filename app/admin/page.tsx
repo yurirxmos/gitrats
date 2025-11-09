@@ -13,6 +13,7 @@ export default function AdminPage() {
   const [achievementResult, setAchievementResult] = useState<any>(null);
   const [analyzeResult, setAnalyzeResult] = useState<any>(null);
   const [resetResult, setResetResult] = useState<any>(null);
+  const [deleteResult, setDeleteResult] = useState<any>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
 
@@ -39,8 +40,6 @@ export default function AdminPage() {
     checkAdmin();
   }, [user]);
 
-
-
   const resetUser = async () => {
     const username = prompt("Digite o username para RESETAR completamente:");
 
@@ -52,8 +51,8 @@ export default function AdminPage() {
       return;
     }
 
-  setLoading(true);
-  setResetResult(null);
+    setLoading(true);
+    setResetResult(null);
 
     try {
       const res = await fetch("/api/debug/reset-user", {
@@ -61,9 +60,9 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username }),
       });
-  const data = await res.json();
-  console.log("[Admin] Resultado do reset:", data);
-  setResetResult(data);
+      const data = await res.json();
+      console.log("[Admin] Resultado do reset:", data);
+      setResetResult(data);
     } catch (error) {
       console.error("Erro ao resetar usuário:", error);
       setResetResult({ error: String(error) });
@@ -101,6 +100,39 @@ export default function AdminPage() {
     }
   };
 
+  const deleteUser = async () => {
+    const username = prompt("Digite o username do GitHub para DELETAR (irreversível):");
+
+    if (!username) return;
+
+    if (
+      !confirm(
+        `⚠️ ATENÇÃO: Isso vai DELETAR PERMANENTEMENTE a conta do usuário ${username}. Esta ação é irreversível. Continuar?`
+      )
+    ) {
+      return;
+    }
+
+    setLoading(true);
+    setDeleteResult(null);
+
+    try {
+      const res = await fetch("/api/admin/delete-user", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ githubUsername: username }),
+      });
+      const data = await res.json();
+      console.log("[Admin] Resultado da deleção:", data);
+      setDeleteResult(data);
+    } catch (error) {
+      console.error("Erro ao deletar usuário:", error);
+      setDeleteResult({ error: String(error) });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -124,7 +156,10 @@ export default function AdminPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-4xl font-bold">Admin Panel</h1>
-          <Button onClick={() => router.push("/leaderboard")} variant="outline">
+          <Button
+            onClick={() => router.push("/leaderboard")}
+            variant="outline"
+          >
             Voltar ao Leaderboard
           </Button>
         </div>
@@ -140,6 +175,14 @@ export default function AdminPage() {
                 className="bg-red-600 hover:bg-red-700"
               >
                 Resetar Usuário
+              </Button>
+              <Button
+                onClick={deleteUser}
+                disabled={loading}
+                variant="destructive"
+                className="bg-red-800 hover:bg-red-900"
+              >
+                Deletar Usuário
               </Button>
               <Button
                 onClick={async () => {
@@ -215,6 +258,16 @@ export default function AdminPage() {
               <h2 className="text-xl font-bold mb-4">Resultado do Reset</h2>
               <pre className="bg-muted p-4 rounded text-xs overflow-auto max-h-96">
                 {JSON.stringify(resetResult, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+        {deleteResult && (
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-xl font-bold mb-4">Resultado da Deleção</h2>
+              <pre className="bg-muted p-4 rounded text-xs overflow-auto max-h-96">
+                {JSON.stringify(deleteResult, null, 2)}
               </pre>
             </CardContent>
           </Card>

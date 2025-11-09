@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
 import Script from "next/script";
+import favicon from "@/public/favicon.png";
 
 // Base URL do site - altere usando a variável de ambiente NEXT_PUBLIC_SITE_URL em produção
 const siteUrl = "https://gitrats.rxmos.dev.br";
@@ -30,8 +31,9 @@ export const metadata: Metadata = {
   // Controle para robôs (padrão) — robots meta será gerado automaticamente no build.
   // Favicon e ícones simples
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
+    // usar o favicon que existe em /public (favicon.png)
+    icon: "/public/favicon.png",
+    shortcut: "/public/favicon.png",
   },
 };
 
