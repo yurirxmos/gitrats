@@ -402,7 +402,7 @@ export default function LeaderboardProfileCard({
             <Button
               onClick={saveName}
               disabled={savingName}
-              className="ml-2 text-xs"
+              className="ml-2"
             >
               {savingName ? "Salvando..." : "Salvar"}
             </Button>
