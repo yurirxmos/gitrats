@@ -142,11 +142,11 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
       open={isOpen}
       onOpenChange={onClose}
     >
-      <DialogContent className="max-w-2xl font-sans">
+      <DialogContent className="w-full max-w-md md:max-w-2xl p-4 md:p-6 font-sans">
         <DialogTitle className="sr-only">Onboarding</DialogTitle>
         <DialogDescription className="sr-only">Configure sua conta e crie seu personagem</DialogDescription>
         <div className="w-full flex flex-row items-center justify-center">
-          <div className="flex gap-2 w-100">
+          <div className="flex gap-2 w-full md:w-96">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}

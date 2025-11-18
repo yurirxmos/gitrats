@@ -220,7 +220,7 @@ export default function Leaderboard() {
                   <h1 className="text-2xl font-black">LEADERBOARD</h1>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {totalCharacters} {totalCharacters === 1 ? "gitwarrior ativo" : "gitwarriors ativos"}.
+                  {totalCharacters} {totalCharacters === 1 ? "gitwarrior" : "gitwarriors"}.
                 </p>
               </div>
               {leaderboard.length === 0 ? (
