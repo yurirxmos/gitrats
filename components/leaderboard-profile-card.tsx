@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { GiBoltShield } from "react-icons/gi";
+import { GiBoltShield, GiBullseye } from "react-icons/gi";
+import { FaMedal } from "react-icons/fa6";
 import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
 import { AchievementBadge } from "@/components/achievement-badge";
 import { getCharacterAvatar } from "@/lib/character-assets";
@@ -110,7 +111,7 @@ export default function LeaderboardProfileCard({
                       />
                     </div>
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <div className="flex flex-row items-center gap-1">
+                      <div className="flex flex-row items-center gap-2">
                         <h3 className="font-black text-xl">{userProfile.character_name}</h3>
                         <Button
                           variant="outline"
@@ -118,7 +119,7 @@ export default function LeaderboardProfileCard({
                           onClick={openEditDialog}
                           aria-label="Editar nome do personagem"
                         >
-                          <FaPen className="w-3! h-3!" />
+                          <FaPen className="w-2! h-2!" />
                         </Button>
                       </div>
 
@@ -198,6 +199,31 @@ export default function LeaderboardProfileCard({
                         </div>
                       </div>
                     </div>
+                    {Array.isArray(userProfile.achievement_codes) && userProfile.achievement_codes.length > 0 ? (
+                      <>
+                        <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
+                          <FaMedal className="shrink-0 !w-2! h-2!" />
+                          <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
+                        </div>
+                        <div className="flex flex-wrap items-start gap-2">
+                          {userProfile.achievement_codes.map((code) => (
+                            <AchievementBadge
+                              key={code}
+                              code={code}
+                              size="sm"
+                            />
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
+                          <FaMedal className="shrink-0 w-2! h-2!" />
+                          <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Sem conquistas ainda</p>
+                      </>
+                    )}
                     <div className="flex flex-row justify-start text-muted-foreground mt-3">
                       <small className="text-[8px]">Sincronização automática a cada 10 minutos</small>
                     </div>
@@ -215,7 +241,7 @@ export default function LeaderboardProfileCard({
                       />
                     </div>
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <div className="flex flex-row items-center gap-1">
+                      <div className="flex flex-row items-center gap-2">
                         <h3 className="font-black text-xl">{userProfile.character_name}</h3>
                         <Button
                           variant="outline"
@@ -223,7 +249,7 @@ export default function LeaderboardProfileCard({
                           onClick={openEditDialog}
                           aria-label="Editar nome do personagem"
                         >
-                          <FaPen className="w-3! h-3!" />
+                          <FaPen className="w-2! h-2!" />
                         </Button>
                       </div>
                       <p className="text-sm text-blue-400">
@@ -294,6 +320,31 @@ export default function LeaderboardProfileCard({
                       <span className="font-bold">{userProfile.total_issues}</span>
                     </div>
                   </div>
+                  {Array.isArray(userProfile.achievement_codes) && userProfile.achievement_codes.length > 0 ? (
+                    <>
+                      <div className="flex flex-row items-center gap-1.5 mb-2 mt-3">
+                        <GiBullseye />
+                        <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 justify-start">
+                        {userProfile.achievement_codes.map((code) => (
+                          <AchievementBadge
+                            key={code}
+                            code={code}
+                            size="sm"
+                          />
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex flex-row items-center gap-1.5 mb-2 mt-3 justify-center">
+                        <GiBullseye />
+                        <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">Sem conquistas ainda</p>
+                    </>
+                  )}
                   <div className="flex flex-row justify-center text-muted-foreground">
                     <small className="text-[8px] text-center">Sincronização automática a cada 10 minutos</small>
                   </div>
