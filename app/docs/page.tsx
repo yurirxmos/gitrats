@@ -24,18 +24,15 @@ export default function Docs() {
       <Navbar />
 
       <main className="flex-1 max-w-6xl mx-auto px-8 py-12 w-full">
-        <div className="space-y-12">
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-black">COMO FUNCIONA</h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Sistema de XP v2.0 balanceado que recompensa contribuições significativas e previne exploits.
-            </p>
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/20 border border-orange-500/50 rounded-full">
-              <FaFire className="text-orange-500" />
-              <span className="text-sm font-bold text-orange-500">Sistema Anti-Exploit Ativo</span>
-            </div>
+        <div className="flex flex-row items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">/docs</h1>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/20 border border-orange-500/50 rounded-full">
+            <FaFire className="text-orange-500" />
+            <span className="text-sm font-bold text-orange-500">Sistema Anti-Exploit Ativo</span>
           </div>
+        </div>
 
+        <div className="space-y-5">
           <Card>
             <CardContent className="space-y-6">
               <div>
@@ -275,8 +272,8 @@ export default function Docs() {
                     Cada issue fechada. Multiplicado pela classe do personagem.
                   </p>
                   <div className="pt-2 border-t border-border">
-                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Mage (+40%):</p>
-                    <p className="text-xs text-muted-foreground">1 issue = 25 × 1.4 = 35 XP</p>
+                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Mage (+30%):</p>
+                    <p className="text-xs text-muted-foreground">1 issue = 25 × 1.3 = 32.5 XP</p>
                   </div>
                 </div>
               </CardContent>

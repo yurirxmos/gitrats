@@ -5,12 +5,13 @@ import Image from "next/image";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { EvolutionModal } from "@/components/evolution-modal";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FaTrophy, FaMedal, FaGithub, FaSpinner, FaStarHalfStroke } from "react-icons/fa6";
+import { FaTrophy, FaMedal, FaGithub, FaStarHalfStroke } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useUser } from "@/hooks/use-user";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useUserContext } from "@/contexts/user-context";
 import { useAutoSync } from "@/hooks/use-auto-sync";
 import { useEvolutionDetector } from "@/hooks/use-evolution-detector";
 import { createClient } from "@/lib/supabase/client";
@@ -24,12 +25,10 @@ import LeaderboardProfileCard from "@/components/leaderboard-profile-card";
 import type { LeaderboardEntry, UserProfile } from "@/lib/types";
 
 export default function Leaderboard() {
-  const { user, loading: userLoading } = useUser();
+  const { user, userProfile, loading: userLoading, hasCharacter, refreshUserProfile } = useUserContext();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
-  const [hasCharacter, setHasCharacter] = useState<boolean | null>(null);
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [totalCharacters, setTotalCharacters] = useState<number>(0);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -53,12 +52,10 @@ export default function Leaderboard() {
     const loadAllData = async () => {
       if (hasLoadedRef.current) return;
       setIsLoading(true);
-      const promises: Promise<any>[] = [loadLeaderboard(), loadStats()];
-      if (user && !userLoading) promises.push(loadUserProfile());
-      await Promise.all(promises);
+      await Promise.all([loadLeaderboard(), loadStats()]);
       setIsLoading(false);
       hasLoadedRef.current = true;
-      if (user && !userLoading && hasCharacter) {
+      if (user && !userLoading && hasCharacter && userProfile) {
         const hasSeenWelcome = localStorage.getItem("has_seen_welcome");
         if (!hasSeenWelcome) {
           setShowWelcomeDialog(true);
@@ -68,7 +65,7 @@ export default function Leaderboard() {
     };
     if (!userLoading) loadAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, userLoading, hasCharacter]);
+  }, [userLoading]);
 
   const syncGitHubData = async () => {
     if (!user) return;
@@ -82,18 +79,31 @@ export default function Leaderboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) return;
-      await loadUserProfile();
+      await refreshUserProfile();
       await loadLeaderboard();
     } catch {}
   };
 
   const loadLeaderboard = async () => {
     try {
+      const CACHE_KEY = "gitrats_leaderboard_50";
+      const TTL = 60 * 1000; // 60s
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data, lastUpdate, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < TTL) {
+          setLeaderboard(data || []);
+          setLastUpdate(lastUpdate || null);
+          return;
+        }
+      }
+
       const response = await fetch("/api/leaderboard?limit=50");
       if (!response.ok) throw new Error("Erro ao carregar leaderboard");
       const { data, lastUpdate: updateTime } = await response.json();
       setLeaderboard(data || []);
       setLastUpdate(updateTime || null);
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, lastUpdate: updateTime, timestamp: Date.now() }));
     } catch {
       setLeaderboard([]);
     }
@@ -101,55 +111,24 @@ export default function Leaderboard() {
 
   const loadStats = async () => {
     try {
+      const CACHE_KEY = "gitrats_stats";
+      const TTL = 60 * 1000; // 60s
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < TTL) {
+          setTotalCharacters(data.total_characters || 0);
+          return;
+        }
+      }
+
       const response = await fetch("/api/stats");
       if (!response.ok) throw new Error("Erro ao carregar estatísticas");
       const { data } = await response.json();
       setTotalCharacters(data.total_characters || 0);
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
     } catch {
       setTotalCharacters(0);
-    }
-  };
-
-  const loadUserProfile = async () => {
-    if (!user) return false;
-    try {
-      const supabase = createClient();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) {
-        setHasCharacter(false);
-        setUserProfile(null);
-        return false;
-      }
-      const characterResponse = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
-      if (!characterResponse.ok) {
-        setHasCharacter(false);
-        setUserProfile(null);
-        return false;
-      }
-      const { data: characterData } = await characterResponse.json();
-      setHasCharacter(true);
-      const rankResponse = await fetch(`/api/leaderboard/${user.id}`);
-      const { data: rankData } = rankResponse.ok ? await rankResponse.json() : { data: null };
-      setUserProfile({
-        character_name: characterData.name,
-        character_class: characterData.class,
-        level: characterData.level,
-        current_xp: characterData.current_xp,
-        total_xp: characterData.total_xp,
-        rank: rankData?.rank || 0,
-        total_commits: characterData.github_stats?.total_commits || 0,
-        total_prs: characterData.github_stats?.total_prs || 0,
-        total_issues: characterData.github_stats?.total_issues || 0,
-        github_username: user.user_metadata?.user_name || user.email?.split("@")[0] || "User",
-        created_at: characterData.created_at,
-        achievement_codes: characterData.achievement_codes || [],
-      });
-      return true;
-    } catch {
-      setHasCharacter(false);
-      setUserProfile(null);
-      return false;
     }
   };
 
@@ -164,10 +143,65 @@ export default function Leaderboard() {
     <div className="min-h-screen flex flex-col bg-background relative bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] animate-[grid-move_2s_linear_infinite]">
       <Navbar />
       {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <FaSpinner className="m-auto text-4xl text-foreground animate-spin" />
-          </div>
+        <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10">
+          {user && (
+            <aside className="w-80 shrink-0">
+              <Card className="border-none shadow-none">
+                <CardContent className="space-y-4">
+                  <Skeleton className="w-32 h-32 mx-auto rounded-lg" />
+                  <Skeleton className="h-5 w-40 mx-auto" />
+                  <Skeleton className="h-3 w-28 mx-auto" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-5/6" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Skeleton className="h-8" />
+                    <Skeleton className="h-8" />
+                    <Skeleton className="h-8 col-span-2" />
+                  </div>
+                </CardContent>
+              </Card>
+            </aside>
+          )}
+          <main className={user ? "flex-1 max-w-4xl" : "flex-1 max-w-6xl"}>
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <div className="hidden md:flex items-end justify-center gap-4 px-4">
+                <Skeleton className="w-24 h-36 rounded-lg" />
+                <Skeleton className="w-32 h-44 rounded-lg" />
+                <Skeleton className="w-24 h-36 rounded-lg" />
+              </div>
+              <div className="space-y-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card
+                    key={i}
+                    className="border-none shadow-none"
+                  >
+                    <CardContent className="px-4">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="w-12 h-6" />
+                        <Skeleton className="w-16 h-16 rounded-lg" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-48" />
+                          <Skeleton className="h-3 w-64" />
+                        </div>
+                        <div className="flex gap-6">
+                          <Skeleton className="h-5 w-16" />
+                          <Skeleton className="h-5 w-12" />
+                          <Skeleton className="h-5 w-12" />
+                          <Skeleton className="h-5 w-12" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </main>
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10">
@@ -557,7 +591,7 @@ export default function Leaderboard() {
         isOpen={isOnboardingOpen}
         onClose={() => {
           setIsOnboardingOpen(false);
-          loadUserProfile();
+          refreshUserProfile();
           loadLeaderboard();
         }}
         initialStep={2}

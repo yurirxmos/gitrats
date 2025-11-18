@@ -7,15 +7,15 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { Navbar } from "@/components/navbar";
-import { useUser } from "@/hooks/use-user";
+import { useUserContext } from "@/contexts/user-context";
 import { useAutoSync } from "@/hooks/use-auto-sync";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
-  const [hasCharacter, setHasCharacter] = useState(false);
-  const [checkingCharacter, setCheckingCharacter] = useState(true);
-  const { user } = useUser();
+  const { user, hasCharacter, loading } = useUserContext();
+  const router = useRouter();
 
   // Sync automático a cada 10 minutos (só se tiver personagem)
   useAutoSync(hasCharacter);
@@ -30,68 +30,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const checkCharacter = async () => {
-      if (!user) {
-        setCheckingCharacter(false);
-        setHasCharacter(false);
-        return;
-      }
-
-      try {
-        // Pegar o token JWT do Supabase
-        const supabase = (await import("@/lib/supabase/client")).createClient();
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session?.access_token) {
-          setHasCharacter(false);
-          setCheckingCharacter(false);
-          return;
-        }
-
-        // Atualizar token do GitHub no banco (se ainda não tiver)
-        try {
-          await fetch("/api/user", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              githubId: user.user_metadata?.provider_id || user.id,
-              githubUsername: user.user_metadata?.user_name || user.email?.split("@")[0],
-              githubAvatarUrl: user.user_metadata?.avatar_url,
-              name: user.user_metadata?.full_name || user.user_metadata?.name,
-              email: user.email,
-            }),
-          });
-        } catch (error) {
-          // Silencioso
-        }
-
-        const response = await fetch("/api/character", {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (response.ok) {
-          setHasCharacter(true);
-          // Redirecionar automaticamente para leaderboard se já tiver personagem
-          window.location.href = "/leaderboard";
-        } else {
-          setHasCharacter(false);
-        }
-      } catch (error) {
-        setHasCharacter(false);
-      } finally {
-        setCheckingCharacter(false);
-      }
-    };
-
-    checkCharacter();
-  }, [user]);
+    // Evitar full reload em SPA
+    if (!loading && user && hasCharacter) router.replace("/leaderboard");
+  }, [user, hasCharacter, loading, router]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -243,7 +184,7 @@ export default function Home() {
             <div className="flex flex-col gap-4 items-center">
               <Button
                 onClick={() => setIsOnboardingOpen(true)}
-                disabled={hasCharacter || checkingCharacter}
+                disabled={hasCharacter || loading}
               >
                 <FaGithub className="text-xl" />
                 Quero jogar!

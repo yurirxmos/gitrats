@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@/assets/github.png";
-import { useUser } from "@/hooks/use-user";
+import { useUserContext } from "@/contexts/user-context";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/theme-context";
@@ -34,11 +34,18 @@ import {
 } from "react-icons/fa6";
 
 export function Navbar() {
-  const { user, loading } = useUser();
+  const { user, loading } = useUserContext();
   const router = useRouter();
   const supabase = createClient();
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Prefetch de rotas comuns para melhorar a navegação em dev
+  useEffect(() => {
+    router.prefetch("/leaderboard");
+    router.prefetch("/configs");
+    router.prefetch("/docs");
+  }, [router]);
 
   const handleLogin = async () => {
     await supabase.auth.signInWithOAuth({

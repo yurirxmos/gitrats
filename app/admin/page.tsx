@@ -14,6 +14,7 @@ export default function AdminPage() {
   const [analyzeResult, setAnalyzeResult] = useState<any>(null);
   const [resetResult, setResetResult] = useState<any>(null);
   const [deleteResult, setDeleteResult] = useState<any>(null);
+  const [resyncResult, setResyncResult] = useState<any>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
 
@@ -186,6 +187,40 @@ export default function AdminPage() {
               </Button>
               <Button
                 onClick={async () => {
+                  if (
+                    !confirm(
+                      "⚠️ ATENÇÃO: Executar resincronização de TODOS os usuários (apenas ambiente local). Continuar?"
+                    )
+                  ) {
+                    return;
+                  }
+
+                  setLoading(true);
+                  setResyncResult(null);
+
+                  try {
+                    const res = await fetch("/api/debug/fix-all-users", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                    });
+                    const data = await res.json();
+                    console.log("[Admin] Resultado resincronização geral:", data);
+                    setResyncResult(data);
+                  } catch (error) {
+                    console.error("Erro ao resincronizar todos:", error);
+                    setResyncResult({ error: String(error) });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Resincronizar Todos
+              </Button>
+              <Button
+                onClick={async () => {
                   const username = prompt("Digite o username para analisar XP (ex: yurirxmos):");
                   if (!username) return;
                   setLoading(true);
@@ -268,6 +303,16 @@ export default function AdminPage() {
               <h2 className="text-xl font-bold mb-4">Resultado da Deleção</h2>
               <pre className="bg-muted p-4 rounded text-xs overflow-auto max-h-96">
                 {JSON.stringify(deleteResult, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+        {resyncResult && (
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-xl font-bold mb-4">Resultado da Resincronização</h2>
+              <pre className="bg-muted p-4 rounded text-xs overflow-auto max-h-96">
+                {JSON.stringify(resyncResult, null, 2)}
               </pre>
             </CardContent>
           </Card>

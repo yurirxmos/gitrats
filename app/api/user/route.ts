@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
         github_access_token: githubAccessToken,
         name,
         email,
+        // notifications_enabled usa o DEFAULT do banco (true)
       })
       .select()
       .single();
@@ -103,6 +104,46 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erro no endpoint user:", error);
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+  }
+}
+
+/**
+ * PUT - Atualizar configurações simples do usuário (ex: notificações)
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { notificationsEnabled } = body;
+
+    if (typeof notificationsEnabled !== "boolean") {
+      return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
+    }
+
+    const { data: updated, error: updateError } = await supabase
+      .from("users")
+      .update({ notifications_enabled: notificationsEnabled })
+      .eq("id", user.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ data: updated });
+  } catch (error) {
+    console.error("Erro no PUT /api/user:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

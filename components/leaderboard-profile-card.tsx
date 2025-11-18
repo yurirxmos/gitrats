@@ -48,7 +48,7 @@ export default function LeaderboardProfileCard({
             <>
               {isHorizontal ? (
                 <div className="flex flex-row items-start gap-6 w-full">
-                  <div className="flex flex-col items-start text-left space-y-3 shrink-0">
+                  <div className="flex flex-col items-center text-center space-y-3 shrink-0">
                     <div className="relative w-36 h-36 bg-muted rounded-lg overflow-hidden">
                       <Image
                         src={getCharacterAvatar(userProfile.character_class, userProfile.level)}

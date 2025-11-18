@@ -1,70 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Navbar } from "@/components/navbar";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import LeaderboardProfileCard from "@/components/leaderboard-profile-card";
-import { useUser } from "@/hooks/use-user";
-import { createClient } from "@/lib/supabase/client";
-import type { UserProfile } from "@/lib/types";
-import { FaGithub, FaSkull } from "react-icons/fa6";
+import { useUserContext } from "@/contexts/user-context";
+import { FaCircleInfo, FaGithub, FaInfo, FaMessage, FaSkull } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 
 export default function Profile() {
-  const { user, loading: userLoading } = useUser();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [hasCharacter, setHasCharacter] = useState<boolean | null>(null);
+  const { user, userProfile, hasCharacter, refreshUserProfile, notificationsEnabled, updateNotifications } =
+    useUserContext();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (!userLoading) loadUserProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, userLoading]);
-
-  const loadUserProfile = async () => {
-    if (!user) return false;
-    try {
-      const supabase = createClient();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) {
-        setHasCharacter(false);
-        setUserProfile(null);
-        return false;
-      }
-      const characterResponse = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
-      if (!characterResponse.ok) {
-        setHasCharacter(false);
-        setUserProfile(null);
-        return false;
-      }
-      const { data: characterData } = await characterResponse.json();
-      setHasCharacter(true);
-      const rankResponse = await fetch(`/api/leaderboard/${user.id}`);
-      const { data: rankData } = rankResponse.ok ? await rankResponse.json() : { data: null };
-      setUserProfile({
-        character_name: characterData.name,
-        character_class: characterData.class,
-        level: characterData.level,
-        current_xp: characterData.current_xp,
-        total_xp: characterData.total_xp,
-        rank: rankData?.rank || 0,
-        total_commits: characterData.github_stats?.total_commits || 0,
-        total_prs: characterData.github_stats?.total_prs || 0,
-        total_issues: characterData.github_stats?.total_issues || 0,
-        github_username: user.user_metadata?.user_name || user.email?.split("@")[0] || "User",
-        created_at: characterData.created_at,
-        achievement_codes: characterData.achievement_codes || [],
-      });
-      return true;
-    } catch {
-      setHasCharacter(false);
-      setUserProfile(null);
-      return false;
-    }
+  // Alternar notificações (otimista)
+  const toggleNotifications = async () => {
+    if (!user || savingNotifications) return;
+    const nextValue = !notificationsEnabled;
+    setSavingNotifications(true);
+    await updateNotifications(nextValue);
+    setSavingNotifications(false);
   };
 
   return (
@@ -74,7 +34,7 @@ export default function Profile() {
       <main className="flex-1 max-w-6xl mx-auto px-8 py-12 w-full">
         <h1 className="text-3xl font-bold mb-6">/configurações</h1>
 
-        <div className="space-y-6">
+        <div className="space-y-3">
           <LeaderboardProfileCard
             userProfile={userProfile}
             hasCharacter={hasCharacter}
@@ -82,21 +42,54 @@ export default function Profile() {
             orientation="horizontal"
           />
 
-          <Card>
+          <Card className="border-none rounded-md">
             <CardContent>
               <div className="flex flex-row items-center gap-1.5">
-                <h1 className="text-lg font-bold">/conta</h1>
-                <div className="flex flex-row items-center gap-1.5 ml-3 opacity-50">
-                  <FaGithub className="w-3 h-3" />
-                  <span className="text-xs">@{userProfile?.github_username}</span>
+                <div className="flex flex-col items-start gap-0.5">
+                  <h1 className="text-lg font-bold">/notificações</h1>
+                  <span className="opacity-50 text-xs">enviadas por e-mail quando eventos importantes acontecem.</span>
+                </div>
+
+                <div className="flex flex-row items-center gap-2 ml-auto">
+                  <Switch
+                    checked={notificationsEnabled}
+                    onCheckedChange={toggleNotifications}
+                    disabled={savingNotifications}
+                    className="cursor-pointer"
+                  />
+                  <span className="text-[10px] uppercase font-bold opacity-70">
+                    {notificationsEnabled
+                      ? savingNotifications
+                        ? "salvando"
+                        : "ativado"
+                      : savingNotifications
+                        ? "salvando"
+                        : "desativado"}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none rounded-md">
+            <CardContent>
+              <div className="flex flex-row items-center gap-1.5">
+                <div className="flex flex-col items-start gap-1">
+                  <h1 className="text-lg font-bold">/conta</h1>
+                  <div className="flex flex-row items-center gap-1.5 opacity-50 text-xs">
+                    <span>@{userProfile?.github_username}</span>
+                    <p>com o gitwarrior</p>
+                    <p>"{userProfile?.character_name}"</p>
+                  </div>
                 </div>
 
                 <Button
                   variant="destructive"
-                  className="ml-auto"
+                  className="ml-auto text-[10px] uppercase"
                   onClick={() => setIsDeleteDialogOpen(true)}
                 >
-                  <FaSkull />
+                  <FaSkull className="!w-3 !h-3 shrink-0" />
+                  deletar
                 </Button>
               </div>
             </CardContent>
@@ -108,7 +101,7 @@ export default function Profile() {
         isOpen={isOnboardingOpen}
         onClose={() => {
           setIsOnboardingOpen(false);
-          loadUserProfile();
+          refreshUserProfile();
         }}
         initialStep={2}
       />
