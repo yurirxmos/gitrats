@@ -55,17 +55,22 @@ export default function Leaderboard() {
       await Promise.all([loadLeaderboard(), loadStats()]);
       setIsLoading(false);
       hasLoadedRef.current = true;
-      if (user && !userLoading && hasCharacter && userProfile) {
-        const hasSeenWelcome = localStorage.getItem("has_seen_welcome");
-        if (!hasSeenWelcome) {
-          setShowWelcomeDialog(true);
-          localStorage.setItem("has_seen_welcome", "true");
-        }
-      }
     };
-    if (!userLoading) loadAllData();
+    loadAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading]);
+  }, []);
+
+  // Exibir modal de boas-vindas após dados carregarem e perfil existir
+  useEffect(() => {
+    if (!hasLoadedRef.current || userLoading) return;
+    if (user && hasCharacter && userProfile) {
+      const hasSeenWelcome = localStorage.getItem("has_seen_welcome");
+      if (!hasSeenWelcome) {
+        setShowWelcomeDialog(true);
+        localStorage.setItem("has_seen_welcome", "true");
+      }
+    }
+  }, [user, hasCharacter, userProfile, userLoading]);
 
   const syncGitHubData = async () => {
     if (!user) return;

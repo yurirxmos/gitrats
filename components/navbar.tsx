@@ -57,7 +57,20 @@ export function Navbar() {
   };
 
   const handleLogout = async () => {
+    try {
+      // Tenta invalidar no backend (cookies httpOnly)
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("Erro ao chamar logout API:", error);
+    }
+
+    // Garanta que o client também limpe qualquer sessão persistida
     await supabase.auth.signOut();
+    // Limpa caches locais para evitar deixar o app preso em loading
+    localStorage.removeItem("gitrats_user_profile");
+    localStorage.removeItem("gitrats_leaderboard_50");
+    localStorage.removeItem("gitrats_stats");
+
     router.push("/");
     router.refresh();
   };

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
@@ -6,7 +7,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "50");
 
-    const supabase = await createClient();
+    // Prefer admin client (bypasses RLS) to evitar que políticas bloqueiem o leaderboard em produção.
+    let supabase: SupabaseClient;
+    let usingAdminClient = false;
+    try {
+      supabase = createAdminClient();
+      usingAdminClient = true;
+    } catch (error) {
+      console.error("Não foi possível inicializar admin client, usando client padrão:", error);
+      supabase = await createClient();
+    }
 
     // Buscar personagens ordenados por XP
     const { data: characters, error: charactersError } = await supabase
@@ -48,9 +58,8 @@ export async function GET(request: NextRequest) {
     // Para exibir badges no leaderboard precisamos da lista completa — usar o
     // cliente admin (service_role) apenas para esta query (somente códigos públicos).
     let achievementsRaw: any[] | null = null;
-    try {
-      const admin = createAdminClient();
-      const { data, error } = await admin
+    if (usingAdminClient) {
+      const { data, error } = await supabase
         .from("user_achievements")
         .select("user_id, achievement:achievements(code)")
         .in("user_id", userIds);
@@ -60,8 +69,7 @@ export async function GET(request: NextRequest) {
       }
 
       achievementsRaw = data || [];
-    } catch (err) {
-      console.error("Erro ao inicializar admin client para achievements:", err);
+    } else {
       // Fallback: tentar via client padrão (poderá retornar apenas achievements do usuário logado)
       const { data: fallbackData, error: fallbackError } = await supabase
         .from("user_achievements")
