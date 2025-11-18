@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -97,28 +98,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        const characterResponse = await fetch("/api/character", {
+        const { data: characterResponse } = await axios.get("/api/character", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!characterResponse.ok) {
-          setHasCharacter(false);
-          setUserProfile(null);
-          localStorage.removeItem(CACHE_KEY);
-          return;
-        }
-
-        const { data: characterData } = await characterResponse.json();
+        const characterData = characterResponse.data;
         setHasCharacter(true);
 
         // Carregar dados do usuário (incluindo notificações)
-        const userResponse = await fetch("/api/user", {
+        const { data: userResponse } = await axios.get("/api/user", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const userData = userResponse.ok ? (await userResponse.json()).data : null;
+        const userData = userResponse?.data ?? null;
 
-        const rankResponse = await fetch(`/api/leaderboard/${currentUser.id}`);
-        const { data: rankData } = rankResponse.ok ? await rankResponse.json() : { data: null };
+        const { data: rankResponse } = await axios.get(`/api/leaderboard/${currentUser.id}`);
+        const rankData = rankResponse?.data ?? null;
 
         const profile: UserProfile = {
           character_name: characterData.name,
@@ -170,12 +164,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const res = await fetch("/api/user", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ notificationsEnabled: enabled }),
-        });
-        if (!res.ok) throw new Error("Falha update");
+        await axios.put(
+          "/api/user",
+          { notificationsEnabled: enabled },
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       } catch (e) {
         // Reverter em caso de erro
         setNotificationsEnabled(!enabled);

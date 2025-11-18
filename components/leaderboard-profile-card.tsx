@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { getCurrentRank, getNextRank } from "@/lib/class-evolution";
 import React, { useState } from "react";
 import { useUserContext } from "@/contexts/user-context";
 import { FaPen } from "react-icons/fa6";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 import type { UserProfile } from "@/lib/types";
@@ -60,24 +61,25 @@ export default function LeaderboardProfileCard({
 
     try {
       setSavingName(true);
-      const res = await fetch("/api/user/update-character-name", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        console.error("Erro ao atualizar nome:", err);
-        setErrorMessage(err?.error || "Falha ao atualizar nome do personagem");
-        return;
-      }
+      await axios.post(
+        "/api/user/update-character-name",
+        { name: trimmed },
+        { headers: { "Content-Type": "application/json" } }
+      );
 
       await refreshUserProfile?.();
       setIsEditOpen(false);
     } catch (error) {
       console.error("Erro ao chamar API:", error);
-      setErrorMessage("Erro ao atualizar nome do personagem");
+      if (axios.isAxiosError(error)) {
+        const errMsg =
+          typeof error.response?.data?.error === "string"
+            ? error.response.data.error
+            : "Erro ao atualizar nome do personagem";
+        setErrorMessage(errMsg);
+      } else {
+        setErrorMessage("Erro ao atualizar nome do personagem");
+      }
     } finally {
       setSavingName(false);
     }

@@ -1,3 +1,4 @@
+import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -52,31 +53,48 @@ export async function GET(request: NextRequest) {
     for (const { name, query } of queries) {
       const url = `https://api.github.com/search/commits?q=${encodeURIComponent(query)}&sort=committer-date&order=desc&per_page=5`;
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `token ${userData.github_access_token}`,
-          Accept: "application/vnd.github.cloak-preview+json",
-        },
-      });
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `token ${userData.github_access_token}`,
+            Accept: "application/vnd.github.cloak-preview+json",
+          },
+        });
 
-      const data = await response.json();
+        const data = response.data;
 
-      results.push({
-        type: name,
-        query,
-        status: response.status,
-        total_count: data.total_count,
-        items_returned: data.items?.length || 0,
-        first_commit: data.items?.[0]
-          ? {
-              sha: data.items[0].sha?.substring(0, 7),
-              message: data.items[0].commit?.message?.substring(0, 100),
-              date: data.items[0].commit?.committer?.date,
-              repo: data.items[0].repository?.full_name,
-            }
-          : null,
-        error: data.message || null,
-      });
+        results.push({
+          type: name,
+          query,
+          status: response.status,
+          total_count: data.total_count,
+          items_returned: data.items?.length || 0,
+          first_commit: data.items?.[0]
+            ? {
+                sha: data.items[0].sha?.substring(0, 7),
+                message: data.items[0].commit?.message?.substring(0, 100),
+                date: data.items[0].commit?.committer?.date,
+                repo: data.items[0].repository?.full_name,
+              }
+            : null,
+          error: data.message || null,
+        });
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+          const data = error.response.data || {};
+          results.push({
+            type: name,
+            query,
+            status: error.response.status,
+            total_count: data.total_count || 0,
+            items_returned: data.items?.length || 0,
+            first_commit: null,
+            error: data.message || error.message,
+          });
+        } else {
+          throw error;
+        }
+      }
     }
 
     return NextResponse.json({

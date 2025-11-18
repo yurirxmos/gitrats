@@ -89,7 +89,7 @@ export default function Profile() {
                     className="text-[10px] uppercase"
                     onClick={() => setIsDeleteDialogOpen(true)}
                   >
-                    <FaSkull className="!w-3 !h-3 shrink-0" />
+                    <FaSkull className="w-3! h-3! shrink-0" />
                     deletar
                   </Button>
                 </div>
