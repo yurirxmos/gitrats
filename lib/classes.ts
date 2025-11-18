@@ -86,8 +86,8 @@ export const CLASS_DESCRIPTIONS: Record<
     description: "Desenvolvedores que preferem ação direta, commits frequentes e entregas rápidas. Gostam de XGH.",
     strengths: [
       "+30% XP em commits",
-      "+40% XP em commits grandes (>100 linhas) - EM BREVE",
-      "+20% XP em releases - EM BREVE",
+      "+40% XP em commits grandes (>100 linhas)",
+      "+20% XP em releases",
       "-10% XP em code reviews",
       "-15% XP em stars/forks",
     ],
@@ -102,9 +102,9 @@ export const CLASS_DESCRIPTIONS: Record<
     strengths: [
       "+15% XP em commits",
       "+25% XP em Pull Requests",
-      "+30% XP em Code Reviews - EM BREVE",
+      "+30% XP em Code Reviews",
       "+15% XP em issues resolvidas",
-      "+15% XP em repos externos - EM BREVE",
+      "+15% XP em repos externos",
     ],
     playstyle: "Colaborativo, versátil, trabalho em equipe",
   },
@@ -116,7 +116,7 @@ export const CLASS_DESCRIPTIONS: Record<
     strengths: [
       "+30% XP em issues resolvidas",
       "+30% XP em achievements",
-      "+30% XP em stars e forks - EM BREVE",
+      "+30% XP em stars e forks",
       "+15% XP em Pull Requests",
       "-10% XP em commits grandes",
     ],
