@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { FaGithub } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -23,22 +22,20 @@ export function GitHubConnectStep({ onNext }: GitHubConnectStepProps) {
       const token = sessionData.session?.access_token;
 
       if (token) {
-        await axios.post(
-          "/api/user",
-          {
+        await fetch("/api/user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
             githubId: user.user_metadata?.provider_id || user.id,
             githubUsername: user.user_metadata?.user_name || user.email?.split("@")[0],
             githubAvatarUrl: user.user_metadata?.avatar_url,
             name: user.user_metadata?.full_name || user.user_metadata?.name,
             email: user.email,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+          }),
+        });
       }
     } catch (error) {
       // Silencioso

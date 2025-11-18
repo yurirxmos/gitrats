@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,30 +65,24 @@ export default function LeaderboardProfileCard({
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
 
-      await axios.post(
-        "/api/user/update-character-name",
-        { name: trimmed },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        }
-      );
+      const res = await fetch("/api/user/update-character-name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error("Erro ao atualizar nome:", err);
+        setErrorMessage(err?.error || "Falha ao atualizar nome do personagem");
+        return;
+      }
 
       await refreshUserProfile?.();
       setIsEditOpen(false);
     } catch (error) {
       console.error("Erro ao chamar API:", error);
-      if (axios.isAxiosError(error)) {
-        const errMsg =
-          typeof error.response?.data?.error === "string"
-            ? error.response.data.error
-            : "Erro ao atualizar nome do personagem";
-        setErrorMessage(errMsg);
-      } else {
-        setErrorMessage("Erro ao atualizar nome do personagem");
-      }
+      setErrorMessage("Erro ao atualizar nome do personagem");
     } finally {
       setSavingName(false);
     }
@@ -214,7 +207,7 @@ export default function LeaderboardProfileCard({
                     {Array.isArray(userProfile.achievement_codes) && userProfile.achievement_codes.length > 0 ? (
                       <>
                         <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
-                          <FaMedal className="shrink-0 !w-2! h-2!" />
+                          <GiBullseye />
                           <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
                         </div>
                         <div className="flex flex-wrap items-start gap-2">
@@ -230,7 +223,7 @@ export default function LeaderboardProfileCard({
                     ) : (
                       <>
                         <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
-                          <FaMedal className="shrink-0 w-2! h-2!" />
+                          <GiBullseye />
                           <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
                         </div>
                         <p className="text-xs text-muted-foreground">Sem conquistas ainda</p>

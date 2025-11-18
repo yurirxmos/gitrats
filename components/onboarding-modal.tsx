@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { useState, useEffect } from "react";
 import { GitHubConnectStep } from "./onboarding/github-connect-step";
 import { CharacterCreationStep } from "./onboarding/character-creation-step";
@@ -48,13 +47,17 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
           return;
         }
 
-        await axios.get("/api/character", {
+        const response = await fetch("/api/character", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        window.location.href = "/leaderboard";
+        if (response.ok) {
+          window.location.href = "/leaderboard";
+        } else {
+          setStep(2);
+        }
       } catch (err) {
         setStep(2);
       }
@@ -82,46 +85,46 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
       }
 
       // 1. Criar/atualizar usuário no banco
-      await axios.post(
-        "/api/user",
-        {
+      const userResponse = await fetch("/api/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
           githubId: user.user_metadata?.provider_id || user.id,
           githubUsername: user.user_metadata?.user_name || user.email?.split("@")[0],
           githubAvatarUrl: user.user_metadata?.avatar_url,
           name: user.user_metadata?.full_name || user.user_metadata?.name,
           email: user.email,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        }),
+      });
+
+      if (!userResponse.ok) {
+        throw new Error("Erro ao criar usuário");
+      }
 
       // 2. Criar personagem
-      await axios.post(
-        "/api/character",
-        {
+      const characterResponse = await fetch("/api/character", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
           name: data.name,
           characterClass: data.class,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        }),
+      });
+
+      if (!characterResponse.ok) {
+        const errorData = await characterResponse.json();
+        throw new Error(errorData.error || "Erro ao criar personagem");
+      }
 
       setStep(3);
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const message = typeof err.response?.data?.error === "string" ? err.response.data.error : err.message;
-        setError(message || "Erro desconhecido");
-      } else {
-        setError(err instanceof Error ? err.message : "Erro desconhecido");
-      }
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setIsCreating(false);
     }

@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,13 +56,12 @@ export default function AdminPage() {
     setResetResult(null);
 
     try {
-      const { data } = await axios.post(
-        "/api/debug/reset-user",
-        { username },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const res = await fetch("/api/debug/reset-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+      const data = await res.json();
       setResetResult(data);
     } catch (error) {
       console.error("Erro ao resetar usuário:", error);
@@ -86,13 +84,12 @@ export default function AdminPage() {
     setAchievementResult(null);
 
     try {
-      const { data } = await axios.post(
-        "/api/admin/grant-achievement",
-        { username, achievementType },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const res = await fetch("/api/admin/grant-achievement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, achievementType }),
+      });
+      const data = await res.json();
       setAchievementResult(data);
     } catch (error) {
       console.error("Erro ao conceder achievement:", error);
@@ -119,10 +116,12 @@ export default function AdminPage() {
     setDeleteResult(null);
 
     try {
-      const { data } = await axios.delete("/api/admin/delete-user", {
+      const res = await fetch("/api/admin/delete-user", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        data: { githubUsername: username },
+        body: JSON.stringify({ githubUsername: username }),
       });
+      const data = await res.json();
       setDeleteResult(data);
     } catch (error) {
       console.error("Erro ao deletar usuário:", error);
@@ -197,13 +196,11 @@ export default function AdminPage() {
                   setResyncResult(null);
 
                   try {
-                    const { data } = await axios.post(
-                      "/api/debug/fix-all-users",
-                      {},
-                      {
-                        headers: { "Content-Type": "application/json" },
-                      }
-                    );
+                    const res = await fetch("/api/debug/fix-all-users", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                    });
+                    const data = await res.json();
                     setResyncResult(data);
                   } catch (error) {
                     console.error("Erro ao resincronizar todos:", error);
@@ -225,13 +222,12 @@ export default function AdminPage() {
                   setLoading(true);
                   setAnalyzeResult(null);
                   try {
-                    const { data } = await axios.post(
-                      "/api/admin/analyze-xp",
-                      { username },
-                      {
-                        headers: { "Content-Type": "application/json" },
-                      }
-                    );
+                    const res = await fetch("/api/admin/analyze-xp", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ username }),
+                    });
+                    const data = await res.json();
                     setAnalyzeResult(data);
                   } catch (err) {
                     console.error("Erro ao analisar XP:", err);

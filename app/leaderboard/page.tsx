@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { OnboardingModal } from "@/components/onboarding-modal";
@@ -75,13 +74,11 @@ export default function Leaderboard() {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) return;
-      await axios.post(
-        "/api/github/sync",
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await fetch("/api/github/sync", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
       await refreshUserProfile();
       await loadLeaderboard();
     } catch {}
@@ -101,8 +98,9 @@ export default function Leaderboard() {
         }
       }
 
-      const { data: responseData } = await axios.get("/api/leaderboard", { params: { limit: 50 } });
-      const { data, lastUpdate: updateTime } = responseData;
+      const response = await fetch("/api/leaderboard?limit=50");
+      if (!response.ok) throw new Error("Erro ao carregar leaderboard");
+      const { data, lastUpdate: updateTime } = await response.json();
       setLeaderboard(data || []);
       setLastUpdate(updateTime || null);
       sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, lastUpdate: updateTime, timestamp: Date.now() }));
@@ -124,9 +122,11 @@ export default function Leaderboard() {
         }
       }
 
-      const { data: responseData } = await axios.get("/api/stats");
-      setTotalCharacters(responseData.data.total_characters || 0);
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: responseData.data, timestamp: Date.now() }));
+      const response = await fetch("/api/stats");
+      if (!response.ok) throw new Error("Erro ao carregar estatísticas");
+      const { data } = await response.json();
+      setTotalCharacters(data.total_characters || 0);
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
     } catch {
       setTotalCharacters(0);
     }

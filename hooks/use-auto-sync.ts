@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { useEffect, useRef } from "react";
 import { useUser } from "./use-user";
 
@@ -33,13 +32,19 @@ export function useAutoSync(hasCharacter: boolean) {
       if (now - lastSyncRef.current < TEN_MINUTES) return;
 
       try {
-        await axios.post("/api/github/sync");
-        lastSyncRef.current = now;
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
+        const response = await fetch("/api/github/sync", {
+          method: "POST",
+        });
+
+        if (response.ok) {
+          lastSyncRef.current = now;
+        } else if (response.status === 401) {
+          // Token expirado - usuário foi desconectado
           window.location.href = "/";
         }
         // Silencioso em produção para outros status/erros
+      } catch (error) {
+        // Silencioso em produção para erros de rede
       }
     };
 

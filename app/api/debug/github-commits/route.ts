@@ -1,4 +1,3 @@
-import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -54,14 +53,18 @@ export async function GET(request: NextRequest) {
       const url = `https://api.github.com/search/commits?q=${encodeURIComponent(query)}&sort=committer-date&order=desc&per_page=5`;
 
       try {
-        const response = await axios.get(url, {
+        const response = await fetch(url, {
           headers: {
             Authorization: `token ${userData.github_access_token}`,
             Accept: "application/vnd.github.cloak-preview+json",
           },
         });
 
-        const data = response.data;
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
 
         results.push({
           type: name,
@@ -80,16 +83,15 @@ export async function GET(request: NextRequest) {
           error: data.message || null,
         });
       } catch (error) {
-        if (axios.isAxiosError(error) && error.response) {
-          const data = error.response.data || {};
+        if (error instanceof Error) {
           results.push({
             type: name,
             query,
-            status: error.response.status,
-            total_count: data.total_count || 0,
-            items_returned: data.items?.length || 0,
+            status: 0,
+            total_count: 0,
+            items_returned: 0,
             first_commit: null,
-            error: data.message || error.message,
+            error: error.message,
           });
         } else {
           throw error;
