@@ -16,6 +16,7 @@ import { useUserContext } from "@/contexts/user-context";
 import { FaPen } from "react-icons/fa6";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { createClient } from "@/lib/supabase/client";
 
 import type { UserProfile } from "@/lib/types";
 
@@ -61,10 +62,19 @@ export default function LeaderboardProfileCard({
 
     try {
       setSavingName(true);
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
       await axios.post(
         "/api/user/update-character-name",
         { name: trimmed },
-        { headers: { "Content-Type": "application/json" } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
       );
 
       await refreshUserProfile?.();

@@ -164,11 +164,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+
         await axios.put(
           "/api/user",
           { notificationsEnabled: enabled },
           {
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
           }
         );
       } catch (e) {
@@ -179,7 +185,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [userProfile, saveToCache]
+    [userProfile, saveToCache, supabase]
   );
 
   // Refresh manual
