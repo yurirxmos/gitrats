@@ -106,8 +106,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[Fix All] Encontrados ${usersNeedingFix.length} usuários que precisam de correção`);
-
     const results = [];
 
     // Processar cada usuário
@@ -129,8 +127,6 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        console.log(`[Fix All] Processando ${user.github_username}...`);
-
         const githubService = new GitHubService(user.github_access_token || undefined);
 
         // Buscar stats do GitHub
@@ -141,7 +137,6 @@ export async function POST(request: NextRequest) {
 
         try {
           weeklyStats = await githubService.getWeeklyXp(user.github_username);
-          console.log(`[Fix All] ${user.github_username} - Últimos 7 dias:`, weeklyStats);
         } catch (error) {
           console.error(`[Fix All] ${user.github_username} - Erro ao buscar XP semanal:`, error);
         }
@@ -162,21 +157,9 @@ export async function POST(request: NextRequest) {
         const xpFromIssues = Math.floor(weeklyStats.issues * 25 * issueMultiplier);
         const retroactiveXp = xpFromCommits + xpFromPRs + xpFromIssues;
 
-        console.log(`[Fix All] ${user.github_username} - XP calculado:`, {
-          commits: `${weeklyStats.commits} × 10 × ${commitMultiplier} = ${xpFromCommits}`,
-          prs: `${weeklyStats.prs} × 50 × ${prMultiplier} = ${xpFromPRs}`,
-          issues: `${weeklyStats.issues} × 25 × ${issueMultiplier} = ${xpFromIssues}`,
-          total: retroactiveXp,
-        });
-
         // Atualizar baseline no github_stats
-        console.log(`[Fix All] ${user.github_username} - Atualizando github_stats:`, {
-          user_id: user.id,
-          old_baseline: userStats.baseline_commits,
-          new_baseline: newBaselineCommits,
-        });
 
-        const { data: updatedStats, error: updateStatsError } = await supabase
+        const { error: updateStatsError } = await supabase
           .from("github_stats")
           .update({
             total_commits: githubStats.totalCommits,
@@ -188,11 +171,6 @@ export async function POST(request: NextRequest) {
           })
           .eq("user_id", user.id)
           .select();
-
-        console.log(`[Fix All] ${user.github_username} - Resultado update stats:`, {
-          error: updateStatsError,
-          data: updatedStats,
-        });
 
         if (updateStatsError) {
           console.error(`[Fix All] ${user.github_username} - Erro ao atualizar stats:`, updateStatsError);
@@ -210,15 +188,7 @@ export async function POST(request: NextRequest) {
           const newLevel = getLevelFromXp(newTotalXp);
           const newCurrentXp = getCurrentXp(newTotalXp, newLevel);
 
-          console.log(`[Fix All] ${user.github_username} - Atualizando character:`, {
-            character_id: character.id,
-            old_xp: character.total_xp,
-            new_xp: newTotalXp,
-            old_level: character.level,
-            new_level: newLevel,
-          });
-
-          const { data: updatedChar, error: updateCharError } = await supabase
+          const { error: updateCharError } = await supabase
             .from("characters")
             .update({
               total_xp: newTotalXp,
@@ -227,11 +197,6 @@ export async function POST(request: NextRequest) {
             })
             .eq("id", character.id)
             .select();
-
-          console.log(`[Fix All] ${user.github_username} - Resultado update character:`, {
-            error: updateCharError,
-            data: updatedChar,
-          });
 
           if (updateCharError) {
             console.error(`[Fix All] ${user.github_username} - Erro ao atualizar personagem:`, updateCharError);
@@ -243,10 +208,6 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
-          console.log(
-            `[Fix All] ✅ ${user.github_username} - ${retroactiveXp} XP | Level ${character.level} → ${newLevel}`
-          );
-
           results.push({
             username: user.github_username,
             success: true,
@@ -256,8 +217,6 @@ export async function POST(request: NextRequest) {
             weekly_stats: weeklyStats,
           });
         } else {
-          console.log(`[Fix All] ✅ ${user.github_username} - Sem XP (sem atividades últimos 7 dias)`);
-
           results.push({
             username: user.github_username,
             success: true,
@@ -280,8 +239,6 @@ export async function POST(request: NextRequest) {
 
     const successCount = results.filter((r) => r.success).length;
     const totalXpGiven = results.reduce((sum, r) => sum + (r.xp_gained || 0), 0);
-
-    console.log(`[Fix All] Concluído: ${successCount}/${results.length} usuários corrigidos`);
 
     return NextResponse.json({
       success: true,

@@ -30,8 +30,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    console.log(`✅ last_sync_at resetado para user ${user.id}`);
-
     return NextResponse.json({
       success: true,
       message: "last_sync_at resetado! Agora você pode fazer a primeira sincronização novamente.",

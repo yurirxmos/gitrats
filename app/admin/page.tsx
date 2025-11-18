@@ -62,7 +62,6 @@ export default function AdminPage() {
         body: JSON.stringify({ username }),
       });
       const data = await res.json();
-      console.log("[Admin] Resultado do reset:", data);
       setResetResult(data);
     } catch (error) {
       console.error("Erro ao resetar usuário:", error);
@@ -91,7 +90,6 @@ export default function AdminPage() {
         body: JSON.stringify({ username, achievementType }),
       });
       const data = await res.json();
-      console.log("[Admin] Resultado do achievement:", data);
       setAchievementResult(data);
     } catch (error) {
       console.error("Erro ao conceder achievement:", error);
@@ -124,7 +122,6 @@ export default function AdminPage() {
         body: JSON.stringify({ githubUsername: username }),
       });
       const data = await res.json();
-      console.log("[Admin] Resultado da deleção:", data);
       setDeleteResult(data);
     } catch (error) {
       console.error("Erro ao deletar usuário:", error);
@@ -204,7 +201,6 @@ export default function AdminPage() {
                       headers: { "Content-Type": "application/json" },
                     });
                     const data = await res.json();
-                    console.log("[Admin] Resultado resincronização geral:", data);
                     setResyncResult(data);
                   } catch (error) {
                     console.error("Erro ao resincronizar todos:", error);

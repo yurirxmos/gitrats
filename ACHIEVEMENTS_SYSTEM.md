@@ -9,6 +9,7 @@ O sistema de achievements permite que usuários conquistem conquistas especiais 
 ### Tabelas Criadas
 
 #### `achievements`
+
 Armazena todos os achievements disponíveis no sistema.
 
 ```sql
@@ -28,6 +29,7 @@ CREATE TABLE public.achievements (
 ```
 
 #### `user_achievements`
+
 Rastreia quais achievements cada usuário conquistou.
 
 ```sql
@@ -43,6 +45,7 @@ CREATE TABLE public.user_achievements (
 ```
 
 #### `achievement_progress` (opcional)
+
 Para achievements que têm progresso incremental.
 
 ```sql
@@ -61,9 +64,11 @@ CREATE TABLE public.achievement_progress (
 ## 🎯 Tipos de Achievements
 
 ### 1. `one_time`
+
 Achievements conquistados uma única vez por uma ação específica.
 
 **Exemplo:**
+
 ```json
 {
   "name": "Primeiro Commit",
@@ -79,9 +84,11 @@ Achievements conquistados uma única vez por uma ação específica.
 ```
 
 ### 2. `progress`
+
 Achievements que requerem progresso incremental.
 
 **Exemplo:**
+
 ```json
 {
   "name": "Mestre dos Commits",
@@ -97,9 +104,11 @@ Achievements que requerem progresso incremental.
 ```
 
 ### 3. `streak`
+
 Achievements baseados em sequências consecutivas.
 
 **Exemplo:**
+
 ```json
 {
   "name": "Commit Diário",
@@ -149,36 +158,32 @@ export async function checkBugReportAchievement(userId: string) {
   const hasReportedBug = await checkIfUserReportedBug(userId);
 
   if (hasReportedBug) {
-    await unlockAchievement(userId, 'bug_report_achievement_id');
+    await unlockAchievement(userId, "bug_report_achievement_id");
   }
 }
 
 export async function unlockAchievement(userId: string, achievementId: string) {
   // Verificar se já não conquistou
   const existing = await supabase
-    .from('user_achievements')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('achievement_id', achievementId)
+    .from("user_achievements")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("achievement_id", achievementId)
     .single();
 
   if (existing.data) return; // Já conquistou
 
   // Buscar dados do achievement
-  const achievement = await supabase
-    .from('achievements')
-    .select('*')
-    .eq('id', achievementId)
-    .single();
+  const achievement = await supabase.from("achievements").select("*").eq("id", achievementId).single();
 
   if (!achievement.data) return;
 
   // Conceder achievement
-  await supabase.from('user_achievements').insert({
+  await supabase.from("user_achievements").insert({
     user_id: userId,
     achievement_id: achievementId,
     xp_granted: achievement.data.xp_reward,
-    progress_data: { unlocked_via: 'bug_report' }
+    progress_data: { unlocked_via: "bug_report" },
   });
 
   // Conceder XP extra se houver
@@ -252,38 +257,35 @@ export async function checkBugReportAchievement(userId: string) {
 
   // Verificar se usuário já tem este achievement
   const { data: existing } = await supabase
-    .from('user_achievements')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('achievement_id', 'BUG_REPORT_ACHIEVEMENT_ID')
+    .from("user_achievements")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("achievement_id", "BUG_REPORT_ACHIEVEMENT_ID")
     .single();
 
   if (existing) return; // Já conquistou
 
   // Verificar se reportou pelo menos 1 bug
   const { data: bugReports } = await supabase
-    .from('bug_reports')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('status', 'resolved'); // Só conta bugs resolvidos
+    .from("bug_reports")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "resolved"); // Só conta bugs resolvidos
 
   if (bugReports && bugReports.length >= 1) {
     // Conceder achievement
-    await supabase.from('user_achievements').insert({
+    await supabase.from("user_achievements").insert({
       user_id: userId,
-      achievement_id: 'BUG_REPORT_ACHIEVEMENT_ID',
+      achievement_id: "BUG_REPORT_ACHIEVEMENT_ID",
       xp_granted: 15,
       progress_data: {
         bug_reports_count: bugReports.length,
-        unlocked_via: 'bug_report'
-      }
+        unlocked_via: "bug_report",
+      },
     });
 
     // Conceder XP extra
     await grantExtraXP(userId, 15);
-
-    // Log da conquista
-    console.log(`🏆 Achievement conquistado: ${userId} reportou bug com sucesso!`);
   }
 }
 ```
@@ -305,13 +307,14 @@ export async function POST(request: NextRequest) {
 ## 🔧 Funções Úteis
 
 ### Verificar Achievement
+
 ```typescript
 export async function hasAchievement(userId: string, achievementId: string) {
   const { data } = await supabase
-    .from('user_achievements')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('achievement_id', achievementId)
+    .from("user_achievements")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("achievement_id", achievementId)
     .single();
 
   return !!data;
@@ -319,11 +322,13 @@ export async function hasAchievement(userId: string, achievementId: string) {
 ```
 
 ### Listar Achievements do Usuário
+
 ```typescript
 export async function getUserAchievements(userId: string) {
   const { data } = await supabase
-    .from('user_achievements')
-    .select(`
+    .from("user_achievements")
+    .select(
+      `
       id,
       unlocked_at,
       xp_granted,
@@ -334,40 +339,36 @@ export async function getUserAchievements(userId: string) {
         icon,
         category
       )
-    `)
-    .eq('user_id', userId)
-    .order('unlocked_at', { ascending: false });
+    `
+    )
+    .eq("user_id", userId)
+    .order("unlocked_at", { ascending: false });
 
   return data;
 }
 ```
 
 ### Progresso de Achievement
+
 ```typescript
 export async function updateProgress(userId: string, achievementId: string, increment: number = 1) {
   const { data: progress } = await supabase
-    .from('achievement_progress')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('achievement_id', achievementId)
+    .from("achievement_progress")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("achievement_id", achievementId)
     .single();
 
   const newProgress = (progress?.current_progress || 0) + increment;
 
-  await supabase
-    .from('achievement_progress')
-    .upsert({
-      user_id: userId,
-      achievement_id: achievementId,
-      current_progress: newProgress
-    });
+  await supabase.from("achievement_progress").upsert({
+    user_id: userId,
+    achievement_id: achievementId,
+    current_progress: newProgress,
+  });
 
   // Verificar se atingiu a meta
-  const achievement = await supabase
-    .from('achievements')
-    .select('*')
-    .eq('id', achievementId)
-    .single();
+  const achievement = await supabase.from("achievements").select("*").eq("id", achievementId).single();
 
   if (newProgress >= achievement.data.requirements.target) {
     await unlockAchievement(userId, achievementId);
@@ -378,26 +379,31 @@ export async function updateProgress(userId: string, achievementId: string, incr
 ## 🎯 Ideias de Achievements
 
 ### Contribuição
+
 - "Primeiro Bug Report" (+15 XP)
 - "Bug Hunter" - Reportou 5 bugs (+50 XP)
 - "Feature Request" - Sugeriu uma feature (+20 XP)
 
 ### Social
+
 - "Amigo dos Amigos" - Conectou 5 amigos (+30 XP)
 - "Influencer" - Compartilhou no Twitter (+10 XP)
 
 ### Milestones
+
 - "Primeiro Commit" (+50 XP)
 - "Century Club" - 100 commits (+100 XP)
 - "Milestone Master" - 1000 commits (+500 XP)
 
 ### Consistency
+
 - "Commit Diário" - 7 dias consecutivos (+100 XP)
 - "Semanalmente Ativo" - Commits em 4 semanas (+75 XP)
 
 ## 🚀 Próximos Passos
 
 1. **Executar migração:**
+
    ```bash
    # No Supabase SQL Editor
    # Executar conteúdo de: supabase/migrations/add_achievements_system.sql

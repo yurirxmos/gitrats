@@ -40,7 +40,6 @@ export function useAutoSync(hasCharacter: boolean) {
           lastSyncRef.current = now;
         } else if (response.status === 401) {
           // Token expirado - usuário foi desconectado
-          console.log("Token expirado detectado, redirecionando para login...");
           window.location.href = "/";
         }
       } catch (error) {

@@ -42,8 +42,6 @@ export async function POST(request: NextRequest) {
       console.error("Erro ao resetar stats:", statsError);
     }
 
-    console.log(`✅ Personagem e stats resetados para user ${user.id}`);
-
     return NextResponse.json({
       success: true,
       message: "Personagem e stats resetados com sucesso!",

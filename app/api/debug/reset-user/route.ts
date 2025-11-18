@@ -56,9 +56,6 @@ export async function POST(request: NextRequest) {
 
     // Garantir que temos a data de criação do usuário
     const userCreatedAt = userData.created_at ? new Date(userData.created_at) : new Date();
-    console.log(`[Reset] ${username} - Data de criação: ${userCreatedAt.toISOString()}`);
-
-    console.log(`[Reset] Processando ${username}...`);
 
     const stats = Array.isArray(userData.github_stats) ? userData.github_stats[0] : userData.github_stats;
     const character = Array.isArray(userData.characters) ? userData.characters[0] : userData.characters;
@@ -67,16 +64,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
     }
 
-    console.log(`[Reset] ${username} - Token no banco:`, userData.github_access_token ? "SIM" : "NÃO");
-    console.log(`[Reset] ${username} - Token fornecido:`, providedToken ? "SIM" : "NÃO");
-
     // Usar token fornecido ou do banco
     let token = providedToken || userData.github_access_token;
 
     // Se não tem token, tentar usar token de um admin disponível (para dados públicos)
     if (!token) {
-      console.log(`[Reset] ${username} - Sem token, tentando buscar token de admin...`);
-
       // Buscar um usuário com token (preferencialmente yurirxmos)
       const { data: adminUser } = await supabase
         .from("users")
@@ -86,7 +78,6 @@ export async function POST(request: NextRequest) {
 
       if (adminUser?.github_access_token) {
         token = adminUser.github_access_token;
-        console.log(`[Reset] ${username} - Usando token do admin para consulta pública`);
       }
     }
 
@@ -108,35 +99,13 @@ export async function POST(request: NextRequest) {
     const githubStats = await githubService.getUserStats(username);
     const { totalCommits, totalPRs, totalIssues } = githubStats;
 
-    console.log(`[Reset] ${username} - GitHub REAL:`, {
-      totalCommits,
-      totalPRs,
-      totalIssues,
-    });
-
-    console.log(`[Reset] ${username} - Dados ANTIGOS (corrompidos):`, {
-      total_commits: stats.total_commits,
-      baseline_commits: stats.baseline_commits,
-      total_prs: stats.total_prs,
-      baseline_prs: stats.baseline_prs,
-      total_xp: character.total_xp,
-      level: character.level,
-    });
-
     // Buscar atividades desde a data de criação do usuário
     const activitiesSinceJoin = await githubService.getActivitiesSince(username, userCreatedAt);
-    console.log(`[Reset] ${username} - Atividades desde ${userCreatedAt.toISOString()}:`, activitiesSinceJoin);
 
     // Calcular baseline correto (total - atividades desde o registro)
     const correctBaselineCommits = Math.max(0, totalCommits - activitiesSinceJoin.commits);
     const correctBaselinePRs = Math.max(0, totalPRs - activitiesSinceJoin.prs);
     const correctBaselineIssues = Math.max(0, totalIssues - activitiesSinceJoin.issues);
-
-    console.log(`[Reset] ${username} - Baseline CORRETO:`, {
-      commits: `${totalCommits} - ${activitiesSinceJoin.commits} = ${correctBaselineCommits}`,
-      prs: `${totalPRs} - ${activitiesSinceJoin.prs} = ${correctBaselinePRs}`,
-      issues: `${totalIssues} - ${activitiesSinceJoin.issues} = ${correctBaselineIssues}`,
-    });
 
     // Calcular XP de TODAS as atividades desde o login até agora
     // Isso preserva o histórico e progresso do usuário
@@ -148,14 +117,6 @@ export async function POST(request: NextRequest) {
     const prsXp = activitiesSinceJoin.prs * 50 * prsMultiplier;
     const issuesXp = activitiesSinceJoin.issues * 25 * issuesMultiplier;
     const activityXp = Math.round(commitsXp + prsXp + issuesXp);
-
-    console.log(`[Reset] ${username} - XP de atividades (desde a criação até agora):`, {
-      commits: `${activitiesSinceJoin.commits} × 10 × ${commitsMultiplier} = ${commitsXp}`,
-      prs: `${activitiesSinceJoin.prs} × 50 × ${prsMultiplier} = ${prsXp}`,
-      issues: `${activitiesSinceJoin.issues} × 25 × ${issuesMultiplier} = ${issuesXp}`,
-      total: activityXp,
-      period: `${userCreatedAt.toISOString()} até agora`,
-    });
 
     // Buscar achievements do usuário e somar XP
     const { data: achievementsData } = await supabase
@@ -178,23 +139,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[Reset] ${username} - XP de achievements:`, {
-      total: achievementsXp,
-      achievements: achievementsList,
-    });
-
     const totalXp = activityXp + achievementsXp;
-
-    console.log(`[Reset] ${username} - XP TOTAL:`, {
-      activity_xp: activityXp,
-      achievements_xp: achievementsXp,
-      total_xp: totalXp,
-    });
 
     const correctLevel = getLevelFromXp(totalXp);
     const correctCurrentXp = getCurrentXp(totalXp, correctLevel);
-
-    console.log(`[Reset] ${username} - Level CORRETO: ${correctLevel} (XP: ${totalXp})`);
 
     // RESETAR github_stats com dados corretos
     const { error: updateStatsError } = await supabase
@@ -228,8 +176,6 @@ export async function POST(request: NextRequest) {
       console.error(`[Reset] Erro ao atualizar character:`, updateCharError);
       return NextResponse.json({ error: updateCharError.message }, { status: 500 });
     }
-
-    console.log(`[Reset] ✅ ${username} - RESETADO com sucesso!`);
 
     return NextResponse.json({
       success: true,

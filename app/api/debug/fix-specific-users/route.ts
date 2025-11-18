@@ -67,8 +67,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[Fix Specific] Encontrados ${usersToFix.length} usuários para corrigir`);
-
     const results = [];
     let totalXpGiven = 0;
     let usersProcessed = 0;
@@ -79,8 +77,6 @@ export async function POST(request: NextRequest) {
       usersProcessed++;
 
       try {
-        console.log(`[Fix Specific] Processando ${username}...`);
-
         // Acessar dados do usuário (relações retornam arrays)
         const stats = Array.isArray(userData.github_stats) ? userData.github_stats[0] : userData.github_stats;
         const character = Array.isArray(userData.characters) ? userData.characters[0] : userData.characters;
@@ -113,32 +109,13 @@ export async function POST(request: NextRequest) {
         const githubStats = await githubService.getUserStats(username);
         const { totalCommits, totalPRs, totalIssues } = githubStats;
 
-        console.log(`[Fix Specific] ${username} - GitHub atual:`, {
-          totalCommits,
-          totalPRs,
-          totalIssues,
-        });
-
-        console.log(`[Fix Specific] ${username} - Baseline atual:`, {
-          baseline_commits: stats.baseline_commits,
-          baseline_prs: stats.baseline_prs,
-          baseline_issues: stats.baseline_issues,
-        });
-
         // Buscar atividades dos últimos 7 dias
         const weeklyStats = await githubService.getWeeklyXp(username);
-        console.log(`[Fix Specific] ${username} - Últimos 7 dias:`, weeklyStats);
 
         // Calcular novo baseline (total atual do GitHub - últimos 7 dias)
         const newBaselineCommits = totalCommits - weeklyStats.commits;
         const newBaselinePRs = totalPRs - weeklyStats.prs;
         const newBaselineIssues = totalIssues - weeklyStats.issues;
-
-        console.log(`[Fix Specific] ${username} - Novo baseline calculado:`, {
-          commits: newBaselineCommits,
-          prs: newBaselinePRs,
-          issues: newBaselineIssues,
-        });
 
         // PROTEÇÃO: Verificar se o baseline já foi corrigido
         // Se o baseline atual já é igual ao novo baseline, significa que já foi corrigido
@@ -148,7 +125,6 @@ export async function POST(request: NextRequest) {
           stats.baseline_issues === newBaselineIssues;
 
         if (alreadyFixed) {
-          console.log(`[Fix Specific] ⚠️ ${username} - Baseline já estava correto, nada a fazer`);
           results.push({
             username,
             success: true,
@@ -172,8 +148,6 @@ export async function POST(request: NextRequest) {
           issues: weeklyStats.issues,
         };
 
-        console.log(`[Fix Specific] ${username} - XP a dar (últimos 7 dias):`, xpToGiveFromWeekly);
-
         // Aplicar multiplicadores de classe
         const commitsMultiplier = getClassXpMultiplier(character.class, "commits");
         const prsMultiplier = getClassXpMultiplier(character.class, "pullRequests");
@@ -184,13 +158,6 @@ export async function POST(request: NextRequest) {
         const prsXp = xpToGiveFromWeekly.prs * 50 * prsMultiplier;
         const issuesXp = xpToGiveFromWeekly.issues * 25 * issuesMultiplier;
         const totalXpToAdd = Math.round(commitsXp + prsXp + issuesXp);
-
-        console.log(`[Fix Specific] ${username} - XP calculado (últimos 7 dias):`, {
-          commits: `${xpToGiveFromWeekly.commits} × 10 × ${commitsMultiplier} = ${commitsXp}`,
-          prs: `${xpToGiveFromWeekly.prs} × 50 × ${prsMultiplier} = ${prsXp}`,
-          issues: `${xpToGiveFromWeekly.issues} × 25 × ${issuesMultiplier} = ${issuesXp}`,
-          total: totalXpToAdd,
-        });
 
         // Atualizar baseline no github_stats
         const { error: updateStatsError } = await supabase
@@ -239,8 +206,6 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
-          console.log(`[Fix Specific] ✅ ${username} - ${totalXpToAdd} XP | Level ${character.level} → ${newLevel}`);
-
           results.push({
             username,
             success: true,
@@ -262,8 +227,6 @@ export async function POST(request: NextRequest) {
           totalXpGiven += totalXpToAdd;
           usersCorrected++;
         } else {
-          console.log(`[Fix Specific] ✅ ${username} - Baseline corrigido (sem XP adicional)`);
-
           results.push({
             username,
             success: true,
@@ -297,8 +260,6 @@ export async function POST(request: NextRequest) {
         });
       }
     }
-
-    console.log(`[Fix Specific] Concluído: ${usersCorrected}/${usersProcessed} usuários corrigidos`);
 
     return NextResponse.json({
       success: true,

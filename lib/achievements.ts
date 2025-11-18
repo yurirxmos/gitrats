@@ -135,7 +135,6 @@ export async function unlockAchievement(
     await grantExtraXP(userId, achievement.xp_reward);
   }
 
-  console.log(`🏆 Achievement conquistado: ${userId} - ${achievement.name} (+${achievement.xp_reward} XP)`);
   return true;
 }
 
@@ -176,7 +175,6 @@ export async function grantExtraXP(userId: string, xpAmount: number): Promise<vo
     })
     .eq('id', character.id);
 
-  console.log(`✨ XP extra concedido: ${userId} +${xpAmount} XP (Achievement bonus)`);
 }
 
 /**

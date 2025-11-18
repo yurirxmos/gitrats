@@ -34,8 +34,6 @@ export async function POST(request: NextRequest) {
 
     // Se não há token no banco, tentar obter da sessão atual e salvar
     if (!userData.github_access_token) {
-      console.log(`[Sync] ${userData.github_username} - Token não encontrado no banco, tentando obter da sessão...`);
-
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -43,8 +41,6 @@ export async function POST(request: NextRequest) {
       const providerToken = session?.provider_token;
 
       if (providerToken) {
-        console.log(`[Sync] ${userData.github_username} - Token encontrado na sessão, salvando no banco...`);
-
         const { error: updateTokenError } = await supabase
           .from("users")
           .update({
@@ -55,19 +51,12 @@ export async function POST(request: NextRequest) {
         if (updateTokenError) {
           console.error("[Sync] Erro ao salvar token:", updateTokenError);
         } else {
-          console.log(`[Sync] ${userData.github_username} - Token salvo com sucesso`);
           // Atualizar userData com o token
           userData.github_access_token = providerToken;
         }
       } else {
-        console.log(`[Sync] ${userData.github_username} - Nenhum token disponível (nem no banco, nem na sessão)`);
-
-        // Forçar logout quando não há token disponível
-        console.log(`[Sync] ${userData.github_username} - Forçando logout para renovar token...`);
-
         try {
           await supabase.auth.signOut();
-          console.log(`[Sync] ${userData.github_username} - Logout realizado com sucesso`);
         } catch (logoutError) {
           console.error(`[Sync] ${userData.github_username} - Erro ao fazer logout:`, logoutError);
         }
@@ -98,12 +87,6 @@ export async function POST(request: NextRequest) {
 
     const githubService = new GitHubService(userData.github_access_token || undefined);
     const githubStats = await githubService.getUserStats(userData.github_username);
-
-    console.log(`[Sync] GitHub Stats para ${userData.github_username}:`, {
-      totalCommits: githubStats.totalCommits,
-      totalPRs: githubStats.totalPRs,
-      totalIssues: githubStats.totalIssues,
-    });
 
     // Buscar ou criar registro de stats
     let { data: currentStats } = await supabase
@@ -153,14 +136,6 @@ export async function POST(request: NextRequest) {
 
     const isFirstSync = !currentStats.last_sync_at;
 
-    console.log(`[Sync] ${userData.github_username} - isFirstSync: ${isFirstSync}, currentStats:`, {
-      total_commits: currentStats.total_commits,
-      baseline_commits: currentStats.baseline_commits,
-      total_prs: currentStats.total_prs,
-      baseline_prs: currentStats.baseline_prs,
-      last_sync_at: currentStats.last_sync_at,
-    });
-
     // VERIFICAR SE PRECISA CORRIGIR XP INICIAL (usuários antigos)
     // Se baseline = total, significa que não recebeu XP inicial dos últimos 7 dias
     const needsInitialXpFix =
@@ -169,19 +144,12 @@ export async function POST(request: NextRequest) {
       currentStats.baseline_prs === currentStats.total_prs &&
       currentStats.total_commits > 0; // Só corrige se tiver commits
 
-    console.log(
-      `[Sync] ${userData.github_username} - needsInitialXpFix: ${needsInitialXpFix} (baseline=${currentStats.baseline_commits}, total=${currentStats.total_commits})`
-    );
-
     if (needsInitialXpFix) {
-      console.log(`[Sync - Fix] Detectado usuário antigo: ${userData.github_username}, aplicando XP retroativo...`);
-
       // Buscar atividades dos últimos 7 dias
       let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
 
       try {
         weeklyStats = await githubService.getWeeklyXp(userData.github_username);
-        console.log(`[Sync - Fix] Stats dos últimos 7 dias:`, weeklyStats);
       } catch (error) {
         console.error("[Sync - Fix] Erro ao buscar XP semanal, usando 0:", error);
       }
@@ -190,12 +158,6 @@ export async function POST(request: NextRequest) {
       const newBaselineCommits = Math.max(0, githubStats.totalCommits - weeklyStats.commits);
       const newBaselinePRs = Math.max(0, githubStats.totalPRs - weeklyStats.prs);
       const newBaselineIssues = Math.max(0, githubStats.totalIssues - weeklyStats.issues);
-
-      console.log(`[Sync - Fix] Novo baseline:`, {
-        commits: `${currentStats.baseline_commits} → ${newBaselineCommits}`,
-        prs: `${currentStats.baseline_prs} → ${newBaselinePRs}`,
-        issues: `${currentStats.baseline_issues} → ${newBaselineIssues}`,
-      });
 
       // Aplicar multiplicadores de classe
       const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
@@ -207,13 +169,6 @@ export async function POST(request: NextRequest) {
       const xpFromPRs = Math.floor(weeklyStats.prs * 50 * prMultiplier);
       const xpFromIssues = Math.floor(weeklyStats.issues * 25 * issueMultiplier);
       const retroactiveXp = xpFromCommits + xpFromPRs + xpFromIssues;
-
-      console.log(`[Sync - Fix] XP Calculado:`, {
-        commits: `${weeklyStats.commits} × 10 × ${commitMultiplier} = ${xpFromCommits}`,
-        prs: `${weeklyStats.prs} × 50 × ${prMultiplier} = ${xpFromPRs}`,
-        issues: `${weeklyStats.issues} × 25 × ${issueMultiplier} = ${xpFromIssues}`,
-        total: retroactiveXp,
-      });
 
       // Atualizar baseline
       await supabase
@@ -244,10 +199,6 @@ export async function POST(request: NextRequest) {
           })
           .eq("id", character.id);
 
-        console.log(
-          `[Sync - Fix] ${userData.github_username} recebeu ${retroactiveXp} XP retroativo! Level: ${character.level} → ${newLevel}`
-        );
-
         return NextResponse.json({
           success: true,
           message: `Correção aplicada! Você ganhou ${retroactiveXp} XP pelas suas atividades da última semana`,
@@ -267,10 +218,6 @@ export async function POST(request: NextRequest) {
           },
         });
       } else {
-        console.log(
-          `[Sync - Fix] ${userData.github_username} não tinha atividades nos últimos 7 dias, baseline ajustado`
-        );
-
         return NextResponse.json({
           success: true,
           message: "Baseline corrigido, sem atividades nos últimos 7 dias",
@@ -296,11 +243,6 @@ export async function POST(request: NextRequest) {
       try {
         // Buscar atividades desde a data de criação do usuário
         activitiesSinceJoin = await githubService.getActivitiesSince(userData.github_username, userCreatedAt);
-
-        console.log(
-          `[Sync - First] ${userData.github_username} - Atividades desde ${userCreatedAt.toISOString()}:`,
-          activitiesSinceJoin
-        );
       } catch (error) {
         console.error("[Sync - First] Erro ao buscar atividades desde o registro:", error);
         // Continua com 0, não falha a primeira sync
@@ -312,16 +254,10 @@ export async function POST(request: NextRequest) {
       const baselinePRs = Math.max(0, githubStats.totalPRs - activitiesSinceJoin.prs);
       const baselineIssues = Math.max(0, githubStats.totalIssues - activitiesSinceJoin.issues);
 
-      console.log(`[Sync - First] ${userData.github_username} - Baseline calculado:`, {
-        commits: `${githubStats.totalCommits} - ${activitiesSinceJoin.commits} = ${baselineCommits}`,
-        prs: `${githubStats.totalPRs} - ${activitiesSinceJoin.prs} = ${baselinePRs}`,
-      });
-
       // Para o XP inicial, usar apenas os últimos 7 dias (não todas as atividades desde o registro)
       let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
       try {
         weeklyStats = await githubService.getWeeklyXp(userData.github_username);
-        console.log(`[Sync - First] ${userData.github_username} - Últimos 7 dias:`, weeklyStats);
       } catch (error) {
         console.error("[Sync - First] Erro ao buscar XP semanal:", error);
       }
@@ -371,10 +307,6 @@ export async function POST(request: NextRequest) {
             current_xp: newCurrentXp,
           })
           .eq("id", character.id);
-
-        console.log(
-          `[Sync - First] ${userData.github_username} recebeu ${initialXp} XP inicial (últimos 7 dias)! Level: ${newLevel}`
-        );
 
         return NextResponse.json({
           success: true,
@@ -454,10 +386,6 @@ export async function POST(request: NextRequest) {
         .eq("id", character.id);
 
       const leveledUp = newLevel > character.level;
-
-      console.log(
-        `[Sync] ${userData.github_username} ganhou ${totalXpGained} XP! Total: ${newTotalXp} | Level: ${newLevel}${leveledUp ? " 🆙" : ""}`
-      );
 
       return NextResponse.json({
         success: true,
