@@ -5,7 +5,7 @@ import { Navbar } from "@/components/navbar";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import LeaderboardProfileCard from "@/components/leaderboard-profile-card";
 import { useUserContext } from "@/contexts/user-context";
-import { FaCircleInfo, FaGithub, FaInfo, FaMessage, FaSkull } from "react-icons/fa6";
+import { FaSkull } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -83,14 +83,16 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <Button
-                  variant="destructive"
-                  className="ml-auto text-[10px] uppercase"
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                >
-                  <FaSkull className="!w-3 !h-3 shrink-0" />
-                  deletar
-                </Button>
+                <div className="ml-auto flex items-center gap-2">
+                  <Button
+                    variant="destructive"
+                    className="text-[10px] uppercase"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    <FaSkull className="!w-3 !h-3 shrink-0" />
+                    deletar
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

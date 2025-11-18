@@ -9,7 +9,11 @@ import { AchievementBadge } from "@/components/achievement-badge";
 import { getCharacterAvatar } from "@/lib/character-assets";
 import { getXpForLevel } from "@/lib/xp-system";
 import { getCurrentRank, getNextRank } from "@/lib/class-evolution";
-import React from "react";
+import React, { useState } from "react";
+import { useUserContext } from "@/contexts/user-context";
+import { FaPen } from "react-icons/fa6";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 import type { UserProfile } from "@/lib/types";
 
@@ -29,6 +33,54 @@ export default function LeaderboardProfileCard({
   const isHorizontal = orientation === "horizontal";
   const containerClass = isHorizontal ? "w-full" : "w-80 shrink-0";
   const contentClass = isHorizontal ? "flex flex-row items-start gap-6" : "space-y-6";
+  const { refreshUserProfile } = useUserContext();
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editName, setEditName] = useState<string>(userProfile?.character_name || "");
+  const [savingName, setSavingName] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const openEditDialog = () => {
+    setEditName(userProfile?.character_name || "");
+    setErrorMessage(null);
+    setIsEditOpen(true);
+  };
+
+  const saveName = async () => {
+    const trimmed = (editName || "").trim();
+    if (trimmed.length === 0) {
+      setErrorMessage("Nome inválido");
+      return;
+    }
+    if (trimmed.length > 32) {
+      setErrorMessage("Nome deve ter no máximo 32 caracteres");
+      return;
+    }
+
+    try {
+      setSavingName(true);
+      const res = await fetch("/api/user/update-character-name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error("Erro ao atualizar nome:", err);
+        setErrorMessage(err?.error || "Falha ao atualizar nome do personagem");
+        return;
+      }
+
+      await refreshUserProfile?.();
+      setIsEditOpen(false);
+    } catch (error) {
+      console.error("Erro ao chamar API:", error);
+      setErrorMessage("Erro ao atualizar nome do personagem");
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   return (
     <aside className={containerClass}>
@@ -57,8 +109,19 @@ export default function LeaderboardProfileCard({
                         className="object-contain"
                       />
                     </div>
-                    <div>
-                      <h3 className="font-black text-xl">{userProfile.character_name}</h3>
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="flex flex-row items-center gap-1">
+                        <h3 className="font-black text-xl">{userProfile.character_name}</h3>
+                        <Button
+                          variant="outline"
+                          className="p-1! h-6! w-6! min-w-0!"
+                          onClick={openEditDialog}
+                          aria-label="Editar nome do personagem"
+                        >
+                          <FaPen className="w-3! h-3!" />
+                        </Button>
+                      </div>
+
                       <p className="text-sm text-blue-400">
                         {getCurrentRank(userProfile.character_class, userProfile.level)}
                       </p>
@@ -151,8 +214,18 @@ export default function LeaderboardProfileCard({
                         className="object-contain"
                       />
                     </div>
-                    <div>
-                      <h3 className="font-black text-xl">{userProfile.character_name}</h3>
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="flex flex-row items-center gap-1">
+                        <h3 className="font-black text-xl">{userProfile.character_name}</h3>
+                        <Button
+                          variant="outline"
+                          className="p-1! h-6! w-6! min-w-0!"
+                          onClick={openEditDialog}
+                          aria-label="Editar nome do personagem"
+                        >
+                          <FaPen className="w-3! h-3!" />
+                        </Button>
+                      </div>
                       <p className="text-sm text-blue-400">
                         {getCurrentRank(userProfile.character_class, userProfile.level)}
                       </p>
@@ -235,6 +308,44 @@ export default function LeaderboardProfileCard({
           )}
         </CardContent>
       </Card>
+      <Dialog
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar nome do {userProfile?.character_class}</DialogTitle>
+          </DialogHeader>
+
+          <div className="mt-2">
+            <Input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Nome do personagem"
+            />
+          </div>
+          {errorMessage && <p className="text-sm text-red-500 mt-2">{errorMessage}</p>}
+
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setIsEditOpen(false);
+                setErrorMessage(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={saveName}
+              disabled={savingName}
+              className="ml-2 text-xs"
+            >
+              {savingName ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </aside>
   );
 }
