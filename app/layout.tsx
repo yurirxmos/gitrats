@@ -3,7 +3,6 @@ import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { UserProvider } from "@/contexts/user-context";
 import Script from "next/script";
-import favicon from "@/public/favicon.png";
 
 // Base URL do site - altere usando a variável de ambiente NEXT_PUBLIC_SITE_URL em produção
 const siteUrl = "https://gitrats.rxmos.dev.br";
@@ -17,7 +16,6 @@ export const metadata: Metadata = {
     description: "Transforme seus commits e pull requests em XP. Crie seu personagem e domine o leaderboard.",
     url: siteUrl,
     siteName: "GitRats",
-    // imagem social default (coloque um arquivo em /public/og-image.png ou ajuste)
     images: [{ url: `${siteUrl}/og-image.png`, width: 802, height: 877, alt: "GitRats" }],
     locale: "pt_BR",
     type: "website",
@@ -29,12 +27,11 @@ export const metadata: Metadata = {
     description: "Transforme seus commits e pull requests em XP.",
     images: [`${siteUrl}/og-image.png`],
   },
-  // Controle para robôs (padrão) — robots meta será gerado automaticamente no build.
-  // Favicon e ícones simples
+  // Favicon e ícones
   icons: {
-    // usar o favicon que existe em /public (favicon.png)
-    icon: "/public/favicon.png",
-    shortcut: "/public/favicon.png",
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
   },
 };
 
