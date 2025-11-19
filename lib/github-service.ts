@@ -201,14 +201,13 @@ export class GitHubService {
         }
       }
     `;
-
-    const result = await this.graphqlWithAuth(query, {
+    const response: Record<string, any> = await this.graphqlWithAuth(query, {
       username,
       from: startDate,
       to: endDate,
     });
 
-    const collection = result.user?.contributionsCollection;
+    const collection = response.user?.contributionsCollection;
 
     if (!collection) {
       throw new Error("Dados de contribuição não encontrados");
