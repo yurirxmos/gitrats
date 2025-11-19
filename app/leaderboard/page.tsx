@@ -56,7 +56,7 @@ export default function Leaderboard() {
       await Promise.all([loadLeaderboard(), loadStats()]);
       setIsLoading(false);
       hasLoadedRef.current = true;
-      if (user && !userLoading && hasCharacter && userProfile && typeof window !== 'undefined') {
+      if (user && !userLoading && hasCharacter && userProfile && typeof window !== "undefined") {
         const hasSeenWelcome = localStorage.getItem("has_seen_welcome");
         if (!hasSeenWelcome) {
           setShowWelcomeDialog(true);
@@ -89,7 +89,7 @@ export default function Leaderboard() {
     try {
       const CACHE_KEY = "gitrats_leaderboard_50";
       const TTL = 2 * 60 * 1000; // 2 min
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const cached = sessionStorage.getItem(CACHE_KEY);
         if (cached) {
           const { data, lastUpdate, timestamp } = JSON.parse(cached);
@@ -108,7 +108,7 @@ export default function Leaderboard() {
       const { data, lastUpdate: updateTime } = await response.json();
       setLeaderboard(data || []);
       setLastUpdate(updateTime || null);
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, lastUpdate: updateTime, timestamp: Date.now() }));
       }
     } catch {
@@ -120,7 +120,7 @@ export default function Leaderboard() {
     try {
       const CACHE_KEY = "gitrats_stats";
       const TTL = 5 * 60 * 1000; // 5 min
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const cached = sessionStorage.getItem(CACHE_KEY);
         if (cached) {
           const { data, timestamp } = JSON.parse(cached);
@@ -137,7 +137,7 @@ export default function Leaderboard() {
       if (!response.ok) throw new Error("Erro ao carregar estatísticas");
       const { data } = await response.json();
       setTotalCharacters(data.total_characters || 0);
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
       }
     } catch {

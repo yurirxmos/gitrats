@@ -38,7 +38,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // Carregar do cache
   const loadFromCache = useCallback((): { profile: UserProfile; notificationsEnabled: boolean } | null => {
-    if (typeof window === 'undefined') return null; // SSR safety
+    if (typeof window === "undefined") return null; // SSR safety
     try {
       const cached = localStorage.getItem(CACHE_KEY);
       if (!cached) return null;
@@ -59,7 +59,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // Salvar no cache
   const saveToCache = useCallback((profile: UserProfile, notificationsEnabled: boolean) => {
-    if (typeof window === 'undefined') return; // SSR safety
+    if (typeof window === "undefined") return; // SSR safety
     try {
       const cacheData: CachedProfile = {
         data: profile,
@@ -110,7 +110,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           console.error("[USER_CTX] Falha ao buscar personagem", { status: characterResponse.status });
           setHasCharacter(false);
           setUserProfile(null);
-          if (typeof window !== 'undefined') localStorage.removeItem(CACHE_KEY);
+          if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
           return;
         }
 
@@ -154,7 +154,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.error("[USER_CTX] Erro ao carregar perfil do usuário", e);
         setHasCharacter(false);
         setUserProfile(null);
-        if (typeof window !== 'undefined') localStorage.removeItem(CACHE_KEY);
+        if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
       } finally {
         isLoadingRef.current = false;
       }
@@ -248,7 +248,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.error("[USER_CTX] Sessão finalizada, limpando cache");
         setUserProfile(null);
         setHasCharacter(false);
-        if (typeof window !== 'undefined') localStorage.removeItem(CACHE_KEY);
+        if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
       }
 
       setLoading(false);
