@@ -49,9 +49,28 @@ export default function Profile() {
     setSavingNotifications(false);
   };
 
-  // Não renderizar nada enquanto verifica autenticação
-  if (loading || !user) {
-    return null;
+  // Renderizar um fallback enquanto verifica autenticação para evitar tela branca
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center px-8">
+          <div className="text-center opacity-70">Carregando...</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!user) {
+    // Se não estiver autenticado, garantir que informamos o usuário e redirecionamos
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center px-8">
+          <div className="text-center opacity-70">Você precisa estar logado para ver esta página.</div>
+        </main>
+      </div>
+    );
   }
 
   return (
