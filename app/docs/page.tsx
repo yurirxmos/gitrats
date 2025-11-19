@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { XP_CONSTANTS, getXpForLevel } from "@/lib/xp-system";
