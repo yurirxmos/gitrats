@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUserFromRequest } from "@/lib/supabase/server";
 
 /**
  * GET - Buscar dados do usuário logado
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { supabase, user, error: authError } = await getAuthUserFromRequest(request as any);
 
     console.log("[API_USER_GET] Auth:", { hasUser: !!user, error: authError?.message });
 
@@ -36,13 +31,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log("[API_USER_POST] Iniciado");
-    const supabase = await createClient();
-
-    // Obter usuário autenticado e sessão
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { supabase, user, error: authError } = await getAuthUserFromRequest(request as any);
 
     console.log("[API_USER_POST] Auth:", { hasUser: !!user, error: authError?.message });
 
@@ -130,11 +119,7 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { supabase, user, error: authError } = await getAuthUserFromRequest(request as any);
 
     if (authError || !user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

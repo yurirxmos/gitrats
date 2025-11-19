@@ -211,30 +211,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const initAuth = async () => {
       console.error("[USER_CTX] initAuth iniciando");
-      try {
-        const {
-          data: { user: currentUser },
-        } = await supabase.auth.getUser();
-        console.error("[USER_CTX] getUser retornou", { hasUser: !!currentUser });
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+      console.error("[USER_CTX] getUser retornou", { hasUser: !!currentUser });
 
-        if (!mounted) return;
+      if (!mounted) return;
 
-        setUser(currentUser);
-        try {
-          navigator.sendBeacon && navigator.sendBeacon('/api/debug/client-log', JSON.stringify({ type: 'user_init', hasUser: !!currentUser }));
-        } catch {}
-        if (currentUser) {
-          console.error("[USER_CTX] Usuário autenticado, carregando perfil");
-          await loadUserProfile(currentUser);
-        }
-      } catch (e) {
-        console.error("[USER_CTX] Erro no initAuth", e);
-        try {
-          fetch('/api/debug/client-log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'user_init_error', message: (e && (e.message || String(e))) || String(e) }) }).catch(()=>{});
-        } catch {}
-      } finally {
-        setLoading(false);
+      setUser(currentUser);
+
+      if (currentUser) {
+        console.error("[USER_CTX] Usuário autenticado, carregando perfil");
+        await loadUserProfile(currentUser);
       }
+
+      setLoading(false);
     };
 
     initAuth();
@@ -245,27 +236,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       console.error("[USER_CTX] onAuthStateChange", { event, hasSession: !!session });
       if (!mounted) return;
 
-      try {
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        try {
-          fetch('/api/debug/client-log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'auth_state_change', event, hasSession: !!session }) }).catch(()=>{});
-        } catch {}
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
 
-        if (currentUser) {
-          console.error("[USER_CTX] Sessão ativa, recarregando perfil");
-          await loadUserProfile(currentUser);
-        } else {
-          console.error("[USER_CTX] Sessão finalizada, limpando cache");
-          setUserProfile(null);
-          setHasCharacter(false);
-          localStorage.removeItem(CACHE_KEY);
-        }
-      } catch (e) {
-        console.error("[USER_CTX] Erro no onAuthStateChange", e);
-      } finally {
-        setLoading(false);
+      if (currentUser) {
+        console.error("[USER_CTX] Sessão ativa, recarregando perfil");
+        await loadUserProfile(currentUser);
+      } else {
+        console.error("[USER_CTX] Sessão finalizada, limpando cache");
+        setUserProfile(null);
+        setHasCharacter(false);
+        localStorage.removeItem(CACHE_KEY);
       }
+
+      setLoading(false);
     });
 
     return () => {

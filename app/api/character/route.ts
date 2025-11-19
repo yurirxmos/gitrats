@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUserFromRequest } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Obter usuário autenticado
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { supabase, user, error: authError } = await getAuthUserFromRequest(request);
 
     if (authError || !user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -81,13 +75,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Obter usuário autenticado
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { supabase, user, error: authError } = await getAuthUserFromRequest(request);
 
     if (authError || !user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

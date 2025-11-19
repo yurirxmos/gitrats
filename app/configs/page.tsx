@@ -29,17 +29,6 @@ export default function Profile() {
     }
   }, [user, loading, router]);
 
-  // DEBUG: report user/loading states to /api/debug/client-log
-  useEffect(() => {
-    try {
-      fetch('/api/debug/client-log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'configs_state', hasUser: !!user, loading }),
-      }).catch(() => {});
-    } catch (e) {}
-  }, [user, loading]);
-
   // Alternar notificações (otimista)
   const toggleNotifications = async () => {
     if (!user || savingNotifications) return;
@@ -49,28 +38,9 @@ export default function Profile() {
     setSavingNotifications(false);
   };
 
-  // Renderizar um fallback enquanto verifica autenticação para evitar tela branca
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center px-8">
-          <div className="text-center opacity-70">Carregando...</div>
-        </main>
-      </div>
-    );
-  }
-
-  if (!user) {
-    // Se não estiver autenticado, garantir que informamos o usuário e redirecionamos
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center px-8">
-          <div className="text-center opacity-70">Você precisa estar logado para ver esta página.</div>
-        </main>
-      </div>
-    );
+  // Não renderizar nada enquanto verifica autenticação
+  if (loading || !user) {
+    return null;
   }
 
   return (
