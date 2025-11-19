@@ -6,6 +6,10 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error("[SUPABASE_MIDDLEWARE] Variáveis públicas do Supabase ausentes (URL/ANON_KEY)");
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -26,7 +30,14 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Refresh session if expired
-  await supabase.auth.getUser();
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error("[SUPABASE_MIDDLEWARE] Erro ao obter usuário no middleware:", error.message);
+    }
+  } catch (e) {
+    console.error("[SUPABASE_MIDDLEWARE] Exceção ao obter usuário:", e);
+  }
 
   return supabaseResponse;
 }

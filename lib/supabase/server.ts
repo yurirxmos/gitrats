@@ -5,6 +5,11 @@ import { cookies } from "next/headers";
 export async function createClient() {
   const cookieStore = await cookies();
 
+  // Log de diagnóstico em produção para variáveis de ambiente
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error("[SUPABASE_SERVER] Variáveis NEXT_PUBLIC_SUPABASE_URL/ANON_KEY ausentes no ambiente do servidor");
+  }
+
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       getAll() {
@@ -31,6 +36,7 @@ export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey) {
+    console.error("[SUPABASE_ADMIN] SUPABASE_SERVICE_ROLE_KEY não está definida no ambiente");
     throw new Error("SUPABASE_SERVICE_ROLE_KEY não está definida");
   }
 
