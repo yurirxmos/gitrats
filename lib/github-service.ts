@@ -166,6 +166,47 @@ export class GitHubService {
   }
 
   /**
+   * Obter estatísticas de atividade entre duas datas específicas
+   */
+  async getActivityByDateRange(
+    username: string,
+    startDate: string,
+    endDate: string
+  ): Promise<{ commits: number; prs: number; issues: number; reviews: number }> {
+    const query = `
+      query($username: String!, $from: DateTime!, $to: DateTime!) {
+        user(login: $username) {
+          contributionsCollection(from: $from, to: $to) {
+            totalCommitContributions
+            totalPullRequestContributions
+            totalIssueContributions
+            totalPullRequestReviewContributions
+          }
+        }
+      }
+    `;
+
+    const result = await this.graphqlWithAuth(query, {
+      username,
+      from: startDate,
+      to: endDate,
+    });
+
+    const collection = result.user?.contributionsCollection;
+
+    if (!collection) {
+      throw new Error("Dados de contribuição não encontrados");
+    }
+
+    return {
+      commits: Number(collection.totalCommitContributions) || 0,
+      prs: Number(collection.totalPullRequestContributions) || 0,
+      issues: Number(collection.totalIssueContributions) || 0,
+      reviews: Number(collection.totalPullRequestReviewContributions) || 0,
+    };
+  }
+
+  /**
    * Busca XP semanal (últimos 7 dias) via GraphQL
    */
   async getWeeklyXp(username: string): Promise<{ commits: number; prs: number; issues: number; reviews: number }> {
