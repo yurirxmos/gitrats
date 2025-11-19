@@ -220,13 +220,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
 
         setUser(currentUser);
-
+        try {
+          navigator.sendBeacon && navigator.sendBeacon('/api/debug/client-log', JSON.stringify({ type: 'user_init', hasUser: !!currentUser }));
+        } catch {}
         if (currentUser) {
           console.error("[USER_CTX] Usuário autenticado, carregando perfil");
           await loadUserProfile(currentUser);
         }
       } catch (e) {
         console.error("[USER_CTX] Erro no initAuth", e);
+        try {
+          fetch('/api/debug/client-log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'user_init_error', message: (e && (e.message || String(e))) || String(e) }) }).catch(()=>{});
+        } catch {}
       } finally {
         setLoading(false);
       }
@@ -243,6 +248,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       try {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
+        try {
+          fetch('/api/debug/client-log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'auth_state_change', event, hasSession: !!session }) }).catch(()=>{});
+        } catch {}
 
         if (currentUser) {
           console.error("[USER_CTX] Sessão ativa, recarregando perfil");
