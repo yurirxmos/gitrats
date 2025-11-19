@@ -28,7 +28,7 @@ interface CharacterCreationStepProps {
 const classes = [
   {
     id: "warrior" as CharacterClass,
-    name: "Warrior",
+    name: "Guerreiro",
     image: warriorLvl1,
     evolution: {
       lvl1: warriorLvl1,
@@ -38,7 +38,7 @@ const classes = [
   },
   {
     id: "mage" as CharacterClass,
-    name: "Mage",
+    name: "Mago",
     image: mageLvl1,
     evolution: {
       lvl1: mageLvl1,
@@ -48,7 +48,7 @@ const classes = [
   },
   {
     id: "orc" as CharacterClass,
-    name: "Orc",
+    name: "Ogro",
     image: orcLvl1,
     evolution: {
       lvl1: orcLvl1,

@@ -234,7 +234,7 @@ export default function Docs() {
                     Cada commit conta igualmente. Multiplicado pela classe do personagem.
                   </p>
                   <div className="pt-2 border-t border-border">
-                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Orc (+25%):</p>
+                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Ogro (+25%):</p>
                     <p className="text-xs text-muted-foreground">1 commit = 10 × 1.25 = 12.5 XP</p>
                   </div>
                 </div>
@@ -253,7 +253,7 @@ export default function Docs() {
                     Cada PR aberto ou merged. Multiplicado pela classe do personagem.
                   </p>
                   <div className="pt-2 border-t border-border">
-                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Warrior (+25%):</p>
+                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Guerreiro (+25%):</p>
                     <p className="text-xs text-muted-foreground">1 PR = 50 × 1.25 = 62 XP</p>
                   </div>
                 </div>
@@ -272,7 +272,7 @@ export default function Docs() {
                     Cada issue fechada. Multiplicado pela classe do personagem.
                   </p>
                   <div className="pt-2 border-t border-border">
-                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Mage (+30%):</p>
+                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Mago (+30%):</p>
                     <p className="text-xs text-muted-foreground">1 issue = 25 × 1.3 = 32.5 XP</p>
                   </div>
                 </div>

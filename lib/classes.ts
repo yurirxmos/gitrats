@@ -81,7 +81,7 @@ export const CLASS_DESCRIPTIONS: Record<
   }
 > = {
   orc: {
-    name: "Orc",
+    name: "Ogro",
     title: "Brute Force Developer",
     description: "Desenvolvedores que preferem ação direta, commits frequentes e entregas rápidas. Gostam de XGH.",
     strengths: [
@@ -94,7 +94,7 @@ export const CLASS_DESCRIPTIONS: Record<
   },
 
   warrior: {
-    name: "Warrior",
+    name: "Guerreiro",
     title: "Full-Stack Warrior",
     description:
       "Guerreiros colaborativos que lutam em múltiplas frentes. Mestres em pull requests e trabalho em equipe.",
@@ -108,7 +108,7 @@ export const CLASS_DESCRIPTIONS: Record<
   },
 
   mage: {
-    name: "Mage",
+    name: "Mago",
     title: "Code Architect/Wizard",
     description: "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em problemas complexos.",
     strengths: ["+30% XP em issues resolvidas", "+30% XP em stars e forks - EM BREVE", "Sem bônus em commits"],
