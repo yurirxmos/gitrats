@@ -210,25 +210,42 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Inicializar auth
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initAuth = async () => {
       console.error("[USER_CTX] initAuth iniciando");
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-      console.error("[USER_CTX] getUser retornou", { hasUser: !!currentUser });
+      
+      try {
+        const {
+          data: { user: currentUser },
+        } = await supabase.auth.getUser();
+        console.error("[USER_CTX] getUser retornou", { hasUser: !!currentUser });
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      setUser(currentUser);
+        setUser(currentUser);
 
-      if (currentUser) {
-        console.error("[USER_CTX] Usuário autenticado, carregando perfil");
-        await loadUserProfile(currentUser);
+        if (currentUser) {
+          console.error("[USER_CTX] Usuário autenticado, carregando perfil");
+          await loadUserProfile(currentUser);
+        }
+      } catch (error) {
+        console.error("[USER_CTX] Erro no initAuth:", error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          console.error("[USER_CTX] Loading finalizado (initAuth)");
+        }
       }
-
-      setLoading(false);
     };
+
+    // Timeout de segurança: forçar loading=false após 5 segundos
+    timeoutId = setTimeout(() => {
+      if (mounted && loading) {
+        console.error("[USER_CTX] TIMEOUT: Forçando loading=false após 5s");
+        setLoading(false);
+      }
+    }, 5000);
 
     initAuth();
 
@@ -256,6 +273,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [supabase, loadUserProfile]);
