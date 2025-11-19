@@ -22,6 +22,10 @@ export class GitHubService {
   private graphqlWithAuth: typeof graphql;
 
   constructor(accessToken?: string) {
+    if (!accessToken) {
+      console.warn("[GitHubService] Criado sem token de acesso - algumas APIs podem falhar");
+    }
+    
     this.octokit = new Octokit({
       auth: accessToken,
       userAgent: "GitRats/1.0",
@@ -29,7 +33,7 @@ export class GitHubService {
 
     this.graphqlWithAuth = graphql.defaults({
       headers: {
-        authorization: accessToken ? `Bearer ${accessToken}` : "",
+        authorization: accessToken ? `token ${accessToken}` : "",
       },
     });
   }
@@ -73,8 +77,20 @@ export class GitHubService {
         totalRepos,
         totalIssues: contributionData.totalIssues,
       };
-    } catch (error) {
-      throw new Error("Failed to fetch GitHub statistics");
+    } catch (error: any) {
+      console.error("[GitHubService] Erro ao buscar stats:", error);
+      
+      // Token inválido/expirado
+      if (error.status === 401) {
+        throw new Error("GitHub token inválido ou expirado. Faça login novamente.");
+      }
+      
+      // Rate limit
+      if (error.status === 403) {
+        throw new Error("Rate limit do GitHub excedido. Tente novamente mais tarde.");
+      }
+      
+      throw new Error(`Erro ao buscar estatísticas do GitHub: ${error.message || "Unknown error"}`);
     }
   }
 
