@@ -11,7 +11,7 @@ import { getCharacterAvatar } from "@/lib/character-assets";
 import { getXpForLevel } from "@/lib/xp-system";
 import { getCurrentRank, getNextRank } from "@/lib/class-evolution";
 import React, { useState } from "react";
-import { useUserContext } from "@/contexts/user-context";
+import { useUserContext } from "@/hooks/use-user-context";
 import { FaPen } from "react-icons/fa6";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";

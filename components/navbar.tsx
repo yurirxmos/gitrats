@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@/assets/github.png";
-import { useUserContext } from "@/contexts/user-context";
+import { useUserContext } from "@/hooks/use-user-context";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/theme-context";

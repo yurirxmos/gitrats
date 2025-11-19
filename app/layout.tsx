@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
-import { UserProvider } from "@/contexts/user-context";
+import { UserStoreProvider } from "@/components/user-store-provider";
 import Script from "next/script";
 
 // Base URL do site - altere usando a variável de ambiente NEXT_PUBLIC_SITE_URL em produção
@@ -99,7 +99,7 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <UserProvider>{children}</UserProvider>
+          <UserStoreProvider>{children}</UserStoreProvider>
         </ThemeProvider>
       </body>
     </html>

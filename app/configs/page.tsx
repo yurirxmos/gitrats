@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Navbar } from "@/components/navbar";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import LeaderboardProfileCard from "@/components/leaderboard-profile-card";
-import { useUserContext } from "@/contexts/user-context";
+import { useUserContext } from "@/hooks/use-user-context";
 import { FaSkull } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

@@ -1,8 +1,9 @@
 "use client";
 
-import { useUserContext } from "@/contexts/user-context";
+import { useUserStore } from "@/store/user-store";
 
 export function useUser() {
-  const { user, loading } = useUserContext();
+  const user = useUserStore((state) => state.user);
+  const loading = useUserStore((state) => state.loading);
   return { user, loading };
 }

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUserContext } from "@/contexts/user-context";
+import { useUserContext } from "@/hooks/use-user-context";
 import { useAutoSync } from "@/hooks/use-auto-sync";
 import { useEvolutionDetector } from "@/hooks/use-evolution-detector";
 import { createClient } from "@/lib/supabase/client";
