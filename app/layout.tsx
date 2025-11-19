@@ -68,6 +68,15 @@ export default function RootLayout({
               try {
                 const theme = localStorage.getItem('theme') || 'dark';
                 document.documentElement.classList.toggle('dark', theme === 'dark');
+                
+                // Limpar service workers antigos (force refresh)
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                      registration.unregister();
+                    }
+                  });
+                }
               } catch (e) {}
             `,
           }}

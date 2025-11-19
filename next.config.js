@@ -8,11 +8,12 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/:path(configs|docs|leaderboard|reports)",
+        // Desabilitar cache em TODAS as páginas (temporário para debug)
+        source: "/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "no-store, must-revalidate",
+            value: "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
           },
           {
             key: "CDN-Cache-Control",
@@ -22,15 +23,13 @@ const nextConfig = {
             key: "Vercel-CDN-Cache-Control",
             value: "no-store",
           },
-        ],
-      },
-      {
-        // Desabilitar cache para páginas de erro e rotas especiais
-        source: "/:path(404|500|_error|_not-found)",
-        headers: [
           {
-            key: "Cache-Control",
-            value: "no-store, no-cache, must-revalidate",
+            key: "Pragma",
+            value: "no-cache",
+          },
+          {
+            key: "Expires",
+            value: "0",
           },
         ],
       },
