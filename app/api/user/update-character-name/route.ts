@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,17 +15,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Nome muito longo (máx 32 caracteres)" }, { status: 400 });
     }
 
-    const supabase = await createClient();
-
-    // Tentar obter token do header Authorization como fallback
+    // Preferir client com token quando presente
     const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      await supabase.auth.setSession({
-        access_token: token,
-        refresh_token: "",
-      });
-    }
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+    const supabase = token
+      ? createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        })
+      : await createClient();
 
     // Recuperar usuário autenticado
     const {

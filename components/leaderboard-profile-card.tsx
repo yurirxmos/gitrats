@@ -67,13 +67,16 @@ export default function LeaderboardProfileCard({
 
       const res = await fetch("/api/user/update-character-name", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ name: trimmed }),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        console.error("Erro ao atualizar nome:", err);
+        console.error("[LeaderboardProfileCard] Erro ao atualizar nome:", err);
         setErrorMessage(err?.error || "Falha ao atualizar nome do personagem");
         return;
       }
