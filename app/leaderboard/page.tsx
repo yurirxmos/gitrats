@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-
-export const dynamic = 'force-dynamic';
 import Image from "next/image";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { EvolutionModal } from "@/components/evolution-modal";

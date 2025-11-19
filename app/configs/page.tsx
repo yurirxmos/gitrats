@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-export const dynamic = 'force-dynamic';
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { OnboardingModal } from "@/components/onboarding-modal";

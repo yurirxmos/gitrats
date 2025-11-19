@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
+export const revalidate = 30; // Revalida a cada 30 segundos
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -55,9 +57,7 @@ export async function GET(request: NextRequest) {
         data: [],
         lastUpdate: new Date().toISOString(),
       });
-    }
-
-    // Buscar achievements (usa admin se disponível; caso contrário, tenta com o mesmo client)
+    }    // Buscar achievements (usa admin se disponível; caso contrário, tenta com o mesmo client)
     const userIds = leaderboardData.map((c) => c.user_id);
     let achievementsRaw: any[] = [];
 

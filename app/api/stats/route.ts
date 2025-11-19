@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+export const revalidate = 60; // Revalida a cada 60 segundos
+
 /**
  * GET - Estatísticas gerais da plataforma
  */
