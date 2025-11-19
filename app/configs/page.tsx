@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import LeaderboardProfileCard from "@/components/leaderboard-profile-card";
@@ -12,11 +13,19 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 
 export default function Profile() {
-  const { user, userProfile, hasCharacter, refreshUserProfile, notificationsEnabled, updateNotifications } =
+  const router = useRouter();
+  const { user, userProfile, hasCharacter, refreshUserProfile, notificationsEnabled, updateNotifications, loading } =
     useUserContext();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState<boolean>(false);
+
+  // Redirecionar se não autenticado
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/");
+    }
+  }, [user, loading, router]);
 
   // Alternar notificações (otimista)
   const toggleNotifications = async () => {
@@ -26,6 +35,11 @@ export default function Profile() {
     await updateNotifications(nextValue);
     setSavingNotifications(false);
   };
+
+  // Não renderizar nada enquanto verifica autenticação
+  if (loading || !user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -89,7 +103,7 @@ export default function Profile() {
                     className="text-[10px] uppercase"
                     onClick={() => setIsDeleteDialogOpen(true)}
                   >
-                    <FaSkull className="!w-3 !h-3 shrink-0" />
+                    <FaSkull className="w-3! h-3! shrink-0" />
                     deletar
                   </Button>
                 </div>
