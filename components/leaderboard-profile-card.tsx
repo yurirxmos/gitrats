@@ -121,11 +121,11 @@ export default function LeaderboardProfileCard({
                         <h3 className="font-black text-xl">{userProfile.character_name}</h3>
                         <Button
                           variant="outline"
-                          className="p-1! h-6! w-6! min-w-0!"
+                          className="p-1 h-6 w-6 min-w-0"
                           onClick={openEditDialog}
                           aria-label="Editar nome do personagem"
                         >
-                          <FaPen className="w-2! h-2!" />
+                          <FaPen className="w-2 h-2" />
                         </Button>
                       </div>
 
@@ -213,7 +213,7 @@ export default function LeaderboardProfileCard({
                     {Array.isArray(userProfile.achievement_codes) && userProfile.achievement_codes.length > 0 ? (
                       <>
                         <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
-                          <FaMedal className="shrink-0 !w-2! h-2!" />
+                          <FaMedal className="shrink-0 w-2 h-2" />
                           <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
                         </div>
                         <div className="flex flex-wrap items-start gap-2">
@@ -229,7 +229,7 @@ export default function LeaderboardProfileCard({
                     ) : (
                       <>
                         <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
-                          <FaMedal className="shrink-0 w-2! h-2!" />
+                          <FaMedal className="shrink-0 w-2 h-2" />
                           <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
                         </div>
                         <p className="text-xs text-muted-foreground">Sem conquistas ainda</p>
@@ -256,11 +256,11 @@ export default function LeaderboardProfileCard({
                         <h3 className="font-black text-xl">{userProfile.character_name}</h3>
                         <Button
                           variant="outline"
-                          className="p-1! h-6! w-6! min-w-0!"
+                          className="p-1 h-6 w-6 min-w-0"
                           onClick={openEditDialog}
                           aria-label="Editar nome do personagem"
                         >
-                          <FaPen className="w-2! h-2!" />
+                          <FaPen className="w-2 h-2" />
                         </Button>
                       </div>
                       <p className={`text-sm ${getRankColorClass(userProfile.level)}`}>
