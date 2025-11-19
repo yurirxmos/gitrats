@@ -53,9 +53,12 @@ export default function Leaderboard() {
   // Carrega leaderboard, stats e perfil
   useEffect(() => {
     const loadAllData = async () => {
+      console.log("[LEADERBOARD] loadAllData iniciado", { hasLoaded: hasLoadedRef.current, userLoading });
       if (hasLoadedRef.current) return;
       setIsLoading(true);
+      console.log("[LEADERBOARD] Carregando dados...");
       await Promise.all([loadLeaderboard(), loadStats()]);
+      console.log("[LEADERBOARD] Dados carregados");
       setIsLoading(false);
       hasLoadedRef.current = true;
       if (user && !userLoading && hasCharacter && userProfile) {
@@ -88,6 +91,7 @@ export default function Leaderboard() {
   };
 
   const loadLeaderboard = async () => {
+    console.log("[LEADERBOARD] loadLeaderboard iniciado");
     try {
       const CACHE_KEY = "gitrats_leaderboard_50";
       const TTL = 2 * 60 * 1000; // 2 min
@@ -101,15 +105,19 @@ export default function Leaderboard() {
         }
       }
 
+      console.log("[LEADERBOARD] Buscando do servidor...");
       const response = await fetch("/api/leaderboard?limit=50", {
         next: { revalidate: 30 },
       });
+      console.log("[LEADERBOARD] Response status:", response.status);
       if (!response.ok) throw new Error("Erro ao carregar leaderboard");
       const { data, lastUpdate: updateTime } = await response.json();
+      console.log("[LEADERBOARD] Dados recebidos:", data?.length, "jogadores");
       setLeaderboard(data || []);
       setLastUpdate(updateTime || null);
       sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, lastUpdate: updateTime, timestamp: Date.now() }));
-    } catch {
+    } catch (error) {
+      console.error("[LEADERBOARD] Erro ao carregar:", error);
       setLeaderboard([]);
     }
   };

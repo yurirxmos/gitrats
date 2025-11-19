@@ -71,12 +71,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Carregar perfil do usuário
   const loadUserProfile = useCallback(
     async (currentUser: User, forceRefresh = false): Promise<void> => {
+      console.log("[USER_CONTEXT] loadUserProfile", {
+        userId: currentUser.id,
+        forceRefresh,
+        isLoading: isLoadingRef.current,
+      });
       if (isLoadingRef.current && !forceRefresh) return;
 
       // Tentar carregar do cache primeiro
       if (!forceRefresh) {
         const cached = loadFromCache();
         if (cached) {
+          console.log("[USER_CONTEXT] Usando cache");
           setUserProfile(cached.profile);
           setNotificationsEnabled(cached.notificationsEnabled);
           setHasCharacter(true);
@@ -88,20 +94,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       isLoadingRef.current = true;
 
       try {
+        console.log("[USER_CONTEXT] Buscando session token...");
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData.session?.access_token;
 
         if (!token) {
+          console.log("[USER_CONTEXT] Sem token de sessão");
           setHasCharacter(false);
           setUserProfile(null);
           return;
         }
 
+        console.log("[USER_CONTEXT] Buscando character...");
         const characterResponse = await fetch("/api/character", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
+        console.log("[USER_CONTEXT] Character response:", characterResponse.status);
         if (!characterResponse.ok) {
+          console.log("[USER_CONTEXT] Erro ao buscar character");
           setHasCharacter(false);
           setUserProfile(null);
           localStorage.removeItem(CACHE_KEY);
@@ -109,6 +120,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
 
         const { data: characterData } = await characterResponse.json();
+        console.log("[USER_CONTEXT] Character data recebido");
         setHasCharacter(true);
 
         // Carregar dados do usuário (incluindo notificações)
@@ -138,12 +150,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(profile);
         setNotificationsEnabled(Boolean(userData?.notifications_enabled ?? true));
         saveToCache(profile, Boolean(userData?.notifications_enabled ?? true));
-      } catch {
+        console.log("[USER_CONTEXT] Perfil carregado com sucesso");
+      } catch (error) {
+        console.error("[USER_CONTEXT] Erro ao carregar perfil:", error);
         setHasCharacter(false);
         setUserProfile(null);
         localStorage.removeItem(CACHE_KEY);
       } finally {
         isLoadingRef.current = false;
+        console.log("[USER_CONTEXT] loadUserProfile finalizado");
       }
     },
     [supabase, loadFromCache, saveToCache]
@@ -196,22 +211,29 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // Inicializar auth
   useEffect(() => {
+    console.log("[USER_CONTEXT] useEffect auth iniciado");
     let mounted = true;
 
     const initAuth = async () => {
+      console.log("[USER_CONTEXT] initAuth começando...");
       const {
         data: { user: currentUser },
       } = await supabase.auth.getUser();
 
+      console.log("[USER_CONTEXT] getUser:", { hasUser: !!currentUser, mounted });
       if (!mounted) return;
 
       setUser(currentUser);
 
       if (currentUser) {
+        console.log("[USER_CONTEXT] Carregando perfil do usuário...");
         await loadUserProfile(currentUser);
+      } else {
+        console.log("[USER_CONTEXT] Sem usuário autenticado");
       }
 
       setLoading(false);
+      console.log("[USER_CONTEXT] initAuth finalizado, loading = false");
     };
 
     initAuth();
@@ -219,6 +241,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log("[USER_CONTEXT] Auth state changed:", _event);
       if (!mounted) return;
 
       const currentUser = session?.user ?? null;

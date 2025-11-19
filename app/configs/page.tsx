@@ -22,9 +22,13 @@ export default function Profile() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState<boolean>(false);
 
+  console.log("[CONFIGS] Estado:", { loading, hasUser: !!user, hasProfile: !!userProfile, hasCharacter });
+
   // Redirecionar se não autenticado
   useEffect(() => {
+    console.log("[CONFIGS] useEffect auth:", { loading, hasUser: !!user });
     if (!loading && !user) {
+      console.log("[CONFIGS] Redirecionando para /");
       router.push("/");
     }
   }, [user, loading, router]);
@@ -40,8 +44,11 @@ export default function Profile() {
 
   // Não renderizar nada enquanto verifica autenticação
   if (loading || !user) {
+    console.log("[CONFIGS] Retornando null - loading ou sem user");
     return null;
   }
+
+  console.log("[CONFIGS] Renderizando página");
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
