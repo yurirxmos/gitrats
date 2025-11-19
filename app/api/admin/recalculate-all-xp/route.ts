@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         id,
         github_username,
         github_access_token,
+        created_at,
         characters(
           id,
           class,
@@ -77,62 +78,62 @@ export async function POST(request: NextRequest) {
         // Buscar stats atuais do GitHub
         const githubStats = await githubService.getUserStats(userData.github_username);
 
-        // Data de criação do personagem
-        const createdAt = new Date(character.created_at);
-        const createdAtStr = createdAt.toISOString();
-
-        // 7 dias ANTES da criação
-        const sevenDaysBeforeCreation = new Date(createdAt);
-        sevenDaysBeforeCreation.setDate(createdAt.getDate() - 7);
-        const sevenDaysBeforeStr = sevenDaysBeforeCreation.toISOString();
+        // Data de referência: preferir criação do usuário (alinha com regra dos 7 dias anteriores)
+        const userCreatedAt = userData.created_at ? new Date(userData.created_at) : new Date(character.created_at);
+        const userCreatedAtStr = userCreatedAt.toISOString();
+        const startWindow = new Date(userCreatedAt);
+        startWindow.setDate(startWindow.getDate() - 7);
 
         console.log(
-          `[Recalc XP] ${userData.github_username} - Criado em ${createdAtStr.split("T")[0]}, buscando atividades desde ${sevenDaysBeforeStr.split("T")[0]}`
+          `[Recalc XP] ${userData.github_username} - Criado em ${userCreatedAtStr.split("T")[0]}, recalculando DESDE ${startWindow.toISOString().split("T")[0]}`
         );
 
-        // Buscar atividades de 7 dias ANTES da criação até a data de criação
-        let activityStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
+        // Buscar atividades DESDE 7 dias antes da criação até agora
+        const activitiesSinceJoin = await githubService.getActivitiesSince(userData.github_username, startWindow);
 
-        try {
-          activityStats = await githubService.getActivityByDateRange(
-            userData.github_username,
-            sevenDaysBeforeStr,
-            createdAtStr
-          );
-        } catch (error) {
-          console.warn(`[Recalc XP] ${userData.github_username} - Erro ao buscar atividades customizadas:`, error);
-          // Fallback: usar últimos 7 dias
-          activityStats = await githubService.getWeeklyXp(userData.github_username);
-        }
-
-        // CALCULAR BASELINE CORRETO
-        // Baseline = Total no GitHub HOJE - atividades dos 7 dias ANTES da criação
-        const baselineCommits = Math.max(0, githubStats.totalCommits - activityStats.commits);
-        const baselinePRs = Math.max(0, githubStats.totalPRs - activityStats.prs);
-        const baselineIssues = Math.max(0, githubStats.totalIssues - activityStats.issues);
+        // Baseline correto = total atual - atividades desde a criação
+        const baselineCommits = Math.max(0, githubStats.totalCommits - activitiesSinceJoin.commits);
+        const baselinePRs = Math.max(0, githubStats.totalPRs - activitiesSinceJoin.prs);
+        const baselineIssues = Math.max(0, githubStats.totalIssues - activitiesSinceJoin.issues);
 
         console.log(
           `[Recalc XP] ${userData.github_username} - Baseline: ${baselineCommits} commits, ${baselinePRs} PRs, ${baselineIssues} issues`
         );
         console.log(
-          `[Recalc XP] ${userData.github_username} - Atividades 7d antes da criação: ${activityStats.commits} commits, ${activityStats.prs} PRs, ${activityStats.issues} issues`
+          `[Recalc XP] ${userData.github_username} - Atividades desde join: ${activitiesSinceJoin.commits} commits, ${activitiesSinceJoin.prs} PRs, ${activitiesSinceJoin.issues} issues`
         );
 
-        // Aplicar multiplicadores de classe ATUALIZADOS
+        // Aplicar multiplicadores de classe ATUALIZADOS às atividades desde a criação
         const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
         const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
         const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
 
-        // Calcular XP total com multiplicadores novos (SÓ DAS ATIVIDADES dos 7 dias ANTES da criação)
-        const xpFromCommits = Math.floor(activityStats.commits * 10 * commitMultiplier);
-        const xpFromPRs = Math.floor(activityStats.prs * 50 * prMultiplier);
-        const xpFromIssues = Math.floor(activityStats.issues * 25 * issueMultiplier);
-        const totalXp = xpFromCommits + xpFromPRs + xpFromIssues;
+        const xpFromCommits = Math.floor(activitiesSinceJoin.commits * 10 * commitMultiplier);
+        const xpFromPRs = Math.floor(activitiesSinceJoin.prs * 50 * prMultiplier);
+        const xpFromIssues = Math.floor(activitiesSinceJoin.issues * 25 * issueMultiplier);
+        const activityXp = xpFromCommits + xpFromPRs + xpFromIssues;
+
+        // Somar achievements existentes do usuário
+        const { data: achievementsData } = await supabase
+          .from("user_achievements")
+          .select("achievement:achievements(code, xp_reward)")
+          .eq("user_id", userData.id);
+
+        let achievementsXp = 0;
+        if (achievementsData && achievementsData.length > 0) {
+          for (const item of achievementsData as any[]) {
+            achievementsXp += item.achievement?.xp_reward || 0;
+          }
+        }
+
+        const totalXp = activityXp + achievementsXp;
 
         const newLevel = getLevelFromXp(totalXp);
         const newCurrentXp = getCurrentXp(totalXp, newLevel);
 
-        console.log(`[Recalc XP] ${userData.github_username} - XP: ${totalXp} (Level ${newLevel})`);
+        console.log(
+          `[Recalc XP] ${userData.github_username} - XP: ${totalXp} (atividades ${activityXp} + achievements ${achievementsXp}) -> Level ${newLevel}`
+        );
 
         // Atualizar github_stats mantendo o baseline correto
         const { error: updateStatsError } = await supabase
@@ -194,15 +195,18 @@ export async function POST(request: NextRequest) {
             prs: baselinePRs,
             issues: baselineIssues,
           },
-          retroactive_activity: {
-            commits: activityStats.commits,
-            prs: activityStats.prs,
-            issues: activityStats.issues,
+          activities_since_join: {
+            commits: activitiesSinceJoin.commits,
+            prs: activitiesSinceJoin.prs,
+            issues: activitiesSinceJoin.issues,
           },
           xp_breakdown: {
             commits: xpFromCommits,
             prs: xpFromPRs,
             issues: xpFromIssues,
+            achievements: achievementsXp,
+            activity_total: activityXp,
+            total: totalXp,
           },
           multipliers: {
             commits: commitMultiplier,
