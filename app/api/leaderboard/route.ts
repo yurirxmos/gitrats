@@ -6,7 +6,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "50");
 
-    const supabase = await createClient();
+    // Preferir admin client para bypassar RLS em leaderboard público; fallback para anon
+    let supabase;
+    let usingAdmin = false;
+    try {
+      supabase = createAdminClient();
+      usingAdmin = true;
+    } catch (e) {
+      console.warn("[Leaderboard] SUPABASE_SERVICE_ROLE_KEY ausente. Usando anon client.");
+      supabase = await createClient();
+    }
 
     // Query otimizada: buscar tudo com JOINs em uma única query
     const { data: leaderboardData, error: leaderboardError } = await supabase
@@ -21,15 +30,15 @@ export async function GET(request: NextRequest) {
         total_xp,
         users!inner (
           github_username,
-          github_avatar_url
-        ),
-        github_stats (
-          total_commits,
-          total_prs,
-          total_issues,
-          baseline_commits,
-          baseline_prs,
-          baseline_issues
+          github_avatar_url,
+          github_stats (
+            total_commits,
+            total_prs,
+            total_issues,
+            baseline_commits,
+            baseline_prs,
+            baseline_issues
+          )
         )
       `
       )
@@ -48,13 +57,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Buscar achievements em paralelo (única query extra necessária)
+    // Buscar achievements (usa admin se disponível; caso contrário, tenta com o mesmo client)
     const userIds = leaderboardData.map((c) => c.user_id);
     let achievementsRaw: any[] = [];
 
     try {
-      const admin = createAdminClient();
-      const { data, error } = await admin
+      const achClient = usingAdmin ? supabase : createAdminClient();
+      const { data, error } = await achClient
         .from("user_achievements")
         .select("user_id, achievement:achievements(code)")
         .in("user_id", userIds);
@@ -76,8 +85,10 @@ export async function GET(request: NextRequest) {
 
     // Formatar dados
     const formattedPlayers = leaderboardData.map((character: any, index) => {
-      const stats = character.github_stats?.[0];
       const user = character.users;
+      // github_stats pode vir como objeto ou array dependendo da relação
+      const statsRaw = user?.github_stats;
+      const stats = Array.isArray(statsRaw) ? statsRaw[0] : statsRaw;
 
       const commitsAfterJoin = stats ? (stats.total_commits || 0) - (stats.baseline_commits || 0) : 0;
       const prsAfterJoin = stats ? (stats.total_prs || 0) - (stats.baseline_prs || 0) : 0;
