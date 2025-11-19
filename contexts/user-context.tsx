@@ -79,7 +79,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (!forceRefresh) {
         const cached = loadFromCache();
         if (cached) {
-          console.error("[USER_CTX] Perfil carregado do cache", { hasCharacter: true });
           setUserProfile(cached.profile);
           setNotificationsEnabled(cached.notificationsEnabled);
           setHasCharacter(true);
@@ -91,12 +90,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       isLoadingRef.current = true;
 
       try {
-        console.error("[USER_CTX] Carregando perfil do usuário", { forceRefresh });
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData.session?.access_token;
 
         if (!token) {
-          console.error("[USER_CTX] Nenhum token encontrado na sessão");
           setHasCharacter(false);
           setUserProfile(null);
           return;
@@ -107,7 +104,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (!characterResponse.ok) {
-          console.error("[USER_CTX] Falha ao buscar personagem", { status: characterResponse.status });
           setHasCharacter(false);
           setUserProfile(null);
           if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
@@ -121,15 +117,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const userResponse = await fetch("/api/user", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!userResponse.ok) {
-          console.error("[USER_CTX] Falha ao buscar dados do usuário", { status: userResponse.status });
-        }
+
         const userData = userResponse.ok ? (await userResponse.json()).data : null;
 
         const rankResponse = await fetch(`/api/leaderboard/${currentUser.id}`);
-        if (!rankResponse.ok) {
-          console.error("[USER_CTX] Falha ao buscar rank do usuário", { status: rankResponse.status });
-        }
+
         const { data: rankData } = rankResponse.ok ? await rankResponse.json() : { data: null };
 
         const profile: UserProfile = {
@@ -151,7 +143,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setNotificationsEnabled(Boolean(userData?.notifications_enabled ?? true));
         saveToCache(profile, Boolean(userData?.notifications_enabled ?? true));
       } catch (e) {
-        console.error("[USER_CTX] Erro ao carregar perfil do usuário", e);
         setHasCharacter(false);
         setUserProfile(null);
         if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
@@ -213,28 +204,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     let timeoutId: NodeJS.Timeout;
 
     const initAuth = async () => {
-      console.error("[USER_CTX] initAuth iniciando");
       
       try {
         const {
           data: { user: currentUser },
         } = await supabase.auth.getUser();
-        console.error("[USER_CTX] getUser retornou", { hasUser: !!currentUser });
 
         if (!mounted) return;
 
         setUser(currentUser);
 
         if (currentUser) {
-          console.error("[USER_CTX] Usuário autenticado, carregando perfil");
           await loadUserProfile(currentUser);
         }
       } catch (error) {
-        console.error("[USER_CTX] Erro no initAuth:", error);
       } finally {
         if (mounted) {
           setLoading(false);
-          console.error("[USER_CTX] Loading finalizado (initAuth)");
         }
       }
     };
@@ -242,7 +228,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     // Timeout de segurança: forçar loading=false após 5 segundos
     timeoutId = setTimeout(() => {
       if (mounted && loading) {
-        console.error("[USER_CTX] TIMEOUT: Forçando loading=false após 5s");
         setLoading(false);
       }
     }, 5000);
@@ -252,17 +237,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.error("[USER_CTX] onAuthStateChange", { event, hasSession: !!session });
       if (!mounted) return;
 
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
       if (currentUser) {
-        console.error("[USER_CTX] Sessão ativa, recarregando perfil");
         await loadUserProfile(currentUser);
       } else {
-        console.error("[USER_CTX] Sessão finalizada, limpando cache");
         setUserProfile(null);
         setHasCharacter(false);
         if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
