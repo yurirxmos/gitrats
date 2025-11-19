@@ -29,6 +29,17 @@ export default function Profile() {
     }
   }, [user, loading, router]);
 
+  // DEBUG: report user/loading states to /api/debug/client-log
+  useEffect(() => {
+    try {
+      fetch('/api/debug/client-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'configs_state', hasUser: !!user, loading }),
+      }).catch(() => {});
+    } catch (e) {}
+  }, [user, loading]);
+
   // Alternar notificações (otimista)
   const toggleNotifications = async () => {
     if (!user || savingNotifications) return;
