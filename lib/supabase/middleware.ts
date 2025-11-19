@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
   // Refresh session if expired
   try {
     const { data, error } = await supabase.auth.getUser();
-    
+
     if (error) {
       // Evitar spam de logs: "Auth session missing!" é esperado para visitantes anônimos
       if (!/auth session missing/i.test(error.message || "")) {
@@ -41,7 +41,7 @@ export async function updateSession(request: NextRequest) {
           status: error.status,
           path: request.nextUrl.pathname,
           hasCookies: request.cookies.getAll().length > 0,
-          cookieNames: request.cookies.getAll().map(c => c.name),
+          cookieNames: request.cookies.getAll().map((c) => c.name),
         });
       }
     } else if (data?.user) {

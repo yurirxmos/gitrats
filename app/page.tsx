@@ -22,10 +22,12 @@ export default function Home() {
 
   useEffect(() => {
     // Verificar se estava no onboarding antes do login
-    const onboardingInProgress = localStorage.getItem("onboarding_in_progress");
-    if (onboardingInProgress === "true") {
-      setIsOnboardingOpen(true);
-      localStorage.removeItem("onboarding_in_progress");
+    if (typeof window !== 'undefined') {
+      const onboardingInProgress = localStorage.getItem("onboarding_in_progress");
+      if (onboardingInProgress === "true") {
+        setIsOnboardingOpen(true);
+        localStorage.removeItem("onboarding_in_progress");
+      }
     }
   }, []);
 

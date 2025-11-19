@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default function NotFound() {
   return (
@@ -6,7 +6,10 @@ export default function NotFound() {
       <div className="text-center space-y-4">
         <h1 className="text-6xl font-bold">404</h1>
         <p className="text-xl opacity-70">Página não encontrada</p>
-        <a href="/" className="text-primary hover:underline">
+        <a
+          href="/"
+          className="text-primary hover:underline"
+        >
           Voltar para o início
         </a>
       </div>

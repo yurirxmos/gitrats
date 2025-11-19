@@ -36,8 +36,8 @@ export async function GET(request: Request) {
     console.log("[AUTH_CALLBACK] Trocando code por session...");
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    console.log("[AUTH_CALLBACK] Exchange result:", { 
-      hasSession: !!data?.session, 
+    console.log("[AUTH_CALLBACK] Exchange result:", {
+      hasSession: !!data?.session,
       error: error?.message,
       hasUser: !!data?.session?.user,
       userId: data?.session?.user?.id,
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
       // Verificar se usuário existe
       const { data: existingUser } = await supabase.from("users").select("id").eq("id", user.id).single();
 
-      console.log("[AUTH_CALLBACK] Existing user check:", { 
+      console.log("[AUTH_CALLBACK] Existing user check:", {
         exists: !!existingUser,
         userId: user.id,
         searchedId: user.id,
