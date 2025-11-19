@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import type { NextRequest } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
@@ -46,4 +47,41 @@ export function createAdminClient() {
       persistSession: false,
     },
   });
+}
+
+/**
+ * Obter usuário autenticado a partir de cookies OU header Authorization: Bearer <token>.
+ * Retorna o mesmo client `supabase` para reutilização nas queries seguintes.
+ */
+export async function getAuthUserFromRequest(request: NextRequest) {
+  const supabase = await createClient();
+  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
+  const bearer = authHeader && authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7) : null;
+  try {
+    // Primeiro tenta cookies normais
+    const { data: cookieUser, error: cookieError } = await supabase.auth.getUser();
+    if (cookieUser.user) {
+      return { supabase, user: cookieUser.user, error: cookieError } as const;
+    }
+    // Se não deu certo e há bearer, tenta trocar sessão (fallback diagnóstico)
+    if (bearer) {
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+        access_token: bearer,
+        refresh_token: bearer,
+      });
+      if (!sessionError) {
+        const { data: userAfterSet } = await supabase.auth.getUser();
+        if (userAfterSet.user) {
+          return { supabase, user: userAfterSet.user, error: null } as const;
+        }
+      }
+    }
+    if (cookieError && !/auth session missing/i.test(cookieError.message)) {
+      console.error("[SUPABASE_SERVER] getAuthUserFromRequest erro:", cookieError.message);
+    }
+    return { supabase, user: null, error: cookieError } as const;
+  } catch (e) {
+    console.error("[SUPABASE_SERVER] getAuthUserFromRequest exceção:", e);
+    return { supabase, user: null, error: e as Error } as const;
+  }
 }
