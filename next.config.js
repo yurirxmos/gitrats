@@ -24,6 +24,16 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Desabilitar cache para páginas de erro e rotas especiais
+        source: "/:path(404|500|_error|_not-found)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate",
+          },
+        ],
+      },
     ];
   },
 };
