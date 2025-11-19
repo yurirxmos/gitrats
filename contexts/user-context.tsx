@@ -211,21 +211,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const initAuth = async () => {
       console.error("[USER_CTX] initAuth iniciando");
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-      console.error("[USER_CTX] getUser retornou", { hasUser: !!currentUser });
+      try {
+        const {
+          data: { user: currentUser },
+        } = await supabase.auth.getUser();
+        console.error("[USER_CTX] getUser retornou", { hasUser: !!currentUser });
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      setUser(currentUser);
+        setUser(currentUser);
 
-      if (currentUser) {
-        console.error("[USER_CTX] Usuário autenticado, carregando perfil");
-        await loadUserProfile(currentUser);
+        if (currentUser) {
+          console.error("[USER_CTX] Usuário autenticado, carregando perfil");
+          await loadUserProfile(currentUser);
+        }
+      } catch (e) {
+        console.error("[USER_CTX] Erro no initAuth", e);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     initAuth();
@@ -236,20 +240,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       console.error("[USER_CTX] onAuthStateChange", { event, hasSession: !!session });
       if (!mounted) return;
 
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
+      try {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
 
-      if (currentUser) {
-        console.error("[USER_CTX] Sessão ativa, recarregando perfil");
-        await loadUserProfile(currentUser);
-      } else {
-        console.error("[USER_CTX] Sessão finalizada, limpando cache");
-        setUserProfile(null);
-        setHasCharacter(false);
-        localStorage.removeItem(CACHE_KEY);
+        if (currentUser) {
+          console.error("[USER_CTX] Sessão ativa, recarregando perfil");
+          await loadUserProfile(currentUser);
+        } else {
+          console.error("[USER_CTX] Sessão finalizada, limpando cache");
+          setUserProfile(null);
+          setHasCharacter(false);
+          localStorage.removeItem(CACHE_KEY);
+        }
+      } catch (e) {
+        console.error("[USER_CTX] Erro no onAuthStateChange", e);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     });
 
     return () => {

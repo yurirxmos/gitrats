@@ -99,6 +99,35 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
+        {/* Script para capturar erros do cliente e enviar para /api/debug/client-log */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                (function(){
+                  function send(payload) {
+                    try {
+                      navigator.sendBeacon('/api/debug/client-log', JSON.stringify(payload));
+                    } catch (e) {
+                      fetch('/api/debug/client-log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(()=>{});
+                    }
+                  }
+
+                  window.addEventListener('error', function(evt) {
+                    send({ type: 'error', message: evt.message, filename: evt.filename, lineno: evt.lineno, colno: evt.colno, error: (evt.error && evt.error.stack) || null });
+                  });
+                  window.addEventListener('unhandledrejection', function(evt) {
+                    var reason = evt.reason;
+                    send({ type: 'unhandledrejection', reason: (reason && (reason.message || reason.toString())) || reason });
+                  });
+                  window.addEventListener('DOMContentLoaded', function(){
+                    send({ type: 'domcontentloaded', href: location.href, userAgent: navigator.userAgent });
+                  });
+                })();
+              } catch (e) {}
+            `,
+          }}
+        />
       </head>
       <body>
         <ThemeProvider>
