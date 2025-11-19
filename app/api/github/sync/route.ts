@@ -32,45 +32,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
 
-    // Se não há token no banco, tentar obter da sessão atual e salvar
+    // Sempre verificar se há token mais recente na sessão
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const sessionToken = session?.provider_token;
+
+    // Se token da sessão é diferente do banco, atualizar
+    if (sessionToken && sessionToken !== userData.github_access_token) {
+      console.log(`[Sync] ${userData.github_username} - Atualizando token do banco com token da sessão`);
+      await supabase.from("users").update({ github_access_token: sessionToken }).eq("id", user.id);
+      userData.github_access_token = sessionToken;
+    }
+
+    // Se não há token no banco nem na sessão
     if (!userData.github_access_token) {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      console.error(`[Sync] ${userData.github_username} - Nenhum token disponível`);
 
-      const providerToken = session?.provider_token;
-
-      if (providerToken) {
-        const { error: updateTokenError } = await supabase
-          .from("users")
-          .update({
-            github_access_token: providerToken,
-          })
-          .eq("id", user.id);
-
-        if (updateTokenError) {
-          console.error("[Sync] Erro ao salvar token:", updateTokenError);
-        } else {
-          // Atualizar userData com o token
-          userData.github_access_token = providerToken;
-        }
-      } else {
-        try {
-          await supabase.auth.signOut();
-        } catch (logoutError) {
-          console.error(`[Sync] ${userData.github_username} - Erro ao fazer logout:`, logoutError);
-        }
-
-        return NextResponse.json(
-          {
-            error: "Token GitHub expirado. Você foi desconectado para renovar o acesso.",
-            username: userData.github_username,
-            action: "logout_required",
-            redirect_to: "/auth/login",
-          },
-          { status: 401 }
-        );
+      try {
+        await supabase.auth.signOut();
+      } catch (logoutError) {
+        console.error(`[Sync] ${userData.github_username} - Erro ao fazer logout:`, logoutError);
       }
+
+      return NextResponse.json(
+        {
+          error: "Token GitHub expirado. Você foi desconectado para renovar o acesso.",
+          username: userData.github_username,
+          action: "logout_required",
+          redirect_to: "/auth/login",
+        },
+        { status: 401 }
+      );
     }
 
     const userCreatedAt = userData.created_at ? new Date(userData.created_at) : new Date();
@@ -86,19 +80,47 @@ export async function POST(request: NextRequest) {
     }
 
     const githubService = new GitHubService(userData.github_access_token || undefined);
-    
+
     let githubStats;
     try {
       githubStats = await githubService.getUserStats(userData.github_username);
     } catch (error: any) {
       console.error(`[Sync] ${userData.github_username} - Erro ao buscar stats:`, error.message);
-      
-      // Se token inválido, tentar refresh
+
+      // Se token inválido, forçar logout para renovar OAuth
       if (error.message.includes("inválido") || error.message.includes("expirado")) {
-        const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
-        
-        if (refreshError || !refreshedSession.session) {
-          console.error(`[Sync] ${userData.github_username} - Erro ao renovar sessão:`, refreshError);
+        // Tentar pegar token da sessão atual primeiro
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const currentToken = session?.provider_token;
+
+        // Se tem token na sessão e é diferente do banco, tentar usar
+        if (currentToken && currentToken !== userData.github_access_token) {
+          console.log(`[Sync] ${userData.github_username} - Tentando token da sessão atual`);
+
+          await supabase.from("users").update({ github_access_token: currentToken }).eq("id", user.id);
+
+          const newGithubService = new GitHubService(currentToken);
+          try {
+            githubStats = await newGithubService.getUserStats(userData.github_username);
+            console.log(`[Sync] ${userData.github_username} - Token da sessão funcionou!`);
+          } catch (retryError: any) {
+            console.error(`[Sync] ${userData.github_username} - Token da sessão também falhou:`, retryError.message);
+            // Forçar logout para renovar OAuth
+            await supabase.auth.signOut();
+            return NextResponse.json(
+              {
+                error: "Token GitHub expirado. Redirecionando para login...",
+                action: "logout_required",
+              },
+              { status: 401 }
+            );
+          }
+        } else {
+          // Sem token válido, forçar logout
+          console.log(`[Sync] ${userData.github_username} - Nenhum token válido encontrado, forçando logout`);
           await supabase.auth.signOut();
           return NextResponse.json(
             {
@@ -107,18 +129,6 @@ export async function POST(request: NextRequest) {
             },
             { status: 401 }
           );
-        }
-        
-        // Atualizar token no banco
-        const newToken = refreshedSession.session.provider_token;
-        if (newToken) {
-          await supabase.from("users").update({ github_access_token: newToken }).eq("id", user.id);
-          
-          // Tentar novamente com novo token
-          const newGithubService = new GitHubService(newToken);
-          githubStats = await newGithubService.getUserStats(userData.github_username);
-        } else {
-          throw new Error("Não foi possível renovar o token do GitHub");
         }
       } else {
         throw error;

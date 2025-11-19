@@ -25,7 +25,7 @@ export class GitHubService {
     if (!accessToken) {
       console.warn("[GitHubService] Criado sem token de acesso - algumas APIs podem falhar");
     }
-    
+
     this.octokit = new Octokit({
       auth: accessToken,
       userAgent: "GitRats/1.0",
@@ -79,17 +79,17 @@ export class GitHubService {
       };
     } catch (error: any) {
       console.error("[GitHubService] Erro ao buscar stats:", error);
-      
+
       // Token inválido/expirado
       if (error.status === 401) {
         throw new Error("GitHub token inválido ou expirado. Faça login novamente.");
       }
-      
+
       // Rate limit
       if (error.status === 403) {
         throw new Error("Rate limit do GitHub excedido. Tente novamente mais tarde.");
       }
-      
+
       throw new Error(`Erro ao buscar estatísticas do GitHub: ${error.message || "Unknown error"}`);
     }
   }

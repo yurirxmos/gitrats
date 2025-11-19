@@ -234,8 +234,8 @@ export default function Docs() {
                     Cada commit conta igualmente. Multiplicado pela classe do personagem.
                   </p>
                   <div className="pt-2 border-t border-border">
-                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Orc (+30%):</p>
-                    <p className="text-xs text-muted-foreground">1 commit = 10 × 1.3 = 13 XP</p>
+                    <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Orc (+25%):</p>
+                    <p className="text-xs text-muted-foreground">1 commit = 10 × 1.25 = 12.5 XP</p>
                   </div>
                 </div>
               </CardContent>

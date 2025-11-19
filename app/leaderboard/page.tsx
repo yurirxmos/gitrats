@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { EvolutionModal } from "@/components/evolution-modal";
+import { XpBreakdownDialog } from "@/components/xp-breakdown-dialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FaTrophy, FaMedal, FaGithub, FaStarHalfStroke } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,6 +34,7 @@ export default function Leaderboard() {
   const [totalCharacters, setTotalCharacters] = useState<number>(0);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [showEvolutionModal, setShowEvolutionModal] = useState(false);
+  const [xpDialogPlayer, setXpDialogPlayer] = useState<LeaderboardEntry | null>(null);
   const hasLoadedRef = useRef(false);
 
   useAutoSync(hasCharacter === true);
@@ -87,7 +89,7 @@ export default function Leaderboard() {
   const loadLeaderboard = async () => {
     try {
       const CACHE_KEY = "gitrats_leaderboard_50";
-      const TTL = 60 * 1000; // 60s
+      const TTL = 2 * 60 * 1000; // 2 min
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
         const { data, lastUpdate, timestamp } = JSON.parse(cached);
@@ -98,7 +100,9 @@ export default function Leaderboard() {
         }
       }
 
-      const response = await fetch("/api/leaderboard?limit=50");
+      const response = await fetch("/api/leaderboard?limit=50", {
+        next: { revalidate: 30 },
+      });
       if (!response.ok) throw new Error("Erro ao carregar leaderboard");
       const { data, lastUpdate: updateTime } = await response.json();
       setLeaderboard(data || []);
@@ -112,7 +116,7 @@ export default function Leaderboard() {
   const loadStats = async () => {
     try {
       const CACHE_KEY = "gitrats_stats";
-      const TTL = 60 * 1000; // 60s
+      const TTL = 5 * 60 * 1000; // 5 min
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
         const { data, timestamp } = JSON.parse(cached);
@@ -122,7 +126,9 @@ export default function Leaderboard() {
         }
       }
 
-      const response = await fetch("/api/stats");
+      const response = await fetch("/api/stats", {
+        next: { revalidate: 60 },
+      });
       if (!response.ok) throw new Error("Erro ao carregar estatísticas");
       const { data } = await response.json();
       setTotalCharacters(data.total_characters || 0);
@@ -274,9 +280,12 @@ export default function Leaderboard() {
                           <div className="bg-gray-400/20 w-full rounded-t-lg p-4 text-center border-2 border-gray-400/50">
                             <p className="font-black text-xl">#{leaderboard[1]?.rank}</p>
                             <p className="text-sm font-bold">Level {leaderboard[1]?.level}</p>
-                            <p className="text-xs text-muted-foreground">
+                            <button
+                              onClick={() => setXpDialogPlayer(leaderboard[1])}
+                              className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                            >
                               {leaderboard[1]?.total_xp?.toLocaleString() || 0} XP
-                            </p>
+                            </button>
                             <div className="flex justify-around mt-2 text-xs">
                               <div>
                                 <p className="font-bold">{leaderboard[1]?.total_commits || 0}</p>
@@ -336,9 +345,12 @@ export default function Leaderboard() {
                           <div className="bg-yellow-500/20 w-full rounded-t-lg p-6 text-center border-2 border-yellow-500/50">
                             <p className="font-black text-2xl">#{leaderboard[0]?.rank}</p>
                             <p className="text-base font-bold">Level {leaderboard[0]?.level}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <button
+                              onClick={() => setXpDialogPlayer(leaderboard[0])}
+                              className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                            >
                               {leaderboard[0]?.total_xp?.toLocaleString() || 0} XP
-                            </p>
+                            </button>
                             <div className="flex justify-around mt-3 text-sm">
                               <div>
                                 <p className="font-bold">{leaderboard[0]?.total_commits || 0}</p>
@@ -398,9 +410,12 @@ export default function Leaderboard() {
                           <div className="bg-amber-700/20 w-full rounded-t-lg p-4 text-center border-2 border-amber-700/50">
                             <p className="font-black text-xl">#{leaderboard[2]?.rank}</p>
                             <p className="text-sm font-bold">Level {leaderboard[2]?.level}</p>
-                            <p className="text-xs text-muted-foreground">
+                            <button
+                              onClick={() => setXpDialogPlayer(leaderboard[2])}
+                              className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                            >
                               {leaderboard[2]?.total_xp?.toLocaleString() || 0} XP
-                            </p>
+                            </button>
                             <div className="flex justify-around mt-2 text-xs">
                               <div>
                                 <p className="font-bold">{leaderboard[2]?.total_commits || 0}</p>
@@ -478,9 +493,15 @@ export default function Leaderboard() {
                                 <div className="flex gap-6 shrink-0">
                                   <div className="text-center">
                                     <p className="font-bold text-base">Level {player.level}</p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setXpDialogPlayer(player);
+                                      }}
+                                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                    >
                                       {player.total_xp.toLocaleString()} XP
-                                    </p>
+                                    </button>
                                   </div>
                                   <div className="text-center">
                                     <p className="font-bold text-base">{player.total_commits}</p>
@@ -557,9 +578,15 @@ export default function Leaderboard() {
                                 <div className="flex gap-6 shrink-0">
                                   <div className="text-center">
                                     <p className="font-bold text-base">Level {player.level}</p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setXpDialogPlayer(player);
+                                      }}
+                                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                    >
                                       {player.total_xp.toLocaleString()} XP
-                                    </p>
+                                    </button>
                                   </div>
                                   <div className="text-center">
                                     <p className="font-bold text-base">{player.total_commits}</p>
@@ -586,6 +613,16 @@ export default function Leaderboard() {
             </div>
           </main>
         </div>
+      )}
+      {xpDialogPlayer && (
+        <XpBreakdownDialog
+          isOpen={!!xpDialogPlayer}
+          onClose={() => setXpDialogPlayer(null)}
+          userId={xpDialogPlayer.user_id}
+          username={xpDialogPlayer.github_username}
+          characterClass={xpDialogPlayer.character_class}
+          totalXp={xpDialogPlayer.total_xp}
+        />
       )}
       <OnboardingModal
         isOpen={isOnboardingOpen}

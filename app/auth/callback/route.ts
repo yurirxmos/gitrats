@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       const providerToken = data.session.provider_token;
 
       // Salvar/atualizar informações do GitHub no banco
-      await supabase
+      const { error: updateError } = await supabase
         .from("users")
         .update({
           github_access_token: providerToken,
@@ -45,7 +45,6 @@ export async function GET(request: Request) {
           avatar_url: user.user_metadata.avatar_url,
         })
         .eq("id", user.id);
-
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

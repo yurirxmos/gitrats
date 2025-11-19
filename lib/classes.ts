@@ -25,11 +25,11 @@ export interface ClassMultipliers {
 export const CLASS_XP_MULTIPLIERS: Record<CharacterClass, ClassMultipliers> = {
   // Orc: Força bruta, commits grandes, releases frequentes
   orc: {
-    commits: 1.3, // Reduzido de 1.5
+    commits: 1.25, // Nerfado de 1.3
     largeCommits: 1.4, // Reduzido de 1.75
-    pullRequests: 1.0, // normal
+    pullRequests: 0.9, // Nerfado de 1.0
     codeReviews: 0.9, // Reduzido penalidade de 0.8
-    issuesResolved: 0.95, // Reduzido penalidade de 0.9
+    issuesResolved: 0.9, // Nerfado de 0.95
     achievements: 1.0, // normal
     starsAndForks: 0.85, // Reduzido penalidade de 0.75
     releases: 1.2, // Reduzido de 1.25
@@ -85,8 +85,9 @@ export const CLASS_DESCRIPTIONS: Record<
     title: "Brute Force Developer",
     description: "Desenvolvedores que preferem ação direta, commits frequentes e entregas rápidas. Gostam de XGH.",
     strengths: [
-      "+30% XP em commits",
-      "+40% XP em commits grandes (>100 linhas) - EM BREVE",
+      "+25% XP em commits",
+      "-10% XP em Pull Requests",
+      "-10% XP em issues resolvidas",
       "+20% XP em releases - EM BREVE",
     ],
     playstyle: "Agressivo, direto, produtividade bruta",
