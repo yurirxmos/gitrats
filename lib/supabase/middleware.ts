@@ -32,7 +32,8 @@ export async function updateSession(request: NextRequest) {
   // Refresh session if expired
   try {
     const { data, error } = await supabase.auth.getUser();
-    if (error) {
+    // Evitar spam de logs: "Auth session missing!" é esperado para visitantes anônimos
+    if (error && !/auth session missing/i.test(error.message || "")) {
       console.error("[SUPABASE_MIDDLEWARE] Erro ao obter usuário no middleware:", error.message);
     }
   } catch (e) {
