@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
+export const dynamic = 'force-dynamic';
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { OnboardingModal } from "@/components/onboarding-modal";
@@ -92,7 +94,7 @@ export default function Profile() {
                   <h1 className="text-lg font-bold">/conta</h1>
                   <div className="flex flex-row items-center gap-1.5 opacity-50 text-xs">
                     <span>@{userProfile?.github_username}</span>
-                    <p>com o gitwarrior</p>
+                    <p>com o gitguerreiro</p>
                     <p>"{userProfile?.character_name}"</p>
                   </div>
                 </div>

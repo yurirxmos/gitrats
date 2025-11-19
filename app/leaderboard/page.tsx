@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+
+export const dynamic = 'force-dynamic';
 import Image from "next/image";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { EvolutionModal } from "@/components/evolution-modal";
@@ -145,6 +147,12 @@ export default function Leaderboard() {
     return <span className="text-muted-foreground font-bold text-lg">#{rank}</span>;
   };
 
+  const getRankColorClass = (level: number): string => {
+    if (level >= 10) return "text-red-500 animate-pulse";
+    if (level >= 5) return "text-amber-500";
+    return "text-muted-foreground";
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background relative bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] animate-[grid-move_2s_linear_infinite]">
       <Navbar />
@@ -226,7 +234,7 @@ export default function Leaderboard() {
                   <h1 className="text-2xl font-black">LEADERBOARD</h1>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {totalCharacters} {totalCharacters === 1 ? "gitwarrior" : "gitwarriors"}.
+                  {totalCharacters} {totalCharacters === 1 ? "gitguerreiro" : "gitguerreiros"}.
                 </p>
               </div>
               {leaderboard.length === 0 ? (
@@ -265,7 +273,7 @@ export default function Leaderboard() {
                                 ))}
                               </div>
                             </div>
-                            <p className="text-xs text-blue-400">
+                            <p className={`text-xs ${getRankColorClass(leaderboard[1]?.level || 1)}`}>
                               {getCurrentRank(leaderboard[1]?.character_class || "orc", leaderboard[1]?.level || 1)}
                             </p>
                             <button
@@ -330,7 +338,7 @@ export default function Leaderboard() {
                                 ))}
                               </div>
                             </div>
-                            <p className="text-sm text-blue-400">
+                            <p className={`text-sm ${getRankColorClass(leaderboard[0]?.level || 1)}`}>
                               {getCurrentRank(leaderboard[0]?.character_class || "orc", leaderboard[0]?.level || 1)}
                             </p>
                             <button
@@ -395,7 +403,7 @@ export default function Leaderboard() {
                                 ))}
                               </div>
                             </div>
-                            <p className="text-xs text-blue-400">
+                            <p className={`text-xs ${getRankColorClass(leaderboard[2]?.level || 1)}`}>
                               {getCurrentRank(leaderboard[2]?.character_class || "orc", leaderboard[2]?.level || 1)}
                             </p>
                             <button
@@ -473,7 +481,7 @@ export default function Leaderboard() {
                                 </div>
 
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <span className="text-blue-400">
+                                  <span className={getRankColorClass(player.level)}>
                                     {getCurrentRank(player.character_class, player.level)}
                                   </span>
                                   <span>•</span>
@@ -556,7 +564,7 @@ export default function Leaderboard() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <span className="text-blue-400">
+                                  <span className={`text-sm ${getRankColorClass(player.level)}`}>
                                     {getCurrentRank(player.character_class, player.level)}
                                   </span>
                                   <span>•</span>

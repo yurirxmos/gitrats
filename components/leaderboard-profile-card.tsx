@@ -36,6 +36,12 @@ export default function LeaderboardProfileCard({
   const contentClass = isHorizontal ? "flex flex-row items-start gap-6" : "space-y-6";
   const { refreshUserProfile } = useUserContext();
 
+  const getRankColorClass = (level: number): string => {
+    if (level >= 10) return "text-red-500 animate-pulse";
+    if (level >= 5) return "text-amber-500";
+    return "text-muted-foreground";
+  };
+
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState<string>(userProfile?.character_name || "");
   const [savingName, setSavingName] = useState(false);
@@ -123,7 +129,7 @@ export default function LeaderboardProfileCard({
                         </Button>
                       </div>
 
-                      <p className="text-sm text-blue-400">
+                      <p className={`text-sm ${getRankColorClass(userProfile.level)}`}>
                         {getCurrentRank(userProfile.character_class, userProfile.level)}
                       </p>
                     </div>
@@ -147,12 +153,17 @@ export default function LeaderboardProfileCard({
                       </div>
                       {(() => {
                         const nextRank = getNextRank(userProfile.character_class, userProfile.level);
+                        const isMaxRankEvolution = nextRank && nextRank.levelRequired === 10;
                         return (
                           <div className="pt-2 space-y-1">
                             {nextRank && (
                               <div className="flex justify-between">
                                 <p className="text-xs text-muted-foreground">Evolução:</p>
-                                <p className="font-bold text-xs">{nextRank.name.toUpperCase()}</p>
+                                <p
+                                  className={`font-bold text-xs ${isMaxRankEvolution ? "text-red-500 animate-pulse" : ""}`}
+                                >
+                                  {nextRank.name.toUpperCase()}
+                                </p>
                               </div>
                             )}
                             {userProfile.created_at && (
@@ -252,7 +263,7 @@ export default function LeaderboardProfileCard({
                           <FaPen className="w-2! h-2!" />
                         </Button>
                       </div>
-                      <p className="text-sm text-blue-400">
+                      <p className={`text-sm ${getRankColorClass(userProfile.level)}`}>
                         {getCurrentRank(userProfile.character_class, userProfile.level)}
                       </p>
                     </div>
@@ -274,12 +285,17 @@ export default function LeaderboardProfileCard({
                     </div>
                     {(() => {
                       const nextRank = getNextRank(userProfile.character_class, userProfile.level);
+                      const isMaxRankEvolution = nextRank && nextRank.levelRequired === 10;
                       return (
                         <div className="pt-2 space-y-1">
                           {nextRank && (
                             <div className="flex justify-between">
                               <p className="text-xs text-muted-foreground">Evolução:</p>
-                              <p className="font-bold text-xs">{nextRank.name.toUpperCase()}</p>
+                              <p
+                                className={`font-bold text-xs ${isMaxRankEvolution ? "text-red-500 animate-pulse" : ""}`}
+                              >
+                                {nextRank.name.toUpperCase()}
+                              </p>
                             </div>
                           )}
                           {userProfile.created_at && (
