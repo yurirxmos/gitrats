@@ -32,12 +32,23 @@ export async function updateSession(request: NextRequest) {
   // Refresh session if expired
   try {
     const { data, error } = await supabase.auth.getUser();
-    // Evitar spam de logs: "Auth session missing!" é esperado para visitantes anônimos
-    if (error && !/auth session missing/i.test(error.message || "")) {
-      console.error("[SUPABASE_MIDDLEWARE] Erro ao obter usuário no middleware:", error.message);
+    
+    if (error) {
+      // Evitar spam de logs: "Auth session missing!" é esperado para visitantes anônimos
+      if (!/auth session missing/i.test(error.message || "")) {
+        console.error("[SUPABASE_MIDDLEWARE] Erro JWT:", {
+          message: error.message,
+          status: error.status,
+          path: request.nextUrl.pathname,
+          hasCookies: request.cookies.getAll().length > 0,
+          cookieNames: request.cookies.getAll().map(c => c.name),
+        });
+      }
+    } else if (data?.user) {
+      // Usuário autenticado com sucesso - silencioso
     }
   } catch (e) {
-    console.error("[SUPABASE_MIDDLEWARE] Exceção ao obter usuário:", e);
+    console.error("[SUPABASE_MIDDLEWARE] Exceção:", e);
   }
 
   return supabaseResponse;

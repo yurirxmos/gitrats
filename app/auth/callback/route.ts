@@ -36,7 +36,12 @@ export async function GET(request: Request) {
     console.log("[AUTH_CALLBACK] Trocando code por session...");
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    console.log("[AUTH_CALLBACK] Exchange result:", { hasSession: !!data?.session, error: error?.message });
+    console.log("[AUTH_CALLBACK] Exchange result:", { 
+      hasSession: !!data?.session, 
+      error: error?.message,
+      hasUser: !!data?.session?.user,
+      userId: data?.session?.user?.id,
+    });
 
     if (!error && data.session) {
       const user = data.session.user;
@@ -51,7 +56,11 @@ export async function GET(request: Request) {
       // Verificar se usuário existe
       const { data: existingUser } = await supabase.from("users").select("id").eq("id", user.id).single();
 
-      console.log("[AUTH_CALLBACK] Existing user:", !!existingUser);
+      console.log("[AUTH_CALLBACK] Existing user check:", { 
+        exists: !!existingUser,
+        userId: user.id,
+        searchedId: user.id,
+      });
 
       if (existingUser) {
         // Atualizar token
@@ -72,7 +81,11 @@ export async function GET(request: Request) {
         }
       } else {
         // Criar novo usuário
-        console.log("[AUTH_CALLBACK] Criando novo usuário...");
+        console.log("[AUTH_CALLBACK] Criando novo usuário...", {
+          userId: user.id,
+          githubId: user.user_metadata.provider_id,
+          username: user.user_metadata.user_name || user.user_metadata.preferred_username,
+        });
         const { error: insertError } = await supabase.from("users").insert({
           id: user.id,
           github_id: user.user_metadata.provider_id,
@@ -84,7 +97,12 @@ export async function GET(request: Request) {
         });
 
         if (insertError) {
-          console.error("[AUTH_CALLBACK] Erro ao criar usuário:", insertError);
+          console.error("[AUTH_CALLBACK] Erro ao criar usuário:", {
+            message: insertError.message,
+            code: insertError.code,
+            details: insertError.details,
+            hint: insertError.hint,
+          });
         } else {
           console.log("[AUTH_CALLBACK] Usuário criado com sucesso");
         }
