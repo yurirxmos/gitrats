@@ -1,25 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Tentar obter token do header Authorization como fallback
+    // Preparar cliente supabase. Se houver Authorization, priorizar client com token (mais confiável em prod).
     const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      await supabase.auth.setSession({
-        access_token: token,
-        refresh_token: "",
-      });
-    }
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+    const supabase = token
+      ? createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        })
+      : await createClient();
 
     // Obter usuário autenticado
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = token ? await supabase.auth.getUser() : await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

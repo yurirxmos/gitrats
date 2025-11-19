@@ -102,6 +102,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (!characterResponse.ok) {
+          try {
+            const errTxt = await characterResponse.text();
+            console.error("/api/character failed", characterResponse.status, errTxt);
+          } catch {}
           setHasCharacter(false);
           setUserProfile(null);
           localStorage.removeItem(CACHE_KEY);
@@ -116,6 +120,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           headers: { Authorization: `Bearer ${token}` },
         });
         const userData = userResponse.ok ? (await userResponse.json()).data : null;
+        if (!userResponse.ok) {
+          try {
+            const errTxt = await userResponse.text();
+            console.error("/api/user failed", userResponse.status, errTxt);
+          } catch {}
+        }
 
         const rankResponse = await fetch(`/api/leaderboard/${currentUser.id}`);
         const { data: rankData } = rankResponse.ok ? await rankResponse.json() : { data: null };
@@ -138,7 +148,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(profile);
         setNotificationsEnabled(Boolean(userData?.notifications_enabled ?? true));
         saveToCache(profile, Boolean(userData?.notifications_enabled ?? true));
-      } catch {
+      } catch (e) {
+        console.error("loadUserProfile error", e);
         setHasCharacter(false);
         setUserProfile(null);
         localStorage.removeItem(CACHE_KEY);
@@ -170,9 +181,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+
         const res = await fetch("/api/user", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ notificationsEnabled: enabled }),
         });
         if (!res.ok) throw new Error("Falha update");

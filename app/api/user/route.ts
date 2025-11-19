@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+
+export const dynamic = "force-dynamic";
 
 /**
  * GET - Buscar dados do usuário logado
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Tentar obter token do header Authorization como fallback
+    // Preferir client com token quando presente (prod costuma falhar cookies SameSite/Secure)
     const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      await supabase.auth.setSession({
-        access_token: token,
-        refresh_token: "",
-      });
-    }
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+    const supabase = token
+      ? createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        })
+      : await createClient();
 
     const {
       data: { user },
@@ -41,7 +42,14 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+    const supabase = token
+      ? createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        })
+      : await createClient();
 
     // Obter usuário autenticado e sessão
     const {
@@ -123,17 +131,15 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Tentar obter token do header Authorization como fallback
+    // Preferir client com token quando presente
     const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      await supabase.auth.setSession({
-        access_token: token,
-        refresh_token: "",
-      });
-    }
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+    const supabase = token
+      ? createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        })
+      : await createClient();
 
     const {
       data: { user },
