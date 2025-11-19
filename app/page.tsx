@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { Navbar } from "@/components/navbar";
-import { useUserContext } from "@/hooks/use-user-context";
+import { useUserContext } from "@/contexts/user-context";
 import { useAutoSync } from "@/hooks/use-auto-sync";
 import { useRouter } from "next/navigation";
 

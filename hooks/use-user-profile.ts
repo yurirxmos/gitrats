@@ -1,19 +1,9 @@
 "use client";
 
-import { useUserStore } from "@/store/user-store";
+import { useUserContext } from "@/contexts/user-context";
 
 export function useUserProfile() {
-  const userProfile = useUserStore((state) => state.userProfile);
-  const hasCharacter = useUserStore((state) => state.hasCharacter);
-  const loading = useUserStore((state) => state.loading);
-  const refreshUserProfile = useUserStore((state) => state.refreshUserProfile);
-  const setUserProfile = useUserStore((state) => state.setUserProfile);
-
-  // Manter compatibilidade com API antiga
-  const updateUserProfile = (updates: any) => {
-    if (!userProfile) return;
-    setUserProfile({ ...userProfile, ...updates });
-  };
+  const { userProfile, hasCharacter, refreshUserProfile, updateUserProfile, loading } = useUserContext();
 
   return {
     userProfile,

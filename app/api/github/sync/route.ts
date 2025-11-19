@@ -13,16 +13,6 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Tentar obter token do header Authorization como fallback
-    const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      await supabase.auth.setSession({
-        access_token: token,
-        refresh_token: "",
-      });
-    }
-
     const {
       data: { user },
       error: authError,

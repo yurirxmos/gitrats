@@ -51,9 +51,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       return { profile: data, notificationsEnabled };
-    } catch (e) {
-      // Log somente quando falhar parsing do cache (ajuda a identificar storage corrompido em prod)
-      console.error("[UserProvider] Failed to parse cached user profile", e);
+    } catch {
       return null;
     }
   }, []);
@@ -61,11 +59,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Salvar no cache
   const saveToCache = useCallback((profile: UserProfile, notificationsEnabled: boolean) => {
     try {
-      const cacheData: CachedProfile = { data: profile, notificationsEnabled, timestamp: Date.now() };
+      const cacheData: CachedProfile = {
+        data: profile,
+        notificationsEnabled,
+        timestamp: Date.now(),
+      };
       localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-    } catch (e) {
-      console.error("[UserProvider] Failed to save profile to cache", e);
-    }
+    } catch {}
   }, []);
 
   // Carregar perfil do usuário
@@ -92,21 +92,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const token = sessionData.session?.access_token;
 
         if (!token) {
-          console.error("[UserProvider] Missing access token; user likely not authenticated");
           setHasCharacter(false);
           setUserProfile(null);
           return;
         }
 
-        const characterResponse = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
+        const characterResponse = await fetch("/api/character", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (!characterResponse.ok) {
-          const bodyText = await characterResponse.text().catch(() => "<no-body>");
-          console.error("[UserProvider] /api/character failed", {
-            status: characterResponse.status,
-            statusText: characterResponse.statusText,
-            body: bodyText,
-          });
           setHasCharacter(false);
           setUserProfile(null);
           localStorage.removeItem(CACHE_KEY);
@@ -117,31 +112,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setHasCharacter(true);
 
         // Carregar dados do usuário (incluindo notificações)
-        const userResponse = await fetch("/api/user", { headers: { Authorization: `Bearer ${token}` } });
-        let userData: any = null;
-        if (userResponse.ok) {
-          userData = (await userResponse.json()).data;
-        } else {
-          const bodyText = await userResponse.text().catch(() => "<no-body>");
-          console.error("[UserProvider] /api/user failed", {
-            status: userResponse.status,
-            statusText: userResponse.statusText,
-            body: bodyText,
-          });
-        }
+        const userResponse = await fetch("/api/user", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const userData = userResponse.ok ? (await userResponse.json()).data : null;
 
         const rankResponse = await fetch(`/api/leaderboard/${currentUser.id}`);
-        let rankData: any = null;
-        if (rankResponse.ok) {
-          ({ data: rankData } = await rankResponse.json());
-        } else {
-          const bodyText = await rankResponse.text().catch(() => "<no-body>");
-          console.error("[UserProvider] /api/leaderboard/[userId] failed", {
-            status: rankResponse.status,
-            statusText: rankResponse.statusText,
-            body: bodyText,
-          });
-        }
+        const { data: rankData } = rankResponse.ok ? await rankResponse.json() : { data: null };
 
         const profile: UserProfile = {
           character_name: characterData.name,
@@ -161,8 +138,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(profile);
         setNotificationsEnabled(Boolean(userData?.notifications_enabled ?? true));
         saveToCache(profile, Boolean(userData?.notifications_enabled ?? true));
-      } catch (e) {
-        console.error("[UserProvider] Unexpected error while loading user profile", e);
+      } catch {
         setHasCharacter(false);
         setUserProfile(null);
         localStorage.removeItem(CACHE_KEY);
@@ -194,28 +170,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const token = sessionData.session?.access_token;
-
         const res = await fetch("/api/user", {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ notificationsEnabled: enabled }),
         });
         if (!res.ok) throw new Error("Falha update");
       } catch (e) {
         // Reverter em caso de erro
-        console.error("[UserProvider] Failed to update notifications", e);
         setNotificationsEnabled(!enabled);
         if (userProfile) {
           saveToCache(userProfile, !enabled);
         }
       }
     },
-    [userProfile, saveToCache, supabase]
+    [userProfile, saveToCache]
   );
 
   // Refresh manual

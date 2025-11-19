@@ -8,23 +8,22 @@ export async function GET(request: Request) {
   const next = searchParams.get("next") ?? "/";
 
   if (code) {
-    // Usa uma Response explícita para garantir que os cookies do Supabase sejam enviados no redirect
-    const response = NextResponse.redirect(`${origin}${next}`);
-    const requestCookies = await cookies();
-
+    const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {
-            return requestCookies.getAll();
+            return cookieStore.getAll();
           },
           setAll(cookiesToSet) {
             try {
-              cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+              cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
             } catch {
-              // Ignora em contextos onde não é possível setar cookies
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing
+              // user sessions.
             }
           },
         },
@@ -47,7 +46,7 @@ export async function GET(request: Request) {
         })
         .eq("id", user.id);
 
-      return response;
+      return NextResponse.redirect(`${origin}${next}`);
     }
   }
 

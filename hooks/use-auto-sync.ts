@@ -42,9 +42,8 @@ export function useAutoSync(hasCharacter: boolean) {
           // Token expirado - usuário foi desconectado
           window.location.href = "/";
         }
-        // Silencioso em produção para outros status/erros
       } catch (error) {
-        // Silencioso em produção para erros de rede
+        // Silencioso em produção
       }
     };
 

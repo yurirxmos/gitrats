@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Navbar } from "@/components/navbar";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import LeaderboardProfileCard from "@/components/leaderboard-profile-card";
-import { useUserContext } from "@/hooks/use-user-context";
+import { useUserContext } from "@/contexts/user-context";
 import { FaSkull } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -89,7 +89,7 @@ export default function Profile() {
                     className="text-[10px] uppercase"
                     onClick={() => setIsDeleteDialogOpen(true)}
                   >
-                    <FaSkull className="w-3! h-3! shrink-0" />
+                    <FaSkull className="!w-3 !h-3 shrink-0" />
                     deletar
                   </Button>
                 </div>

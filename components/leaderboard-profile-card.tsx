@@ -11,11 +11,10 @@ import { getCharacterAvatar } from "@/lib/character-assets";
 import { getXpForLevel } from "@/lib/xp-system";
 import { getCurrentRank, getNextRank } from "@/lib/class-evolution";
 import React, { useState } from "react";
-import { useUserContext } from "@/hooks/use-user-context";
+import { useUserContext } from "@/contexts/user-context";
 import { FaPen } from "react-icons/fa6";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
 
 import type { UserProfile } from "@/lib/types";
 
@@ -61,22 +60,15 @@ export default function LeaderboardProfileCard({
 
     try {
       setSavingName(true);
-      const supabase = createClient();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
       const res = await fetch("/api/user/update-character-name", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: trimmed }),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        console.error("[LeaderboardProfileCard] Erro ao atualizar nome:", err);
+        console.error("Erro ao atualizar nome:", err);
         setErrorMessage(err?.error || "Falha ao atualizar nome do personagem");
         return;
       }
@@ -210,7 +202,7 @@ export default function LeaderboardProfileCard({
                     {Array.isArray(userProfile.achievement_codes) && userProfile.achievement_codes.length > 0 ? (
                       <>
                         <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
-                          <GiBullseye />
+                          <FaMedal className="shrink-0 !w-2! h-2!" />
                           <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
                         </div>
                         <div className="flex flex-wrap items-start gap-2">
@@ -226,7 +218,7 @@ export default function LeaderboardProfileCard({
                     ) : (
                       <>
                         <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
-                          <GiBullseye />
+                          <FaMedal className="shrink-0 w-2! h-2!" />
                           <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
                         </div>
                         <p className="text-xs text-muted-foreground">Sem conquistas ainda</p>
@@ -398,7 +390,7 @@ export default function LeaderboardProfileCard({
             <Button
               onClick={saveName}
               disabled={savingName}
-              className="ml-2"
+              className="ml-2 text-xs"
             >
               {savingName ? "Salvando..." : "Salvar"}
             </Button>

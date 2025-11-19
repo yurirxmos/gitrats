@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUserContext } from "@/hooks/use-user-context";
+import { useUserContext } from "@/contexts/user-context";
 import { useAutoSync } from "@/hooks/use-auto-sync";
 import { useEvolutionDetector } from "@/hooks/use-evolution-detector";
 import { createClient } from "@/lib/supabase/client";
@@ -55,22 +55,17 @@ export default function Leaderboard() {
       await Promise.all([loadLeaderboard(), loadStats()]);
       setIsLoading(false);
       hasLoadedRef.current = true;
-    };
-    loadAllData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Exibir modal de boas-vindas após dados carregarem e perfil existir
-  useEffect(() => {
-    if (!hasLoadedRef.current || userLoading) return;
-    if (user && hasCharacter && userProfile) {
-      const hasSeenWelcome = localStorage.getItem("has_seen_welcome");
-      if (!hasSeenWelcome) {
-        setShowWelcomeDialog(true);
-        localStorage.setItem("has_seen_welcome", "true");
+      if (user && !userLoading && hasCharacter && userProfile) {
+        const hasSeenWelcome = localStorage.getItem("has_seen_welcome");
+        if (!hasSeenWelcome) {
+          setShowWelcomeDialog(true);
+          localStorage.setItem("has_seen_welcome", "true");
+        }
       }
-    }
-  }, [user, hasCharacter, userProfile, userLoading]);
+    };
+    if (!userLoading) loadAllData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLoading]);
 
   const syncGitHubData = async () => {
     if (!user) return;
