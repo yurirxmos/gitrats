@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 30; // Revalida a cada 30 segundos
 
 export async function GET(request: NextRequest) {

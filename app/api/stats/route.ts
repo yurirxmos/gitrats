@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Revalida a cada 60 segundos
 
 /**
