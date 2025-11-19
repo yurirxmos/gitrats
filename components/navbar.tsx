@@ -36,7 +36,15 @@ import {
 export function Navbar() {
   const { user, loading } = useUserContext();
   const router = useRouter();
-  const supabase = createClient();
+  // Criar o client de forma lazily no estado para evitar exceptions em render
+  const [supabase, setSupabase] = useState(() => {
+    try {
+      return createClient();
+    } catch (e) {
+      console.error("[NAVBAR] Falha ao instanciar supabase client", e);
+      return null;
+    }
+  });
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -48,18 +56,28 @@ export function Navbar() {
   }, [router]);
 
   const handleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    try {
+      const client = supabase ?? createClient();
+      await client.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+    } catch (e) {
+      console.error("[NAVBAR] Erro ao iniciar o login", e);
+    }
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      const client = supabase ?? createClient();
+      await client.auth.signOut();
+      router.push("/");
+      router.refresh();
+    } catch (e) {
+      console.error("[NAVBAR] Erro ao deslogar", e);
+    }
   };
 
   return (
