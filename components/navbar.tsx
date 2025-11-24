@@ -191,16 +191,26 @@ export function Navbar() {
           <div className="flex flex-col gap-4 p-4">
             <Link
               href="/docs"
-              className="hover:underline text-sm"
+              className="flex flex-row items-center gap-2 hover:underline text-sm"
               onClick={() => setMobileMenuOpen(false)}
             >
+              <FaFileCode />
               /docs
             </Link>
             <Link
-              href="/leaderboard"
-              className="hover:underline text-sm"
+              href="/reports"
+              className="flex flex-row items-center gap-2 hover:underline text-sm"
               onClick={() => setMobileMenuOpen(false)}
             >
+              <FaPaperPlane />
+              /reports
+            </Link>
+            <Link
+              href="/leaderboard"
+              className="flex flex-row items-center gap-2 hover:underline text-sm"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <FaTrophy />
               /leaderboard
             </Link>
 
@@ -215,6 +225,17 @@ export function Navbar() {
                   </Avatar>
                   <span className="text-sm">{user.user_metadata?.user_name || user.email}</span>
                 </div>
+                <Button
+                  onClick={() => {
+                    router.push("/configs");
+                    setMobileMenuOpen(false);
+                  }}
+                  variant="outline"
+                  className="flex items-center gap-2 justify-center w-full"
+                >
+                  <FaGear />
+                  Configs
+                </Button>
                 <Button
                   onClick={toggleTheme}
                   variant="outline"
