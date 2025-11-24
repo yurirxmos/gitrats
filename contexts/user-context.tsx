@@ -1,9 +1,11 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { UserProfile } from "@/lib/types";
+import { fetchUserProfile, updateUserNotifications } from "@/lib/queries/user-queries";
 
 interface UserContextType {
   user: User | null;
@@ -18,220 +20,59 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-const CACHE_KEY = "gitrats_user_profile";
-const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutos
-
-interface CachedProfile {
-  data: UserProfile;
-  notificationsEnabled: boolean;
-  timestamp: number;
-}
-
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hasCharacter, setHasCharacter] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const supabase = createClient();
-  const isLoadingRef = useRef(false);
+  const queryClient = useQueryClient();
 
-  // Carregar do cache
-  const loadFromCache = useCallback((): { profile: UserProfile; notificationsEnabled: boolean; timestamp: number } | null => {
-    if (typeof window === "undefined") return null; // SSR safety
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (!cached) return null;
+  // Query para buscar perfil do usuário
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["userProfile", user?.id],
+    queryFn: () => (user ? fetchUserProfile(user.id, user.user_metadata) : Promise.resolve(null)),
+    enabled: !!user && !authLoading,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    retry: (failureCount, error: any) => {
+      if (error?.message?.includes("No token")) return false;
+      return failureCount < 2;
+    },
+  });
 
-      const { data, notificationsEnabled, timestamp }: CachedProfile = JSON.parse(cached);
-      const isExpired = Date.now() - timestamp > CACHE_EXPIRY;
+  // Mutation para atualizar notificações
+  const notificationsMutation = useMutation({
+    mutationFn: updateUserNotifications,
+    onMutate: async (enabled) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ["userProfile", user?.id] });
+      const previous = queryClient.getQueryData(["userProfile", user?.id]);
 
-      if (isExpired) {
-        console.log('[UserContext] Cache expirado, removendo');
-        localStorage.removeItem(CACHE_KEY);
-        return null;
-      }
+      queryClient.setQueryData(["userProfile", user?.id], (old: any) => {
+        if (!old) return old;
+        return { ...old, notificationsEnabled: enabled };
+      });
 
-      return { profile: data, notificationsEnabled, timestamp };
-    } catch {
-      return null;
-    }
-  }, []);
-
-  // Salvar no cache
-  const saveToCache = useCallback((profile: UserProfile, notificationsEnabled: boolean) => {
-    if (typeof window === "undefined") return; // SSR safety
-    try {
-      const cacheData: CachedProfile = {
-        data: profile,
-        notificationsEnabled,
-        timestamp: Date.now(),
-      };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-    } catch {}
-  }, []);
-
-  // Carregar perfil do usuário
-  const loadUserProfile = useCallback(
-    async (currentUser: User, forceRefresh = false): Promise<void> => {
-      if (isLoadingRef.current && !forceRefresh) return;
-
-      // Tentar carregar do cache primeiro
-      if (!forceRefresh) {
-        const cached = loadFromCache();
-        if (cached) {
-          const remaining = Math.round((CACHE_EXPIRY - (Date.now() - cached.timestamp)) / 1000);
-          console.log('[UserContext] Usando cache, expires em:', remaining, 's');
-          setUserProfile(cached.profile);
-          setNotificationsEnabled(cached.notificationsEnabled);
-          setHasCharacter(true);
-          setLoading(false);
-          
-          // Validação silenciosa em background: confirmar que personagem ainda existe
-          (async () => {
-            try {
-              const { data: sessionData } = await supabase.auth.getSession();
-              const token = sessionData.session?.access_token;
-              if (!token) return;
-              
-              const response = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
-              if (response.status === 404) {
-                console.warn('[UserContext] Cache inválido: personagem não existe mais, forçando refresh');
-                localStorage.removeItem(CACHE_KEY);
-                await loadUserProfile(currentUser, true);
-              }
-            } catch (e) {
-              console.warn('[UserContext] Falha na validação em background:', e);
-            }
-          })();
-          
-          return;
-        }
-      }
-
-      isLoadingRef.current = true;
-
-      try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const token = sessionData.session?.access_token;
-
-        if (!token) {
-          // Sem token ainda: não afirmar ausência definitiva; aguardar próxima iteração
-          return;
-        }
-        // Buscar personagem: determinar existência apenas a partir deste endpoint
-        const characterResponse = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
-        console.log('[UserContext] GET /api/character status:', characterResponse.status);
-
-        if (characterResponse.status === 404) {
-          // Ausência confirmada - limpar cache ANTES de atualizar estado
-          console.log('[UserContext] Personagem não encontrado (404), limpando cache');
-          if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
-          setHasCharacter(false);
-          setUserProfile(null);
-          return;
-        }
-
-        if (!characterResponse.ok) {
-          // Erros 401/500 ou transitórios: não mudar estado para falso
-          console.warn('[UserContext] Erro ao buscar personagem:', characterResponse.status, '- não alterando estado');
-          return;
-        }
-
-        const { data: characterData } = await characterResponse.json();
-        console.log('[UserContext] Personagem encontrado:', characterData.name, 'level', characterData.level);
-        setHasCharacter(true);
-
-        // Carregar dados do usuário (incluindo notificações)
-        let userData: any = null;
-        try {
-          const userResponse = await fetch("/api/user", { headers: { Authorization: `Bearer ${token}` } });
-          userData = userResponse.ok ? (await userResponse.json()).data : null;
-        } catch {}
-
-        // Rank é best-effort e não deve impactar hasCharacter
-        let rankData: any = null;
-        try {
-          const rankResponse = await fetch(`/api/leaderboard/${currentUser.id}`);
-          rankData = rankResponse.ok ? (await rankResponse.json()).data : null;
-        } catch {}
-
-        const profile: UserProfile = {
-          character_name: characterData.name,
-          character_class: characterData.class,
-          level: characterData.level,
-          current_xp: characterData.current_xp,
-          total_xp: characterData.total_xp,
-          rank: rankData?.rank || 0,
-          total_commits: characterData.github_stats?.total_commits || 0,
-          total_prs: characterData.github_stats?.total_prs || 0,
-          total_issues: characterData.github_stats?.total_issues || 0,
-          github_username: currentUser.user_metadata?.user_name || currentUser.email?.split("@")[0] || "User",
-          created_at: characterData.created_at,
-          achievement_codes: characterData.achievement_codes || [],
-        };
-
-        setUserProfile(profile);
-        setNotificationsEnabled(Boolean(userData?.notifications_enabled ?? true));
-        saveToCache(profile, Boolean(userData?.notifications_enabled ?? true));
-      } catch (e) {
-        // Falhas genéricas: não alterar hasCharacter para falso aqui
-      } finally {
-        isLoadingRef.current = false;
+      return { previous };
+    },
+    onError: (err, variables, context) => {
+      // Rollback em caso de erro
+      if (context?.previous) {
+        queryClient.setQueryData(["userProfile", user?.id], context.previous);
       }
     },
-    [supabase, loadFromCache, saveToCache]
-  );
-
-  // Atualizar perfil localmente (otimistic update)
-  const updateUserProfile = useCallback(
-    (updates: Partial<UserProfile>) => {
-      if (!userProfile) return;
-
-      const updated = { ...userProfile, ...updates };
-      setUserProfile(updated);
-      saveToCache(updated, notificationsEnabled);
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["userProfile", user?.id] });
     },
-    [userProfile, notificationsEnabled, saveToCache]
-  );
-
-  // Atualizar notificações
-  const updateNotifications = useCallback(
-    async (enabled: boolean) => {
-      setNotificationsEnabled(enabled);
-      if (userProfile) {
-        saveToCache(userProfile, enabled);
-      }
-
-      try {
-        const res = await fetch("/api/user", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ notificationsEnabled: enabled }),
-        });
-        if (!res.ok) throw new Error("Falha update");
-      } catch (e) {
-        // Reverter em caso de erro
-        setNotificationsEnabled(!enabled);
-        if (userProfile) {
-          saveToCache(userProfile, !enabled);
-        }
-      }
-    },
-    [userProfile, saveToCache]
-  );
-
-  // Refresh manual
-  const refreshUserProfile = useCallback(async () => {
-    if (user) {
-      await loadUserProfile(user, true);
-    }
-  }, [user, loadUserProfile]);
+  });
 
   // Inicializar auth
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout;
 
     const initAuth = async () => {
       try {
@@ -240,26 +81,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         } = await supabase.auth.getUser();
 
         if (!mounted) return;
-
         setUser(currentUser);
-
-        if (currentUser) {
-          await loadUserProfile(currentUser);
-        }
       } catch (error) {
+        console.error("[UserContext] Erro ao inicializar auth:", error);
       } finally {
         if (mounted) {
-          setLoading(false);
+          setAuthLoading(false);
         }
       }
     };
-
-    // Timeout de segurança: forçar loading=false após 5 segundos
-    timeoutId = setTimeout(() => {
-      if (mounted && loading) {
-        setLoading(false);
-      }
-    }, 5000);
 
     initAuth();
 
@@ -271,23 +101,41 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
-      if (currentUser) {
-        await loadUserProfile(currentUser);
-      } else {
-        setUserProfile(null);
-        setHasCharacter(false);
-        if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
+      if (!currentUser) {
+        queryClient.clear();
       }
 
-      setLoading(false);
+      setAuthLoading(false);
     });
 
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
-  }, [supabase, loadUserProfile]);
+  }, [supabase, queryClient]);
+
+  const updateUserProfile = (updates: Partial<UserProfile>) => {
+    queryClient.setQueryData(["userProfile", user?.id], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        profile: { ...old.profile, ...updates },
+      };
+    });
+  };
+
+  const refreshUserProfile = async () => {
+    await refetch();
+  };
+
+  const updateNotifications = async (enabled: boolean) => {
+    await notificationsMutation.mutateAsync(enabled);
+  };
+
+  const loading = authLoading || profileLoading;
+  const hasCharacter = !!profileData?.profile;
+  const userProfile = profileData?.profile ?? null;
+  const notificationsEnabled = profileData?.notificationsEnabled ?? true;
 
   return (
     <UserContext.Provider

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { QueryProvider } from "@/contexts/query-provider";
 import { UserProvider } from "@/contexts/user-context";
 import favicon from "@/public/favicon.png";
 
@@ -89,7 +90,9 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <UserProvider>{children}</UserProvider>
+          <QueryProvider>
+            <UserProvider>{children}</UserProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
