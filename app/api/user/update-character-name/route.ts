@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Nome inválido" }, { status: 400 });
     }
 
-    if (name.length > 32) {
-      return NextResponse.json({ error: "Nome muito longo (máx 32 caracteres)" }, { status: 400 });
+    if (name.length > 64) {
+      return NextResponse.json({ error: "Nome muito longo (máx 64 caracteres)" }, { status: 400 });
     }
 
     const supabase = await createClient();

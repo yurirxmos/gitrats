@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { UserProvider } from "@/contexts/user-context";
-import Script from "next/script";
 import favicon from "@/public/favicon.png";
 
 // Base URL do site - altere usando a variável de ambiente NEXT_PUBLIC_SITE_URL em produção

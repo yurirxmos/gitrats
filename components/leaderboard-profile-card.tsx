@@ -59,8 +59,8 @@ export default function LeaderboardProfileCard({
       setErrorMessage("Nome inválido");
       return;
     }
-    if (trimmed.length > 32) {
-      setErrorMessage("Nome deve ter no máximo 32 caracteres");
+    if (trimmed.length > 64) {
+      setErrorMessage("Nome deve ter no máximo 64 caracteres");
       return;
     }
 
