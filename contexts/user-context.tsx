@@ -37,7 +37,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const isLoadingRef = useRef(false);
 
   // Carregar do cache
-  const loadFromCache = useCallback((): { profile: UserProfile; notificationsEnabled: boolean } | null => {
+  const loadFromCache = useCallback((): { profile: UserProfile; notificationsEnabled: boolean; timestamp: number } | null => {
     if (typeof window === "undefined") return null; // SSR safety
     try {
       const cached = localStorage.getItem(CACHE_KEY);
@@ -47,11 +47,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       const isExpired = Date.now() - timestamp > CACHE_EXPIRY;
 
       if (isExpired) {
+        console.log('[UserContext] Cache expirado, removendo');
         localStorage.removeItem(CACHE_KEY);
         return null;
       }
 
-      return { profile: data, notificationsEnabled };
+      return { profile: data, notificationsEnabled, timestamp };
     } catch {
       return null;
     }
@@ -79,10 +80,31 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (!forceRefresh) {
         const cached = loadFromCache();
         if (cached) {
+          const remaining = Math.round((CACHE_EXPIRY - (Date.now() - cached.timestamp)) / 1000);
+          console.log('[UserContext] Usando cache, expires em:', remaining, 's');
           setUserProfile(cached.profile);
           setNotificationsEnabled(cached.notificationsEnabled);
           setHasCharacter(true);
           setLoading(false);
+          
+          // Validação silenciosa em background: confirmar que personagem ainda existe
+          (async () => {
+            try {
+              const { data: sessionData } = await supabase.auth.getSession();
+              const token = sessionData.session?.access_token;
+              if (!token) return;
+              
+              const response = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
+              if (response.status === 404) {
+                console.warn('[UserContext] Cache inválido: personagem não existe mais, forçando refresh');
+                localStorage.removeItem(CACHE_KEY);
+                await loadUserProfile(currentUser, true);
+              }
+            } catch (e) {
+              console.warn('[UserContext] Falha na validação em background:', e);
+            }
+          })();
+          
           return;
         }
       }
@@ -99,21 +121,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
         // Buscar personagem: determinar existência apenas a partir deste endpoint
         const characterResponse = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
+        console.log('[UserContext] GET /api/character status:', characterResponse.status);
 
         if (characterResponse.status === 404) {
-          // Ausência confirmada
+          // Ausência confirmada - limpar cache ANTES de atualizar estado
+          console.log('[UserContext] Personagem não encontrado (404), limpando cache');
+          if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
           setHasCharacter(false);
           setUserProfile(null);
-          if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
           return;
         }
 
         if (!characterResponse.ok) {
           // Erros 401/500 ou transitórios: não mudar estado para falso
+          console.warn('[UserContext] Erro ao buscar personagem:', characterResponse.status, '- não alterando estado');
           return;
         }
 
         const { data: characterData } = await characterResponse.json();
+        console.log('[UserContext] Personagem encontrado:', characterData.name, 'level', characterData.level);
         setHasCharacter(true);
 
         // Carregar dados do usuário (incluindo notificações)
