@@ -103,6 +103,15 @@ export default function LeaderboardProfileCard({
                 Criar Personagem
               </Button>
             </div>
+          ) : hasCharacter && !userProfile ? (
+            <div className="text-center py-10 space-y-2">
+              <p className="text-sm text-muted-foreground">Carregando personagem...</p>
+              <div className="flex flex-row justify-center gap-2">
+                <div className="w-6 h-6 bg-muted animate-pulse rounded" />
+                <div className="w-6 h-6 bg-muted animate-pulse rounded delay-150" />
+                <div className="w-6 h-6 bg-muted animate-pulse rounded delay-300" />
+              </div>
+            </div>
           ) : userProfile ? (
             <>
               {isHorizontal ? (
@@ -125,7 +134,7 @@ export default function LeaderboardProfileCard({
                           onClick={openEditDialog}
                           aria-label="Editar nome do personagem"
                         >
-                          <FaPen className="!w-2.5 !h-2.5" />
+                          <FaPen className="w-2.5 h-2.5" />
                         </Button>
                       </div>
 
@@ -260,7 +269,7 @@ export default function LeaderboardProfileCard({
                           onClick={openEditDialog}
                           aria-label="Editar nome do personagem"
                         >
-                          <FaPen className="!w-2.5 !h-2.5" />
+                          <FaPen className="w-2.5 h-2.5" />
                         </Button>
                       </div>
                       <p className={`text-sm ${getRankColorClass(userProfile.level)}`}>
@@ -369,15 +378,8 @@ export default function LeaderboardProfileCard({
               )}
             </>
           ) : (
-            <div className="text-center py-10 space-y-3">
-              <p className="text-sm text-muted-foreground">Carregando personagem...</p>
-              <Button
-                variant="outline"
-                className="text-xs"
-                onClick={() => refreshUserProfile?.()}
-              >
-                Recarregar
-              </Button>
+            <div className="text-center py-10">
+              <p className="text-sm text-muted-foreground">Nenhum personagem criado</p>
             </div>
           )}
         </CardContent>

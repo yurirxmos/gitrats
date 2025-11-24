@@ -94,30 +94,33 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const token = sessionData.session?.access_token;
 
         if (!token) {
-          // Sessão ainda não pronta, não marcar como sem personagem para evitar estado incorreto
+          // Sem token ainda: não afirmar que não existe personagem, apenas limpar perfil
+          setHasCharacter(false);
+          setUserProfile(null);
           return;
         }
 
-        const characterResponse = await fetch("/api/character", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!characterResponse.ok) {
-          // Se 404 realmente não há personagem; outros erros podem ser temporários
-          if (characterResponse.status === 404) {
-            setHasCharacter(false);
-            setUserProfile(null);
-            if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
-          } else {
-            // Re-tentar rapidamente uma vez com forceRefresh
-            setTimeout(() => {
-              loadUserProfile(currentUser, true);
-            }, 500);
+        // Retry para evitar condição de corrida logo após criação de personagem / sessão fresca
+        let characterData: any = null;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const response = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
+          if (response.ok) {
+            const json = await response.json();
+            characterData = json.data;
+            break;
           }
+          // Espera incremental antes do próximo retry
+          await new Promise((r) => setTimeout(r, 300 + attempt * 400));
+        }
+
+        if (!characterData) {
+          // Confirmado falha após retries: tratar como sem personagem
+          setHasCharacter(false);
+          setUserProfile(null);
+          if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
           return;
         }
 
-        const { data: characterData } = await characterResponse.json();
         setHasCharacter(true);
 
         // Carregar dados do usuário (incluindo notificações)
@@ -150,15 +153,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setNotificationsEnabled(Boolean(userData?.notifications_enabled ?? true));
         saveToCache(profile, Boolean(userData?.notifications_enabled ?? true));
       } catch (e) {
-        // Erro transitório: tentar novamente sem invalidar personagem existente
-        setTimeout(() => {
-          loadUserProfile(currentUser, true);
-        }, 800);
+        // Falha inesperada: não afirmar ausência definitiva se já tínhamos perfil antes
+        if (!userProfile) {
+          setHasCharacter(false);
+          setUserProfile(null);
+          if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
+        }
       } finally {
         isLoadingRef.current = false;
       }
     },
-    [supabase, loadFromCache, saveToCache]
+    [supabase, loadFromCache, saveToCache, userProfile]
   );
 
   // Atualizar perfil localmente (otimistic update)
@@ -266,13 +271,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, [supabase, loadUserProfile]);
-
-  // Recarregar automaticamente se sabemos que existe personagem mas perfil ainda não carregou
-  useEffect(() => {
-    if (user && hasCharacter && !userProfile && !loading) {
-      loadUserProfile(user, true);
-    }
-  }, [user, hasCharacter, userProfile, loading, loadUserProfile]);
 
   return (
     <UserContext.Provider
