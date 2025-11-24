@@ -81,30 +81,6 @@ export default function RootLayout({
           }}
         />
 
-        {/* Google Analytics apenas em produção para não afetar dev */}
-        {process.env.NODE_ENV === "production" && (
-          <>
-            <Script
-              src="https://www.googletagmanager.com/gtag/js?id=G-0PLVQ46WZH"
-              strategy="afterInteractive"
-            />
-            <Script
-              id="google-analytics"
-              strategy="afterInteractive"
-            >
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);} 
-                gtag('js', new Date());
-                gtag('config', 'G-0PLVQ46WZH', {
-                  'cookie_domain': 'rxmos.dev.br',
-                  'cookie_flags': 'SameSite=None;Secure'
-                });
-              `}
-            </Script>
-          </>
-        )}
-
         {/* JSON-LD: structured data para SEO */}
         <script
           type="application/ld+json"
