@@ -30,6 +30,7 @@ import {
   FaPowerOff,
   FaSun,
   FaTrophy,
+  FaUsers,
   FaXmark,
 } from "react-icons/fa6";
 
@@ -119,6 +120,14 @@ export function Navbar() {
           >
             <FaTrophy />
             /leaderboard
+          </Link>
+
+          <Link
+            href="/guild"
+            className="flex flex-row items-center gap-2 hover:underline"
+          >
+            <FaUsers />
+            /guild
           </Link>
 
           {user ? (
@@ -212,6 +221,14 @@ export function Navbar() {
             >
               <FaTrophy />
               /leaderboard
+            </Link>
+            <Link
+              href="/guild"
+              className="flex flex-row items-center gap-2 hover:underline text-sm"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <FaUsers />
+              /guild
             </Link>
 
             {user ? (

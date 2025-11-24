@@ -6,17 +6,17 @@ export interface ClassRank {
 
 export const CLASS_RANKINGS: Record<string, ClassRank[]> = {
   orc: [
-    { name: "Ogro", minLevel: 1, maxLevel: 4 },
+    { name: "Ogro Iniciante", minLevel: 1, maxLevel: 4 },
     { name: "Ogro Bruto", minLevel: 5, maxLevel: 9 },
     { name: "Rei Ogro", minLevel: 10, maxLevel: 999 },
   ],
   warrior: [
-    { name: "Guerreiro", minLevel: 1, maxLevel: 4 },
-    { name: "Cavaleiro", minLevel: 5, maxLevel: 9 },
+    { name: "Guerreiro Iniciante", minLevel: 1, maxLevel: 4 },
+    { name: "Cavaleiro ", minLevel: 5, maxLevel: 9 },
     { name: "Paladino", minLevel: 10, maxLevel: 999 },
   ],
   mage: [
-    { name: "Mago", minLevel: 1, maxLevel: 4 },
+    { name: "Mago Iniciante", minLevel: 1, maxLevel: 4 },
     { name: "Mago Arcano", minLevel: 5, maxLevel: 9 },
     { name: "Mago Arcanista", minLevel: 10, maxLevel: 999 },
   ],

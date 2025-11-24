@@ -22,11 +22,13 @@ import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
 import { AchievementBadge } from "@/components/achievement-badge";
 import { GiBoltShield } from "react-icons/gi";
 import LeaderboardProfileCard from "@/components/leaderboard-profile-card";
-import type { LeaderboardEntry, UserProfile } from "@/lib/types";
+import type { LeaderboardEntry, UserProfile, GuildLeaderboardEntry } from "@/lib/types";
 
 export default function Leaderboard() {
   const { user, userProfile, loading: userLoading, hasCharacter, refreshUserProfile } = useUserContext();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [guildLeaderboard, setGuildLeaderboard] = useState<GuildLeaderboardEntry[]>([]);
+  const [viewMode, setViewMode] = useState<"players" | "guilds">("players");
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
@@ -53,7 +55,7 @@ export default function Leaderboard() {
     const loadAllData = async () => {
       if (hasLoadedRef.current) return;
       setIsLoading(true);
-      await Promise.all([loadLeaderboard(), loadStats()]);
+      await Promise.all([loadLeaderboard(), loadGuildLeaderboard(), loadStats()]);
       setIsLoading(false);
       hasLoadedRef.current = true;
       if (user && !userLoading && hasCharacter && userProfile && typeof window !== "undefined") {
@@ -113,6 +115,35 @@ export default function Leaderboard() {
       }
     } catch {
       setLeaderboard([]);
+    }
+  };
+
+  const loadGuildLeaderboard = async () => {
+    try {
+      const CACHE_KEY = "gitrats_guild_leaderboard";
+      const TTL = 2 * 60 * 1000; // 2 min
+      if (typeof window !== "undefined") {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < TTL) {
+            setGuildLeaderboard(data || []);
+            return;
+          }
+        }
+      }
+
+      const response = await fetch("/api/leaderboard/guilds", {
+        next: { revalidate: 30 },
+      });
+      if (!response.ok) throw new Error("Erro ao carregar leaderboard de guildas");
+      const { data } = await response.json();
+      setGuildLeaderboard(data || []);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+      }
+    } catch {
+      setGuildLeaderboard([]);
     }
   };
 
@@ -239,11 +270,24 @@ export default function Leaderboard() {
                   <FaTrophy className="text-2xl text-foreground" />
                   <h1 className="text-2xl font-black">LEADERBOARD</h1>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {totalCharacters} {totalCharacters === 1 ? "gitguerreiro" : "gitguerreiros"}.
-                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={viewMode === "players" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("players")}
+                  >
+                    Jogadores
+                  </Button>
+                  <Button
+                    variant={viewMode === "guilds" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("guilds")}
+                  >
+                    Guildas
+                  </Button>
+                </div>
               </div>
-              {leaderboard.length === 0 ? (
+              {viewMode === "players" && leaderboard.length === 0 ? (
                 <div className="text-center py-20">
                   <p className="text-muted-foreground">Nenhum jogador encontrado</p>
                 </div>
@@ -619,6 +663,69 @@ export default function Leaderboard() {
                     </div>
                   </div>
                 </>
+              )}
+              {viewMode === "guilds" && (
+                <div className="space-y-4">
+                  {guildLeaderboard.length === 0 ? (
+                    <div className="text-center py-20">
+                      <p className="text-muted-foreground">Nenhuma guilda encontrada</p>
+                    </div>
+                  ) : (
+                    guildLeaderboard.map((guild) => (
+                      <Card
+                        key={guild.id}
+                        className="border-none shadow-none hover:opacity-60 transition-all"
+                      >
+                        <CardContent className="px-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 flex items-center justify-center shrink-0">
+                              {guild.rank === 1 && <FaTrophy className="text-yellow-500 text-2xl" />}
+                              {guild.rank === 2 && <FaMedal className="text-gray-400 text-2xl" />}
+                              {guild.rank === 3 && <FaMedal className="text-amber-700 text-2xl" />}
+                              {guild.rank > 3 && (
+                                <span className="text-muted-foreground font-bold text-lg">#{guild.rank}</span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-1 w-20 h-20 shrink-0">
+                              {guild.top_members?.slice(0, 4).map((member, idx) => (
+                                <div
+                                  key={idx}
+                                  className="relative bg-muted rounded overflow-hidden"
+                                >
+                                  {member.character_class && (
+                                    <Image
+                                      src={getCharacterAvatar(member.character_class, member.level || 1)}
+                                      alt=""
+                                      fill
+                                      className="object-contain"
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-lg">
+                                {guild.name}{" "}
+                                {guild.tag && <span className="text-sm text-muted-foreground">[{guild.tag}]</span>}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">Líder: @{guild.owner_username}</p>
+                            </div>
+                            <div className="flex gap-6 shrink-0">
+                              <div className="text-center">
+                                <p className="font-bold text-base">{guild.total_members}</p>
+                                <p className="text-xs text-muted-foreground">Membros</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="font-bold text-base">{guild.total_xp.toLocaleString()}</p>
+                                <p className="text-xs text-muted-foreground">XP Total</p>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
               )}
             </div>
           </main>
