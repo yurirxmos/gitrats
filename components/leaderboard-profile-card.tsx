@@ -369,8 +369,15 @@ export default function LeaderboardProfileCard({
               )}
             </>
           ) : (
-            <div className="text-center py-10">
-              <p className="text-sm text-muted-foreground">Nenhum personagem criado</p>
+            <div className="text-center py-10 space-y-3">
+              <p className="text-sm text-muted-foreground">Carregando personagem...</p>
+              <Button
+                variant="outline"
+                className="text-xs"
+                onClick={() => refreshUserProfile?.()}
+              >
+                Recarregar
+              </Button>
             </div>
           )}
         </CardContent>

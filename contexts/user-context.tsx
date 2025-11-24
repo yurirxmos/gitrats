@@ -94,8 +94,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const token = sessionData.session?.access_token;
 
         if (!token) {
-          setHasCharacter(false);
-          setUserProfile(null);
+          // Sessão ainda não pronta, não marcar como sem personagem para evitar estado incorreto
           return;
         }
 
@@ -104,9 +103,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (!characterResponse.ok) {
-          setHasCharacter(false);
-          setUserProfile(null);
-          if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
+          // Se 404 realmente não há personagem; outros erros podem ser temporários
+          if (characterResponse.status === 404) {
+            setHasCharacter(false);
+            setUserProfile(null);
+            if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
+          } else {
+            // Re-tentar rapidamente uma vez com forceRefresh
+            setTimeout(() => {
+              loadUserProfile(currentUser, true);
+            }, 500);
+          }
           return;
         }
 
@@ -143,9 +150,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setNotificationsEnabled(Boolean(userData?.notifications_enabled ?? true));
         saveToCache(profile, Boolean(userData?.notifications_enabled ?? true));
       } catch (e) {
-        setHasCharacter(false);
-        setUserProfile(null);
-        if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
+        // Erro transitório: tentar novamente sem invalidar personagem existente
+        setTimeout(() => {
+          loadUserProfile(currentUser, true);
+        }, 800);
       } finally {
         isLoadingRef.current = false;
       }
@@ -204,7 +212,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     let timeoutId: NodeJS.Timeout;
 
     const initAuth = async () => {
-      
       try {
         const {
           data: { user: currentUser },
@@ -259,6 +266,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, [supabase, loadUserProfile]);
+
+  // Recarregar automaticamente se sabemos que existe personagem mas perfil ainda não carregou
+  useEffect(() => {
+    if (user && hasCharacter && !userProfile && !loading) {
+      loadUserProfile(user, true);
+    }
+  }, [user, hasCharacter, userProfile, loading, loadUserProfile]);
 
   return (
     <UserContext.Provider
