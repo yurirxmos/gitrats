@@ -45,6 +45,7 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
         const token = sessionData.session?.access_token;
 
         if (!token) {
+          // Sem token ainda: permanecer no passo 1
           setStep(1);
           return;
         }
@@ -58,13 +59,16 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
         if (response.ok) {
           // Já tem personagem, redirecionar
           window.location.href = "/leaderboard";
-        } else {
+        } else if (response.status === 404) {
           // Não tem personagem, ir para criação
           setStep(2);
+        } else {
+          // Erros 401/500: manter no passo 1
+          setStep(1);
         }
       } catch (err) {
-        // Em caso de erro, permitir criar personagem
-        setStep(2);
+        // Em caso de erro, manter no passo 1 (evita falso negativo)
+        setStep(1);
       }
     };
 

@@ -182,7 +182,7 @@ export default function Home() {
             </div>
           </div>
 
-          {!hasCharacter && (
+          {!loading && !hasCharacter && (
             <div className="flex flex-col gap-4 items-center">
               <Button
                 onClick={() => setIsOnboardingOpen(true)}

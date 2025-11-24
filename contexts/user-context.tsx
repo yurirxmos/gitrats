@@ -94,32 +94,41 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const token = sessionData.session?.access_token;
 
         if (!token) {
-          // Sem token ainda: não afirmar que não existe personagem, apenas limpar perfil
-          setHasCharacter(false);
-          setUserProfile(null);
+          // Sem token ainda: não afirmar ausência definitiva; aguardar próxima iteração
           return;
         }
-        // Fetch único sem retry para não gerar carga extra
+        // Buscar personagem: determinar existência apenas a partir deste endpoint
         const characterResponse = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
-        if (!characterResponse.ok) {
+
+        if (characterResponse.status === 404) {
+          // Ausência confirmada
           setHasCharacter(false);
           setUserProfile(null);
           if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
           return;
         }
+
+        if (!characterResponse.ok) {
+          // Erros 401/500 ou transitórios: não mudar estado para falso
+          return;
+        }
+
         const { data: characterData } = await characterResponse.json();
         setHasCharacter(true);
 
         // Carregar dados do usuário (incluindo notificações)
-        const userResponse = await fetch("/api/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        let userData: any = null;
+        try {
+          const userResponse = await fetch("/api/user", { headers: { Authorization: `Bearer ${token}` } });
+          userData = userResponse.ok ? (await userResponse.json()).data : null;
+        } catch {}
 
-        const userData = userResponse.ok ? (await userResponse.json()).data : null;
-
-        const rankResponse = await fetch(`/api/leaderboard/${currentUser.id}`);
-
-        const { data: rankData } = rankResponse.ok ? await rankResponse.json() : { data: null };
+        // Rank é best-effort e não deve impactar hasCharacter
+        let rankData: any = null;
+        try {
+          const rankResponse = await fetch(`/api/leaderboard/${currentUser.id}`);
+          rankData = rankResponse.ok ? (await rankResponse.json()).data : null;
+        } catch {}
 
         const profile: UserProfile = {
           character_name: characterData.name,
@@ -140,12 +149,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setNotificationsEnabled(Boolean(userData?.notifications_enabled ?? true));
         saveToCache(profile, Boolean(userData?.notifications_enabled ?? true));
       } catch (e) {
-        // Falha inesperada: não afirmar ausência definitiva se já tínhamos perfil antes
-        if (!userProfile) {
-          setHasCharacter(false);
-          setUserProfile(null);
-          if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
-        }
+        // Falhas genéricas: não alterar hasCharacter para falso aqui
       } finally {
         isLoadingRef.current = false;
       }
