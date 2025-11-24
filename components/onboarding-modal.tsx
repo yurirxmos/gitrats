@@ -30,20 +30,22 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
   // Verificar se usuário já tem personagem ao abrir modal
   useEffect(() => {
     const checkExistingCharacter = async () => {
-      if (!isOpen || !user) {
-        if (isOpen && !user) {
-          setStep(1);
-        }
+      if (!isOpen) return;
+
+      // Se não tem usuário, vai para step 1 (GitHub Connect)
+      if (!user) {
+        setStep(1);
         return;
       }
 
+      // Se tem usuário, verificar se já tem personagem
       try {
         const supabase = createClient();
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData.session?.access_token;
 
         if (!token) {
-          setStep(2);
+          setStep(1);
           return;
         }
 
@@ -54,11 +56,14 @@ export function OnboardingModal({ isOpen, onClose, initialStep = 1 }: Onboarding
         });
 
         if (response.ok) {
+          // Já tem personagem, redirecionar
           window.location.href = "/leaderboard";
         } else {
+          // Não tem personagem, ir para criação
           setStep(2);
         }
       } catch (err) {
+        // Em caso de erro, permitir criar personagem
         setStep(2);
       }
     };

@@ -97,7 +97,10 @@ export default function RootLayout({
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);} 
                 gtag('js', new Date());
-                gtag('config', 'G-0PLVQ46WZH');
+                gtag('config', 'G-0PLVQ46WZH', {
+                  'cookie_domain': 'rxmos.dev.br',
+                  'cookie_flags': 'SameSite=None;Secure'
+                });
               `}
             </Script>
           </>
