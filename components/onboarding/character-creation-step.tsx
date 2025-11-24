@@ -83,14 +83,14 @@ export function CharacterCreationStep({ onNext, isLoading = false }: CharacterCr
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="text-sm font-bold">/nome</label>
-            <span className="text-xs text-muted-foreground">{characterName.length}/16</span>
+            <span className="text-xs text-muted-foreground">{characterName.length}/64</span>
           </div>
           <Input
             type="text"
             placeholder="digite o nome do seu personagem"
             value={characterName}
-            onChange={(e) => setCharacterName(e.target.value.slice(0, 16))}
-            maxLength={16}
+            onChange={(e) => setCharacterName(e.target.value.slice(0, 64))}
+            maxLength={64}
             className="w-full"
           />
         </div>
