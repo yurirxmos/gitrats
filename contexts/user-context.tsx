@@ -99,28 +99,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setUserProfile(null);
           return;
         }
-
-        // Retry para evitar condição de corrida logo após criação de personagem / sessão fresca
-        let characterData: any = null;
-        for (let attempt = 0; attempt < 3; attempt++) {
-          const response = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
-          if (response.ok) {
-            const json = await response.json();
-            characterData = json.data;
-            break;
-          }
-          // Espera incremental antes do próximo retry
-          await new Promise((r) => setTimeout(r, 300 + attempt * 400));
-        }
-
-        if (!characterData) {
-          // Confirmado falha após retries: tratar como sem personagem
+        // Fetch único sem retry para não gerar carga extra
+        const characterResponse = await fetch("/api/character", { headers: { Authorization: `Bearer ${token}` } });
+        if (!characterResponse.ok) {
           setHasCharacter(false);
           setUserProfile(null);
           if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
           return;
         }
-
+        const { data: characterData } = await characterResponse.json();
         setHasCharacter(true);
 
         // Carregar dados do usuário (incluindo notificações)
@@ -163,7 +150,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         isLoadingRef.current = false;
       }
     },
-    [supabase, loadFromCache, saveToCache, userProfile]
+    [supabase, loadFromCache, saveToCache]
   );
 
   // Atualizar perfil localmente (otimistic update)
