@@ -42,8 +42,10 @@ export function useGuild() {
 
   const fetchMembers = async (guildId: string) => {
     try {
+      console.log("🔍 Fetching members for guild:", guildId);
       const response = await fetch(`/api/guild/members?guild_id=${guildId}`);
       const data = await response.json();
+      console.log("🔍 Members data:", data);
       setMembers(data.members || []);
     } catch (error) {
       console.error("Erro ao buscar membros:", error);

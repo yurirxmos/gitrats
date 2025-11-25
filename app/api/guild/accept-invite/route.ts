@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 const MAX_GUILD_MEMBERS = 20;
 
@@ -50,8 +50,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Você já está em uma guilda" }, { status: 400 });
     }
 
-    // Adicionar membro à guilda
-    const { error: memberError } = await supabase.from("guild_members").insert({
+    // Adicionar membro à guilda usando admin client
+    const adminClient = createAdminClient();
+    const { error: memberError } = await adminClient.from("guild_members").insert({
       guild_id: invite.guild_id,
       user_id: user.id,
       role: "member",
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
     if (memberError) throw memberError;
 
     // Atualizar status do convite
-    await supabase.from("guild_invites").update({ status: "accepted" }).eq("id", invite_id);
+    await adminClient.from("guild_invites").update({ status: "accepted" }).eq("id", invite_id);
 
     return NextResponse.json({
       message: "Convite aceito com sucesso",

@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Convite já enviado para este usuário" }, { status: 400 });
     }
 
-    // Criar convite usando admin client para bypass RLS
+    // Criar convite usando admin client para bypassar RLS
     const adminClient = createAdminClient();
     const { data: invite, error: inviteError } = await adminClient
       .from("guild_invites")

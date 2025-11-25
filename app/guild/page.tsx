@@ -227,9 +227,9 @@ export default function GuildPage() {
           {/* Guilda Atual ou Criar Guilda */}
           {guild ? (
             <Card>
-              <CardContent className="p-6">
+              <CardContent>
                 <div className="flex flex-row gap-2 items-center w-full">
-                  <div className="flex items-start justify-between mb-4 w-full">
+                  <div className="flex items-start gap-2 w-full">
                     <div>
                       <h2 className="text-2xl font-black">
                         {guild.name} {guild.tag && <span className="text-lg text-muted-foreground">[{guild.tag}]</span>}
@@ -239,7 +239,7 @@ export default function GuildPage() {
                     {isOwner && <FaCrown className="text-yellow-500 text-2xl" />}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="flex flex-row items-center gap-4">
                     <div className="bg-muted rounded-lg p-4 text-center">
                       <p className="text-2xl font-bold">{guild.total_members}</p>
                       <p className="text-xs text-muted-foreground">Membros</p>
@@ -278,7 +278,7 @@ export default function GuildPage() {
                       onClick={handleLeaveGuild}
                       className="w-full"
                     >
-                      <FaRightFromBracket className="mr-2" />
+                      <FaRightFromBracket className="ml-auto w-fit text-xs" />
                       Sair da Guilda
                     </Button>
                   )}
@@ -286,9 +286,9 @@ export default function GuildPage() {
                     <Button
                       variant="destructive"
                       onClick={handleDeleteGuild}
-                      className="w-full"
+                      className="ml-auto w-fit text-xs"
                     >
-                      <FaTrash className="mr-2" />
+                      <FaTrash />
                       Deletar Guilda
                     </Button>
                   )}
@@ -312,8 +312,8 @@ export default function GuildPage() {
           {/* Membros */}
           {guild && (
             <Card className="md:col-span-2">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4">Membros ({members.length})</h2>
+              <CardContent>
+                <h2 className="text-xl font-bold mb-4">Membros ({guild.total_members})</h2>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {members.map((member) => (
                     <div
