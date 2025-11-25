@@ -18,7 +18,13 @@ export default function Home() {
   useAutoSync(hasCharacter);
 
   useEffect(() => {
-    if (!loading && user && hasCharacter) router.replace("/leaderboard");
+    if (!loading) {
+      if (user && hasCharacter) {
+        router.replace("/leaderboard");
+      } else if (user && !hasCharacter) {
+        router.replace("/onboarding");
+      }
+    }
   }, [user, hasCharacter, loading, router]);
 
   useEffect(() => {
