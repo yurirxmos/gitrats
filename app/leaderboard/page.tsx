@@ -287,235 +287,321 @@ export default function Leaderboard() {
                   </Button>
                 </div>
               </div>
-              {viewMode === "players" && leaderboard.length === 0 ? (
-                <div className="text-center py-20">
-                  <p className="text-muted-foreground">Nenhum jogador encontrado</p>
-                </div>
-              ) : (
-                <>
-                  {leaderboard.length >= 3 && (
-                    <div className="hidden md:flex items-end justify-center gap-4 px-4">
-                      {leaderboard[1] && (
-                        <div className="flex flex-col items-center gap-3 flex-1">
-                          <FaMedal className="text-gray-400 text-3xl" />
-                          <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden">
-                            <Image
-                              src={getCharacterAvatar(
-                                leaderboard[1]?.character_class || "orc",
-                                leaderboard[1]?.level || 1
-                              )}
-                              alt={leaderboard[1]?.character_name || ""}
-                              fill
-                              className="object-contain"
-                            />
-                          </div>
-                          <div className="flex flex-col items-center justify-center text-center">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-base">{leaderboard[1]?.character_name}</h3>
-                              {/* Mostrar até 3 badges ao lado do nome */}
-                              <div className="flex items-center gap-1">
-                                {(leaderboard[1]?.achievement_codes || []).slice(0, 3).map((code) => (
-                                  <AchievementBadge
-                                    key={code}
-                                    code={code}
-                                    size="sm"
-                                  />
-                                ))}
-                              </div>
+              {viewMode === "players" ? (
+                leaderboard.length === 0 ? (
+                  <div className="text-center py-20">
+                    <p className="text-muted-foreground">Nenhum jogador encontrado</p>
+                  </div>
+                ) : (
+                  <>
+                    {leaderboard.length >= 3 && (
+                      <div className="hidden md:flex items-end justify-center gap-4 px-4">
+                        {leaderboard[1] && (
+                          <div className="flex flex-col items-center gap-3 flex-1">
+                            <FaMedal className="text-gray-400 text-3xl" />
+                            <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden">
+                              <Image
+                                src={getCharacterAvatar(
+                                  leaderboard[1]?.character_class || "orc",
+                                  leaderboard[1]?.level || 1
+                                )}
+                                alt={leaderboard[1]?.character_name || ""}
+                                fill
+                                className="object-contain"
+                              />
                             </div>
-                            <p className={`text-xs ${getRankColorClass(leaderboard[1]?.level || 1)}`}>
-                              {getCurrentRank(leaderboard[1]?.character_class || "orc", leaderboard[1]?.level || 1)}
-                            </p>
-                            <button
-                              onClick={() =>
-                                window.open(`https://github.com/${leaderboard[1]?.github_username}`, "_blank")
-                              }
-                              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
-                            >
-                              <FaGithub className="text-xs" />@{leaderboard[1]?.github_username}
-                            </button>
-                          </div>
-                          <div className="bg-gray-400/20 w-full rounded-t-lg p-4 text-center border-2 border-gray-400/50">
-                            <p className="font-black text-xl">#{leaderboard[1]?.rank}</p>
-                            <p className="text-sm font-bold">Level {leaderboard[1]?.level}</p>
-                            <button
-                              onClick={() => setXpDialogPlayer(leaderboard[1])}
-                              className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                            >
-                              {leaderboard[1]?.total_xp?.toLocaleString() || 0} XP
-                            </button>
-                            <div className="flex justify-around mt-2 text-xs">
-                              <div>
-                                <p className="font-bold">{leaderboard[1]?.total_commits || 0}</p>
-                                <p className="text-muted-foreground">Commits</p>
+                            <div className="flex flex-col items-center justify-center text-center">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-base">{leaderboard[1]?.character_name}</h3>
+                                {/* Mostrar até 3 badges ao lado do nome */}
+                                <div className="flex items-center gap-1">
+                                  {(leaderboard[1]?.achievement_codes || []).slice(0, 3).map((code) => (
+                                    <AchievementBadge
+                                      key={code}
+                                      code={code}
+                                      size="sm"
+                                    />
+                                  ))}
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-bold">{leaderboard[1]?.total_prs || 0}</p>
-                                <p className="text-muted-foreground">PRs</p>
-                              </div>
-                              <div>
-                                <p className="font-bold">{leaderboard[1]?.total_issues || 0}</p>
-                                <p className="text-muted-foreground">Issues</p>
-                              </div>
+                              <p className={`text-xs ${getRankColorClass(leaderboard[1]?.level || 1)}`}>
+                                {getCurrentRank(leaderboard[1]?.character_class || "orc", leaderboard[1]?.level || 1)}
+                              </p>
+                              <button
+                                onClick={() =>
+                                  window.open(`https://github.com/${leaderboard[1]?.github_username}`, "_blank")
+                                }
+                                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+                              >
+                                <FaGithub className="text-xs" />@{leaderboard[1]?.github_username}
+                              </button>
                             </div>
-                          </div>
-                        </div>
-                      )}
-                      {leaderboard[0] && (
-                        <div className="flex flex-col items-center gap-3 flex-1">
-                          <FaTrophy className="text-yellow-500 text-4xl animate-bounce" />
-                          <div className="relative w-32 h-32 bg-muted rounded-lg overflow-hidden">
-                            <Image
-                              src={getCharacterAvatar(
-                                leaderboard[0]?.character_class || "orc",
-                                leaderboard[0]?.level || 1
-                              )}
-                              alt={leaderboard[0]?.character_name || ""}
-                              fill
-                              className="object-contain"
-                            />
-                          </div>
-                          <div className="flex flex-col items-center justify-center text-center">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-lg">{leaderboard[0]?.character_name}</h3>
-                              <div className="flex items-center gap-1">
-                                {(leaderboard[0]?.achievement_codes || []).slice(0, 3).map((code) => (
-                                  <AchievementBadge
-                                    key={code}
-                                    code={code}
-                                    size="sm"
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <p className={`text-sm ${getRankColorClass(leaderboard[0]?.level || 1)}`}>
-                              {getCurrentRank(leaderboard[0]?.character_class || "orc", leaderboard[0]?.level || 1)}
-                            </p>
-                            <button
-                              onClick={() =>
-                                window.open(`https://github.com/${leaderboard[0]?.github_username}`, "_blank")
-                              }
-                              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1 mx-auto"
-                            >
-                              <FaGithub className="text-xs" />@{leaderboard[0]?.github_username}
-                            </button>
-                          </div>
-                          <div className="bg-yellow-500/20 w-full rounded-t-lg p-6 text-center border-2 border-yellow-500/50">
-                            <p className="font-black text-2xl">#{leaderboard[0]?.rank}</p>
-                            <p className="text-base font-bold">Level {leaderboard[0]?.level}</p>
-                            <button
-                              onClick={() => setXpDialogPlayer(leaderboard[0])}
-                              className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                            >
-                              {leaderboard[0]?.total_xp?.toLocaleString() || 0} XP
-                            </button>
-                            <div className="flex justify-around mt-3 text-sm">
-                              <div>
-                                <p className="font-bold">{leaderboard[0]?.total_commits || 0}</p>
-                                <p className="text-muted-foreground">Commits</p>
-                              </div>
-                              <div>
-                                <p className="font-bold">{leaderboard[0]?.total_prs || 0}</p>
-                                <p className="text-muted-foreground">PRs</p>
-                              </div>
-                              <div>
-                                <p className="font-bold">{leaderboard[0]?.total_issues || 0}</p>
-                                <p className="text-muted-foreground">Issues</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      {leaderboard[2] && (
-                        <div className="flex flex-col items-center gap-3 flex-1">
-                          <FaMedal className="text-amber-700 text-3xl" />
-                          <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden">
-                            <Image
-                              src={getCharacterAvatar(
-                                leaderboard[2]?.character_class || "orc",
-                                leaderboard[2]?.level || 1
-                              )}
-                              alt={leaderboard[2]?.character_name || ""}
-                              fill
-                              className="object-contain"
-                            />
-                          </div>
-                          <div className="flex flex-col items-center justify-center text-center">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-base">{leaderboard[2]?.character_name}</h3>
-                              <div className="flex items-center gap-1">
-                                {(leaderboard[2]?.achievement_codes || []).slice(0, 3).map((code) => (
-                                  <AchievementBadge
-                                    key={code}
-                                    code={code}
-                                    size="sm"
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <p className={`text-xs ${getRankColorClass(leaderboard[2]?.level || 1)}`}>
-                              {getCurrentRank(leaderboard[2]?.character_class || "orc", leaderboard[2]?.level || 1)}
-                            </p>
-                            <button
-                              onClick={() =>
-                                window.open(`https://github.com/${leaderboard[2]?.github_username}`, "_blank")
-                              }
-                              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
-                            >
-                              <FaGithub className="text-xs" />@{leaderboard[2]?.github_username}
-                            </button>
-                          </div>
-                          <div className="bg-amber-700/20 w-full rounded-t-lg p-2 text-center border-2 border-amber-700/50">
-                            <p className="font-black text-xl">#{leaderboard[2]?.rank}</p>
-                            <p className="text-sm font-bold">Level {leaderboard[2]?.level}</p>
-                            <button
-                              onClick={() => setXpDialogPlayer(leaderboard[2])}
-                              className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                            >
-                              {leaderboard[2]?.total_xp?.toLocaleString() || 0} XP
-                            </button>
-                            <div className="flex justify-around mt-2 text-xs">
-                              <div>
-                                <p className="font-bold">{leaderboard[2]?.total_commits || 0}</p>
-                                <p className="text-muted-foreground">Commits</p>
-                              </div>
-                              <div>
-                                <p className="font-bold">{leaderboard[2]?.total_prs || 0}</p>
-                                <p className="text-muted-foreground">PRs</p>
-                              </div>
-                              <div>
-                                <p className="font-bold">{leaderboard[2]?.total_issues || 0}</p>
-                                <p className="text-muted-foreground">Issues</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {/* Mobile: lista completa */}
-                  <div className="mb-10 md:hidden">
-                    <div className="space-y-2">
-                      {leaderboard.map((player) => (
-                        <Card
-                          key={player.user_id}
-                          className="transition-all hover:opacity-60 border-none shadow-none"
-                        >
-                          <CardContent className="px-4 border-none shadow-none">
-                            <div className="flex items-center md:flex-row flex-col gap-4">
-                              <div className="w-12 flex items-center justify-center shrink-0">
-                                {getRankIcon(player.rank)}
-                              </div>
-                              <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
-                                <Image
-                                  src={getCharacterAvatar(player.character_class, player.level)}
-                                  alt={player.character_name}
-                                  fill
-                                  className="object-contain"
-                                />
-                              </div>
-                              <div className="flex-1 min-w-0">
+                            <div className="bg-gray-400/20 w-full rounded-t-lg p-4 text-center border-2 border-gray-400/50">
+                              <p className="font-black text-xl">#{leaderboard[1]?.rank}</p>
+                              <p className="text-sm font-bold">Level {leaderboard[1]?.level}</p>
+                              <button
+                                onClick={() => setXpDialogPlayer(leaderboard[1])}
+                                className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                              >
+                                {leaderboard[1]?.total_xp?.toLocaleString() || 0} XP
+                              </button>
+                              <div className="flex justify-around mt-2 text-xs">
                                 <div>
+                                  <p className="font-bold">{leaderboard[1]?.total_commits || 0}</p>
+                                  <p className="text-muted-foreground">Commits</p>
+                                </div>
+                                <div>
+                                  <p className="font-bold">{leaderboard[1]?.total_prs || 0}</p>
+                                  <p className="text-muted-foreground">PRs</p>
+                                </div>
+                                <div>
+                                  <p className="font-bold">{leaderboard[1]?.total_issues || 0}</p>
+                                  <p className="text-muted-foreground">Issues</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {leaderboard[0] && (
+                          <div className="flex flex-col items-center gap-3 flex-1">
+                            <FaTrophy className="text-yellow-500 text-4xl animate-bounce" />
+                            <div className="relative w-32 h-32 bg-muted rounded-lg overflow-hidden">
+                              <Image
+                                src={getCharacterAvatar(
+                                  leaderboard[0]?.character_class || "orc",
+                                  leaderboard[0]?.level || 1
+                                )}
+                                alt={leaderboard[0]?.character_name || ""}
+                                fill
+                                className="object-contain"
+                              />
+                            </div>
+                            <div className="flex flex-col items-center justify-center text-center">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-lg">{leaderboard[0]?.character_name}</h3>
+                                <div className="flex items-center gap-1">
+                                  {(leaderboard[0]?.achievement_codes || []).slice(0, 3).map((code) => (
+                                    <AchievementBadge
+                                      key={code}
+                                      code={code}
+                                      size="sm"
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <p className={`text-sm ${getRankColorClass(leaderboard[0]?.level || 1)}`}>
+                                {getCurrentRank(leaderboard[0]?.character_class || "orc", leaderboard[0]?.level || 1)}
+                              </p>
+                              <button
+                                onClick={() =>
+                                  window.open(`https://github.com/${leaderboard[0]?.github_username}`, "_blank")
+                                }
+                                className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1 mx-auto"
+                              >
+                                <FaGithub className="text-xs" />@{leaderboard[0]?.github_username}
+                              </button>
+                            </div>
+                            <div className="bg-yellow-500/20 w-full rounded-t-lg p-6 text-center border-2 border-yellow-500/50">
+                              <p className="font-black text-2xl">#{leaderboard[0]?.rank}</p>
+                              <p className="text-base font-bold">Level {leaderboard[0]?.level}</p>
+                              <button
+                                onClick={() => setXpDialogPlayer(leaderboard[0])}
+                                className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                              >
+                                {leaderboard[0]?.total_xp?.toLocaleString() || 0} XP
+                              </button>
+                              <div className="flex justify-around mt-3 text-sm">
+                                <div>
+                                  <p className="font-bold">{leaderboard[0]?.total_commits || 0}</p>
+                                  <p className="text-muted-foreground">Commits</p>
+                                </div>
+                                <div>
+                                  <p className="font-bold">{leaderboard[0]?.total_prs || 0}</p>
+                                  <p className="text-muted-foreground">PRs</p>
+                                </div>
+                                <div>
+                                  <p className="font-bold">{leaderboard[0]?.total_issues || 0}</p>
+                                  <p className="text-muted-foreground">Issues</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {leaderboard[2] && (
+                          <div className="flex flex-col items-center gap-3 flex-1">
+                            <FaMedal className="text-amber-700 text-3xl" />
+                            <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden">
+                              <Image
+                                src={getCharacterAvatar(
+                                  leaderboard[2]?.character_class || "orc",
+                                  leaderboard[2]?.level || 1
+                                )}
+                                alt={leaderboard[2]?.character_name || ""}
+                                fill
+                                className="object-contain"
+                              />
+                            </div>
+                            <div className="flex flex-col items-center justify-center text-center">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-base">{leaderboard[2]?.character_name}</h3>
+                                <div className="flex items-center gap-1">
+                                  {(leaderboard[2]?.achievement_codes || []).slice(0, 3).map((code) => (
+                                    <AchievementBadge
+                                      key={code}
+                                      code={code}
+                                      size="sm"
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <p className={`text-xs ${getRankColorClass(leaderboard[2]?.level || 1)}`}>
+                                {getCurrentRank(leaderboard[2]?.character_class || "orc", leaderboard[2]?.level || 1)}
+                              </p>
+                              <button
+                                onClick={() =>
+                                  window.open(`https://github.com/${leaderboard[2]?.github_username}`, "_blank")
+                                }
+                                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+                              >
+                                <FaGithub className="text-xs" />@{leaderboard[2]?.github_username}
+                              </button>
+                            </div>
+                            <div className="bg-amber-700/20 w-full rounded-t-lg p-2 text-center border-2 border-amber-700/50">
+                              <p className="font-black text-xl">#{leaderboard[2]?.rank}</p>
+                              <p className="text-sm font-bold">Level {leaderboard[2]?.level}</p>
+                              <button
+                                onClick={() => setXpDialogPlayer(leaderboard[2])}
+                                className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                              >
+                                {leaderboard[2]?.total_xp?.toLocaleString() || 0} XP
+                              </button>
+                              <div className="flex justify-around mt-2 text-xs">
+                                <div>
+                                  <p className="font-bold">{leaderboard[2]?.total_commits || 0}</p>
+                                  <p className="text-muted-foreground">Commits</p>
+                                </div>
+                                <div>
+                                  <p className="font-bold">{leaderboard[2]?.total_prs || 0}</p>
+                                  <p className="text-muted-foreground">PRs</p>
+                                </div>
+                                <div>
+                                  <p className="font-bold">{leaderboard[2]?.total_issues || 0}</p>
+                                  <p className="text-muted-foreground">Issues</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* Mobile: lista completa */}
+                    <div className="mb-10 md:hidden">
+                      <div className="space-y-2">
+                        {leaderboard.map((player) => (
+                          <Card
+                            key={player.user_id}
+                            className="transition-all hover:opacity-60 border-none shadow-none"
+                          >
+                            <CardContent className="px-4 border-none shadow-none">
+                              <div className="flex items-center md:flex-row flex-col gap-4">
+                                <div className="w-12 flex items-center justify-center shrink-0">
+                                  {getRankIcon(player.rank)}
+                                </div>
+                                <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
+                                  <Image
+                                    src={getCharacterAvatar(player.character_class, player.level)}
+                                    alt={player.character_name}
+                                    fill
+                                    className="object-contain"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="font-bold text-base">{player.character_name}</h3>
+                                      <div className="flex items-center gap-1">
+                                        {(player.achievement_codes || []).slice(0, 3).map((code) => (
+                                          <AchievementBadge
+                                            key={code}
+                                            code={code}
+                                            size="sm"
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className={getRankColorClass(player.level)}>
+                                      {getCurrentRank(player.character_class, player.level)}
+                                    </span>
+                                    <span>•</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(`https://github.com/${player.github_username}`, "_blank");
+                                      }}
+                                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                    >
+                                      <FaGithub className="text-xs" />
+                                      <span>@{player.github_username}</span>
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="flex gap-6 shrink-0">
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">Level {player.level}</p>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setXpDialogPlayer(player);
+                                      }}
+                                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                    >
+                                      {player.total_xp.toLocaleString()} XP
+                                    </button>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_commits}</p>
+                                    <p className="text-xs text-muted-foreground">Commits</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_prs}</p>
+                                    <p className="text-xs text-muted-foreground">PRs</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_issues}</p>
+                                    <p className="text-xs text-muted-foreground">Issues</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Desktop: lista a partir do 4º */}
+                    <div className="mb-10 hidden md:block">
+                      <div className="space-y-2">
+                        {leaderboard.slice(3).map((player) => (
+                          <Card
+                            key={player.user_id}
+                            className="transition-all hover:opacity-60 border-none shadow-none"
+                          >
+                            <CardContent className="px-4 border-none shadow-none">
+                              <div className="flex items-center md:flex-row flex-col gap-4">
+                                <div className="w-12 flex items-center justify-center shrink-0">
+                                  {getRankIcon(player.rank)}
+                                </div>
+                                <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
+                                  <Image
+                                    src={getCharacterAvatar(player.character_class, player.level)}
+                                    alt={player.character_name}
+                                    fill
+                                    className="object-contain"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <h3 className="font-bold text-base">{player.character_name}</h3>
                                     <div className="flex items-center gap-1">
@@ -528,143 +614,58 @@ export default function Leaderboard() {
                                       ))}
                                     </div>
                                   </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <span className={getRankColorClass(player.level)}>
-                                    {getCurrentRank(player.character_class, player.level)}
-                                  </span>
-                                  <span>•</span>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      window.open(`https://github.com/${player.github_username}`, "_blank");
-                                    }}
-                                    className="flex items-center gap-1 hover:text-foreground transition-colors"
-                                  >
-                                    <FaGithub className="text-xs" />
-                                    <span>@{player.github_username}</span>
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="flex gap-6 shrink-0">
-                                <div className="text-center">
-                                  <p className="font-bold text-base">Level {player.level}</p>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setXpDialogPlayer(player);
-                                    }}
-                                    className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                                  >
-                                    {player.total_xp.toLocaleString()} XP
-                                  </button>
-                                </div>
-                                <div className="text-center">
-                                  <p className="font-bold text-base">{player.total_commits}</p>
-                                  <p className="text-xs text-muted-foreground">Commits</p>
-                                </div>
-                                <div className="text-center">
-                                  <p className="font-bold text-base">{player.total_prs}</p>
-                                  <p className="text-xs text-muted-foreground">PRs</p>
-                                </div>
-                                <div className="text-center">
-                                  <p className="font-bold text-base">{player.total_issues}</p>
-                                  <p className="text-xs text-muted-foreground">Issues</p>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Desktop: lista a partir do 4º */}
-                  <div className="mb-10 hidden md:block">
-                    <div className="space-y-2">
-                      {leaderboard.slice(3).map((player) => (
-                        <Card
-                          key={player.user_id}
-                          className="transition-all hover:opacity-60 border-none shadow-none"
-                        >
-                          <CardContent className="px-4 border-none shadow-none">
-                            <div className="flex items-center md:flex-row flex-col gap-4">
-                              <div className="w-12 flex items-center justify-center shrink-0">
-                                {getRankIcon(player.rank)}
-                              </div>
-                              <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
-                                <Image
-                                  src={getCharacterAvatar(player.character_class, player.level)}
-                                  alt={player.character_name}
-                                  fill
-                                  className="object-contain"
-                                />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-bold text-base">{player.character_name}</h3>
-                                  <div className="flex items-center gap-1">
-                                    {(player.achievement_codes || []).slice(0, 3).map((code) => (
-                                      <AchievementBadge
-                                        key={code}
-                                        code={code}
-                                        size="sm"
-                                      />
-                                    ))}
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className={`text-sm ${getRankColorClass(player.level)}`}>
+                                      {getCurrentRank(player.character_class, player.level)}
+                                    </span>
+                                    <span>•</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(`https://github.com/${player.github_username}`, "_blank");
+                                      }}
+                                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                    >
+                                      <FaGithub className="text-xs" />
+                                      <span>@{player.github_username}</span>
+                                    </button>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <span className={`text-sm ${getRankColorClass(player.level)}`}>
-                                    {getCurrentRank(player.character_class, player.level)}
-                                  </span>
-                                  <span>•</span>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      window.open(`https://github.com/${player.github_username}`, "_blank");
-                                    }}
-                                    className="flex items-center gap-1 hover:text-foreground transition-colors"
-                                  >
-                                    <FaGithub className="text-xs" />
-                                    <span>@{player.github_username}</span>
-                                  </button>
+                                <div className="flex gap-6 shrink-0">
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">Level {player.level}</p>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setXpDialogPlayer(player);
+                                      }}
+                                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                    >
+                                      {player.total_xp.toLocaleString()} XP
+                                    </button>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_commits}</p>
+                                    <p className="text-xs text-muted-foreground">Commits</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_prs}</p>
+                                    <p className="text-xs text-muted-foreground">PRs</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-bold text-base">{player.total_issues}</p>
+                                    <p className="text-xs text-muted-foreground">Issues</p>
+                                  </div>
                                 </div>
                               </div>
-                              <div className="flex gap-6 shrink-0">
-                                <div className="text-center">
-                                  <p className="font-bold text-base">Level {player.level}</p>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setXpDialogPlayer(player);
-                                    }}
-                                    className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                                  >
-                                    {player.total_xp.toLocaleString()} XP
-                                  </button>
-                                </div>
-                                <div className="text-center">
-                                  <p className="font-bold text-base">{player.total_commits}</p>
-                                  <p className="text-xs text-muted-foreground">Commits</p>
-                                </div>
-                                <div className="text-center">
-                                  <p className="font-bold text-base">{player.total_prs}</p>
-                                  <p className="text-xs text-muted-foreground">PRs</p>
-                                </div>
-                                <div className="text-center">
-                                  <p className="font-bold text-base">{player.total_issues}</p>
-                                  <p className="text-xs text-muted-foreground">Issues</p>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </>
-              )}
-              {viewMode === "guilds" && (
+                  </>
+                )
+              ) : (
                 <div className="space-y-4">
                   {guildLeaderboard.length === 0 ? (
                     <div className="text-center py-20">

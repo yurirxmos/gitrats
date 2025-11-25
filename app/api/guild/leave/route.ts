@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       .from("guild_members")
       .select("guild_id, role")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!membership) {
       return NextResponse.json({ error: "Você não está em uma guilda" }, { status: 400 });

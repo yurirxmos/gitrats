@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       .eq("id", invite_id)
       .eq("invited_user_id", user.id)
       .eq("status", "pending")
-      .single();
+      .maybeSingle();
 
     if (!invite) {
       return NextResponse.json({ error: "Convite não encontrado" }, { status: 404 });
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       .from("guild_members")
       .select("guild_id")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (existingMembership) {
       return NextResponse.json({ error: "Você já está em uma guilda" }, { status: 400 });

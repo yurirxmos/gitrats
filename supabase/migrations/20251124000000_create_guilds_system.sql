@@ -90,15 +90,9 @@ CREATE POLICY "Usuários podem ver seus convites"
   ON public.guild_invites FOR SELECT 
   USING (invited_user_id = auth.uid());
 
-CREATE POLICY "Membros podem enviar convites" 
+CREATE POLICY "Usuarios autenticados podem enviar convites" 
   ON public.guild_invites FOR INSERT 
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.guild_members 
-      WHERE guild_id = guild_invites.guild_id 
-      AND user_id = auth.uid()
-    )
-  );
+  WITH CHECK (auth.uid() IS NOT NULL AND invited_by = auth.uid());
 
 CREATE POLICY "Sistema pode atualizar convites" 
   ON public.guild_invites FOR UPDATE 

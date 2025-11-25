@@ -256,7 +256,7 @@ export default function GuildPage() {
                     <h3 className="font-bold text-sm">Convidar Membro</h3>
                     <div className="flex gap-2">
                       <Input
-                        placeholder="GitHub username"
+                        placeholder="GitHub username ou nick do personagem"
                         value={inviteUsername}
                         onChange={(e) => setInviteUsername(e.target.value)}
                         disabled={isSubmitting}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 const MAX_GUILD_MEMBERS = 20;
 
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const { github_username } = await req.json();
 
     if (!github_username) {
-      return NextResponse.json({ error: "Username do GitHub é obrigatório" }, { status: 400 });
+      return NextResponse.json({ error: "Username ou nick é obrigatório" }, { status: 400 });
     }
 
     // Buscar guilda do usuário que está convidando
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       .from("guild_members")
       .select("guild_id, role")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!membership) {
       return NextResponse.json({ error: "Você não está em uma guilda" }, { status: 400 });
@@ -38,18 +38,37 @@ export async function POST(req: NextRequest) {
       .from("guilds")
       .select("total_members")
       .eq("id", membership.guild_id)
-      .single();
+      .maybeSingle();
 
     if (guild && guild.total_members >= MAX_GUILD_MEMBERS) {
       return NextResponse.json({ error: "Guilda atingiu o limite de membros" }, { status: 400 });
     }
 
-    // Buscar usuário a ser convidado
-    const { data: invitedUser } = await supabase
+    // Buscar usuário a ser convidado por github_username OU character_name
+    const { data: userByGithub } = await supabase
       .from("users")
       .select("id, github_username")
       .eq("github_username", github_username)
-      .single();
+      .maybeSingle();
+
+    let invitedUser = userByGithub;
+
+    // Se não encontrou por github_username, buscar por character_name
+    if (!invitedUser) {
+      const { data: character } = await supabase
+        .from("characters")
+        .select("user_id, users!inner(id, github_username)")
+        .eq("character_name", github_username)
+        .maybeSingle();
+
+      if (character) {
+        const users = character.users as any;
+        invitedUser = {
+          id: users.id,
+          github_username: users.github_username,
+        };
+      }
+    }
 
     if (!invitedUser) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
@@ -64,7 +83,7 @@ export async function POST(req: NextRequest) {
       .from("guild_members")
       .select("guild_id")
       .eq("user_id", invitedUser.id)
-      .single();
+      .maybeSingle();
 
     if (targetMembership) {
       return NextResponse.json({ error: "Usuário já está em uma guilda" }, { status: 400 });
@@ -77,14 +96,15 @@ export async function POST(req: NextRequest) {
       .eq("guild_id", membership.guild_id)
       .eq("invited_user_id", invitedUser.id)
       .eq("status", "pending")
-      .single();
+      .maybeSingle();
 
     if (existingInvite) {
       return NextResponse.json({ error: "Convite já enviado para este usuário" }, { status: 400 });
     }
 
-    // Criar convite
-    const { data: invite, error: inviteError } = await supabase
+    // Criar convite usando admin client para bypass RLS
+    const adminClient = createAdminClient();
+    const { data: invite, error: inviteError } = await adminClient
       .from("guild_invites")
       .insert({
         guild_id: membership.guild_id,
