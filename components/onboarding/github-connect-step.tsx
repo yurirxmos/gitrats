@@ -45,17 +45,15 @@ export function GitHubConnectStep({ onNext }: GitHubConnectStepProps) {
   };
 
   const handleGitHubLogin = async () => {
-    localStorage.setItem("onboarding_in_progress", "true");
-
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/onboarding?step=2`,
       },
     });
 
     if (error) {
-      localStorage.removeItem("onboarding_in_progress");
+      console.error("Erro ao fazer login:", error);
     }
   };
 

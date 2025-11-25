@@ -2,10 +2,9 @@
 
 import Image from "next/image";
 import logo from "@/assets/github.png";
-import { FaGithub, FaUser, FaTrophy, FaArrowRight, FaMoon, FaCode } from "react-icons/fa6";
+import { FaGithub, FaUser, FaTrophy, FaArrowRight } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
-import { useEffect, useRef, useState } from "react";
-import { OnboardingModal } from "@/components/onboarding-modal";
+import { useEffect, useRef } from "react";
 import { Navbar } from "@/components/navbar";
 import { useUserContext } from "@/contexts/user-context";
 import { useAutoSync } from "@/hooks/use-auto-sync";
@@ -13,26 +12,12 @@ import { useRouter } from "next/navigation";
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const { user, hasCharacter, loading } = useUserContext();
   const router = useRouter();
 
-  // Sync automático a cada 10 minutos (só se tiver personagem)
   useAutoSync(hasCharacter);
 
   useEffect(() => {
-    // Verificar se estava no onboarding antes do login
-    if (typeof window !== "undefined") {
-      const onboardingInProgress = localStorage.getItem("onboarding_in_progress");
-      if (onboardingInProgress === "true") {
-        setIsOnboardingOpen(true);
-        localStorage.removeItem("onboarding_in_progress");
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    // Evitar full reload em SPA
     if (!loading && user && hasCharacter) router.replace("/leaderboard");
   }, [user, hasCharacter, loading, router]);
 
@@ -184,10 +169,7 @@ export default function Home() {
 
           {!loading && !hasCharacter && (
             <div className="flex flex-col gap-4 items-center">
-              <Button
-                onClick={() => setIsOnboardingOpen(true)}
-                disabled={hasCharacter || loading}
-              >
+              <Button onClick={() => router.push("/onboarding")}>
                 <FaGithub className="text-xl" />
                 Quero jogar!
               </Button>
@@ -195,11 +177,6 @@ export default function Home() {
           )}
         </div>
       </main>
-
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-      />
     </div>
   );
 }

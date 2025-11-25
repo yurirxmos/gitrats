@@ -53,7 +53,6 @@ export async function GET(request: Request) {
         hasToken: !!providerToken,
       });
 
-      // Verificar se usuário existe
       const { data: existingUser } = await supabase.from("users").select("id").eq("id", user.id).single();
 
       console.log("[AUTH_CALLBACK] Existing user check:", {
@@ -63,7 +62,6 @@ export async function GET(request: Request) {
       });
 
       if (existingUser) {
-        // Atualizar token
         console.log("[AUTH_CALLBACK] Atualizando token do usuário existente...");
         const { error: updateError } = await supabase
           .from("users")
@@ -80,7 +78,6 @@ export async function GET(request: Request) {
           console.log("[AUTH_CALLBACK] Token atualizado com sucesso");
         }
       } else {
-        // Criar novo usuário
         console.log("[AUTH_CALLBACK] Criando novo usuário...", {
           userId: user.id,
           githubId: user.user_metadata.provider_id,

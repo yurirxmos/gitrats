@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaArrowRight, FaFire, FaStar } from "react-icons/fa6";
+import { FaArrowRight, FaFire, FaStar, FaCheck } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
@@ -17,12 +17,15 @@ import orcLvl10 from "@/assets/orc_lvl_10.png";
 import { Card, CardContent } from "../ui/card";
 import { GiSwordsPower } from "react-icons/gi";
 import { CLASS_DESCRIPTIONS } from "@/lib/classes";
+import { useUserContext } from "@/contexts/user-context";
+import { getCharacterAvatar } from "@/lib/character-assets";
 
 type CharacterClass = "warrior" | "mage" | "orc";
 
 interface CharacterCreationStepProps {
   onNext: (characterData: { name: string; class: CharacterClass }) => void;
   isLoading?: boolean;
+  hasExistingCharacter?: boolean;
 }
 
 const classes = [
@@ -59,16 +62,72 @@ const classes = [
 ];
 
 export function CharacterCreationStep({ onNext, isLoading = false }: CharacterCreationStepProps) {
+  const { userProfile, hasCharacter } = useUserContext();
   const [characterName, setCharacterName] = useState("");
   const [selectedClass, setSelectedClass] = useState<CharacterClass>("warrior");
 
   const handleNext = () => {
-    if (characterName.trim()) {
+    if (hasCharacter) {
+      onNext({ name: userProfile!.character_name, class: userProfile!.character_class as CharacterClass });
+    } else if (characterName.trim()) {
       onNext({ name: characterName.trim(), class: selectedClass });
     }
   };
 
   const currentClass = classes.find((c) => c.id === selectedClass)!;
+
+  if (hasCharacter && userProfile) {
+    const characterAsset = getCharacterAvatar(userProfile.character_class, userProfile.level);
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col items-center gap-2 mb-3">
+          <div className="w-10 h-10 bg-green-500/20 rounded-full text-3xl flex items-center justify-center">
+            <FaCheck className="text-green-500" />
+          </div>
+          <h2 className="text-lg font-black text-center uppercase font-mono">Personagem Existente</h2>
+        </div>
+
+        <Card className="border-green-500/50 bg-green-500/10">
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-32 h-32 bg-muted rounded-lg overflow-hidden">
+                <Image
+                  src={characterAsset}
+                  alt={userProfile.character_name}
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <div className="text-center">
+                <h3 className="text-2xl font-black">{userProfile.character_name}</h3>
+                <p className="text-muted-foreground">
+                  {userProfile.character_class === "warrior" && "Guerreiro"}
+                  {userProfile.character_class === "mage" && "Mago"}
+                  {userProfile.character_class === "orc" && "Ogro"}
+                  {" • "}Nível {userProfile.level}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">{userProfile.total_xp} XP Total</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <p className="text-center text-sm text-muted-foreground">
+          Você já tem um personagem criado! Continue para finalizar.
+        </p>
+
+        <div className="flex items-center justify-end">
+          <Button
+            onClick={handleNext}
+            className="w-20 bg-foreground hover:opacity-90 text-background font-bold"
+          >
+            <FaArrowRight />
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-0">
@@ -80,6 +139,7 @@ export function CharacterCreationStep({ onNext, isLoading = false }: CharacterCr
       </div>
 
       <div className="space-y-4">
+        {/* Character Preview with Evolution */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="text-sm font-bold">/nome</label>
