@@ -30,6 +30,7 @@ export default function GuildPage() {
     leaveGuild,
     deleteGuild,
     refreshInvites,
+    cancelInvite,
   } = useGuild();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -77,6 +78,7 @@ export default function GuildPage() {
       await inviteMember(inviteUsername);
       setSuccess(`Convite enviado para @${inviteUsername}`);
       setInviteUsername("");
+      await refreshInvites(); // Atualiza lista de convites pendentes
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -99,6 +101,16 @@ export default function GuildPage() {
     try {
       await declineInvite(inviteId);
       refreshInvites();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleCancelInvite = async (inviteId: string) => {
+    setError("");
+    try {
+      await cancelInvite(inviteId);
+      setSuccess("Convite cancelado");
     } catch (err: any) {
       setError(err.message);
     }
@@ -182,48 +194,6 @@ export default function GuildPage() {
         )}
 
         <div className="flex flex-col gap-3">
-          {/* Convites Pendentes */}
-          {invites.length > 0 && (
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4">Convites Pendentes</h2>
-                <div className="space-y-3">
-                  {invites.map((invite) => (
-                    <div
-                      key={invite.id}
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                    >
-                      <div>
-                        <p className="font-bold">
-                          {invite.guild_name}{" "}
-                          {invite.guild_tag && (
-                            <span className="text-xs text-muted-foreground">[{invite.guild_tag}]</span>
-                          )}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Por @{invite.invited_by_username}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleAcceptInvite(invite.id)}
-                        >
-                          <FaCheck />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeclineInvite(invite.id)}
-                        >
-                          <FaXmark />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Guilda Atual ou Criar Guilda */}
           {guild ? (
             <Card>
@@ -252,21 +222,55 @@ export default function GuildPage() {
                 </div>
 
                 {isOwner && (
-                  <div className="space-y-3 mb-6">
-                    <h3 className="font-bold text-sm">Convidar Membro</h3>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="GitHub username ou nick do personagem"
-                        value={inviteUsername}
-                        onChange={(e) => setInviteUsername(e.target.value)}
-                        disabled={isSubmitting}
-                      />
-                      <Button
-                        onClick={handleInvite}
-                        disabled={isSubmitting}
-                      >
-                        <FaPlus />
-                      </Button>
+                  <div className="space-y-4 mb-6">
+                    {/* Convites Pendentes dentro do card da guilda usando invites do hook */}
+                    {isOwner && invites.filter(
+                      (invite) => invite.status === "pending" && invite.guild_id === guild.id
+                    ).length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="font-bold text-sm">Convites Pendentes</h3>
+                        <div className="space-y-3">
+                          {invites
+                            .filter((invite) => invite.status === "pending" && invite.guild_id === guild.id)
+                            .map((invite) => (
+                              <div
+                                key={invite.id}
+                                className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                              >
+                                <div>
+                                  <p className="font-bold">{(invite as any).invited_username || invite.invited_user_id}</p>
+                                  <p className="text-xs text-muted-foreground">Enviado em {new Date(invite.created_at).toLocaleString()}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleCancelInvite(invite.id)}
+                                  >
+                                    <FaXmark />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-3">
+                      <h3 className="font-bold text-sm">Convidar Membro</h3>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="GitHub username ou nick do personagem"
+                          value={inviteUsername}
+                          onChange={(e) => setInviteUsername(e.target.value)}
+                          disabled={isSubmitting}
+                        />
+                        <Button
+                          onClick={handleInvite}
+                          disabled={isSubmitting}
+                        >
+                          <FaPlus />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}

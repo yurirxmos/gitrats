@@ -57,7 +57,9 @@ export function useGuild() {
     }
 
     try {
-      const response = await fetch("/api/guild/invite");
+      // Se for owner, usar endpoint que retorna convites enviados pela guilda
+      const endpoint = membership?.role === "owner" ? "/api/guild/invite/sent" : "/api/guild/invite/received";
+      const response = await fetch(endpoint);
       const data = await response.json();
       setInvites(data.invites || []);
     } catch (error) {
@@ -129,6 +131,22 @@ export function useGuild() {
     return response.json();
   };
 
+  const cancelInvite = async (inviteId: string) => {
+    const response = await fetch("/api/guild/invite/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invite_id: inviteId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Erro ao cancelar convite");
+    }
+
+    await fetchInvites();
+    return response.json();
+  };
+
   const leaveGuild = async () => {
     const response = await fetch("/api/guild/leave", {
       method: "POST",
@@ -159,9 +177,16 @@ export function useGuild() {
 
   useEffect(() => {
     fetchGuild();
-    fetchInvites();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Buscar convites quando a membership (e papel) estiver disponível
+  useEffect(() => {
+    if (user) {
+      fetchInvites();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membership?.role, user]);
 
   return {
     guild,
@@ -178,5 +203,6 @@ export function useGuild() {
     deleteGuild,
     refreshGuild: fetchGuild,
     refreshInvites: fetchInvites,
+    cancelInvite,
   };
 }
