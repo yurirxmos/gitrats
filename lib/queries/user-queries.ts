@@ -84,7 +84,7 @@ export async function fetchUserProfile(
   // Buscar informações da guilda
   let guildName: string | null = null;
   let guildTag: string | null = null;
-  
+
   try {
     const guildResponse = await fetch("/api/guild");
     if (guildResponse.ok) {
