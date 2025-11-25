@@ -16,6 +16,7 @@ export default function AdminPage() {
   const [deleteResult, setDeleteResult] = useState<any>(null);
   const [resyncResult, setResyncResult] = useState<any>(null);
   const [recalcResult, setRecalcResult] = useState<any>(null);
+  const [singleRecalcResult, setSingleRecalcResult] = useState<any>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
 
@@ -251,6 +252,34 @@ export default function AdminPage() {
               </Button>
               <Button
                 onClick={async () => {
+                  const username = prompt("Username para RECALCULAR XP específico:");
+                  if (!username) return;
+                  if (!confirm(`Recalcular XP apenas de ${username}?`)) return;
+                  setLoading(true);
+                  setSingleRecalcResult(null);
+                  try {
+                    const res = await fetch("/api/admin/recalculate-user-xp", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ username }),
+                    });
+                    const data = await res.json();
+                    setSingleRecalcResult(data);
+                  } catch (err) {
+                    console.error("Erro ao recalcular XP usuário:", err);
+                    setSingleRecalcResult({ error: String(err) });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              >
+                Recalcular XP Usuário
+              </Button>
+              <Button
+                onClick={async () => {
                   const username = prompt("Digite o username para analisar XP (ex: yurirxmos):");
                   if (!username) return;
                   setLoading(true);
@@ -353,6 +382,16 @@ export default function AdminPage() {
               <h2 className="text-xl font-bold mb-4">Resultado do Recálculo de XP</h2>
               <pre className="bg-muted p-4 rounded text-xs overflow-auto max-h-96">
                 {JSON.stringify(recalcResult, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+        {singleRecalcResult && (
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-xl font-bold mb-4">Resultado do Recálculo de XP (Usuário)</h2>
+              <pre className="bg-muted p-4 rounded text-xs overflow-auto max-h-96">
+                {JSON.stringify(singleRecalcResult, null, 2)}
               </pre>
             </CardContent>
           </Card>
