@@ -81,6 +81,23 @@ export async function fetchUserProfile(
   const user = userData.status === "fulfilled" ? userData.value : null;
   const userRank = rank.status === "fulfilled" ? rank.value : 0;
 
+  // Buscar informações da guilda
+  let guildName: string | null = null;
+  let guildTag: string | null = null;
+  
+  try {
+    const guildResponse = await fetch("/api/guild");
+    if (guildResponse.ok) {
+      const guildData = await guildResponse.json();
+      if (guildData.guild) {
+        guildName = guildData.guild.name;
+        guildTag = guildData.guild.tag;
+      }
+    }
+  } catch (err) {
+    console.error("Erro ao buscar guilda:", err);
+  }
+
   const profile: UserProfile = {
     character_name: character.name,
     character_class: character.class as "warrior" | "mage" | "orc",
@@ -94,6 +111,8 @@ export async function fetchUserProfile(
     github_username: userMetadata?.user_name || userMetadata?.email?.split("@")[0] || "User",
     created_at: character.created_at,
     achievement_codes: character.achievement_codes || [],
+    guild_name: guildName,
+    guild_tag: guildTag,
   };
 
   return {

@@ -76,6 +76,18 @@ export async function GET(request: NextRequest) {
       console.error("Erro ao buscar achievements:", err);
     }
 
+    // Buscar guild tags
+    const { data: guildMembersData } = await supabase
+      .from("guild_members")
+      .select("user_id, guild:guilds(tag)")
+      .in("user_id", userIds);
+
+    // Mapear guild tags por user_id
+    const guildTagsMap = new Map<string, string | null>();
+    (guildMembersData || []).forEach((row: any) => {
+      guildTagsMap.set(row.user_id, row.guild?.tag || null);
+    });
+
     // Mapear achievements por user_id
     const achievementsMap = new Map<string, string[]>();
     achievementsRaw.forEach((row: any) => {
@@ -108,6 +120,7 @@ export async function GET(request: NextRequest) {
         total_prs: prsAfterJoin,
         total_issues: issuesAfterJoin,
         achievement_codes: achievementsMap.get(character.user_id) || [],
+        guild_tag: guildTagsMap.get(character.user_id) || null,
       };
     });
 

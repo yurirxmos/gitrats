@@ -311,7 +311,12 @@ export default function Leaderboard() {
                               />
                             </div>
                             <div className="flex flex-col items-center justify-center text-center">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5">
+                                {leaderboard[1]?.guild_tag && (
+                                  <span className="text-xs font-bold text-muted-foreground">
+                                    [{leaderboard[1].guild_tag}]
+                                  </span>
+                                )}
                                 <h3 className="font-bold text-base">{leaderboard[1]?.character_name}</h3>
                                 {/* Mostrar até 3 badges ao lado do nome */}
                                 <div className="flex items-center gap-1">
@@ -378,6 +383,11 @@ export default function Leaderboard() {
                             </div>
                             <div className="flex flex-col items-center justify-center text-center">
                               <div className="flex items-center gap-2">
+                                {leaderboard[0]?.guild_tag && (
+                                  <span className="text-xs font-bold text-muted-foreground">
+                                    [{leaderboard[0].guild_tag}]
+                                  </span>
+                                )}
                                 <h3 className="font-bold text-lg">{leaderboard[0]?.character_name}</h3>
                                 <div className="flex items-center gap-1">
                                   {(leaderboard[0]?.achievement_codes || []).slice(0, 3).map((code) => (
@@ -443,6 +453,11 @@ export default function Leaderboard() {
                             </div>
                             <div className="flex flex-col items-center justify-center text-center">
                               <div className="flex items-center gap-2">
+                                {leaderboard[2]?.guild_tag && (
+                                  <span className="text-xs font-bold text-muted-foreground">
+                                    [{leaderboard[2].guild_tag}]
+                                  </span>
+                                )}
                                 <h3 className="font-bold text-base">{leaderboard[2]?.character_name}</h3>
                                 <div className="flex items-center gap-1">
                                   {(leaderboard[2]?.achievement_codes || []).slice(0, 3).map((code) => (
@@ -518,6 +533,11 @@ export default function Leaderboard() {
                                 <div className="flex-1 min-w-0">
                                   <div>
                                     <div className="flex items-center gap-2">
+                                      {player.guild_tag && (
+                                        <span className="text-xs font-bold text-muted-foreground">
+                                          [{player.guild_tag}]
+                                        </span>
+                                      )}
                                       <h3 className="font-bold text-base">{player.character_name}</h3>
                                       <div className="flex items-center gap-1">
                                         {(player.achievement_codes || []).slice(0, 3).map((code) => (
@@ -603,6 +623,11 @@ export default function Leaderboard() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
+                                    {player.guild_tag && (
+                                      <span className="text-xs font-bold text-muted-foreground">
+                                        [{player.guild_tag}]
+                                      </span>
+                                    )}
                                     <h3 className="font-bold text-base">{player.character_name}</h3>
                                     <div className="flex items-center gap-1">
                                       {(player.achievement_codes || []).slice(0, 3).map((code) => (

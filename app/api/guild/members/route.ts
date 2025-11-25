@@ -67,8 +67,6 @@ export async function GET(req: NextRequest) {
       })
     );
 
-    console.log("✅ Formatted members:", formattedMembers);
-
     return NextResponse.json({ members: formattedMembers });
   } catch (error) {
     console.error("Erro ao buscar membros:", error);

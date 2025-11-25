@@ -183,6 +183,17 @@ export default function LeaderboardProfileCard({
                                 </p>
                               </div>
                             )}
+                            {userProfile.guild_name && (
+                              <div className="flex justify-between">
+                                <p className="text-xs text-muted-foreground">Guilda:</p>
+                                <p className="font-bold text-xs">
+                                  {userProfile.guild_name}
+                                  {userProfile.guild_tag && (
+                                    <span className="text-muted-foreground">[{userProfile.guild_tag}]</span>
+                                  )}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
@@ -312,6 +323,17 @@ export default function LeaderboardProfileCard({
                               <p className="text-xs text-muted-foreground">Nascimento:</p>
                               <p className="font-bold text-xs">
                                 {new Date(userProfile.created_at).toLocaleDateString("pt-BR")}
+                              </p>
+                            </div>
+                          )}
+                          {userProfile.guild_name && (
+                            <div className="flex justify-between">
+                              <p className="text-xs text-muted-foreground">Guilda:</p>
+                              <p className="font-bold text-xs">
+                                {userProfile.guild_name}{" "}
+                                {userProfile.guild_tag && (
+                                  <span className="text-muted-foreground">[{userProfile.guild_tag}]</span>
+                                )}
                               </p>
                             </div>
                           )}

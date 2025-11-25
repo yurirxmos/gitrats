@@ -11,6 +11,7 @@ export type LeaderboardEntry = {
   total_prs: number;
   total_issues: number;
   achievement_codes?: string[];
+  guild_tag?: string | null;
 };
 
 export type UserProfile = {
@@ -26,6 +27,8 @@ export type UserProfile = {
   github_username: string;
   created_at?: string;
   achievement_codes?: string[];
+  guild_name?: string | null;
+  guild_tag?: string | null;
 };
 
 export type Guild = {
