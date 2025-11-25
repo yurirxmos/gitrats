@@ -12,7 +12,23 @@ import { useGuild } from "@/hooks/use-guild";
 import { useUserContext } from "@/contexts/user-context";
 import { getCharacterAvatar } from "@/lib/character-assets";
 import { getCurrentRank } from "@/lib/class-evolution";
-import { FaUsers, FaPlus, FaTrophy, FaRightFromBracket, FaTrash, FaCheck, FaXmark, FaCrown } from "react-icons/fa6";
+import {
+  FaUsers,
+  FaPlus,
+  FaTrophy,
+  FaRightFromBracket,
+  FaTrash,
+  FaCheck,
+  FaXmark,
+  FaCrown,
+  FaBell,
+  FaShare,
+  FaUserPlus,
+  FaStar,
+} from "react-icons/fa6";
+import { DialogTitle } from "@radix-ui/react-dialog";
+import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipContent, TooltipProvider, TooltipTrigger } from "@radix-ui/react-tooltip";
 
 export default function GuildPage() {
   const { user, hasCharacter } = useUserContext();
@@ -38,6 +54,8 @@ export default function GuildPage() {
   const [guildDescription, setGuildDescription] = useState("");
   const [guildTag, setGuildTag] = useState("");
   const [inviteUsername, setInviteUsername] = useState("");
+  const [showInviteDialog, setShowInviteDialog] = useState(false); // dialog para convidar membro
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false); // dialog para confirmar deleção
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,6 +97,7 @@ export default function GuildPage() {
       setSuccess(`Convite enviado para @${inviteUsername}`);
       setInviteUsername("");
       await refreshInvites(); // Atualiza lista de convites pendentes
+      setShowInviteDialog(false); // fecha dialog após envio
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -129,12 +148,11 @@ export default function GuildPage() {
   };
 
   const handleDeleteGuild = async () => {
-    if (!confirm("Tem certeza que deseja deletar a guilda? Esta ação não pode ser desfeita.")) return;
-
     setError("");
     try {
       await deleteGuild();
       setSuccess("Guilda deletada");
+      setShowDeleteDialog(false);
     } catch (err: any) {
       setError(err.message);
     }
@@ -177,7 +195,7 @@ export default function GuildPage() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <FaUsers className="text-3xl" />
-            <h1 className="text-3xl font-black">GUILDAS</h1>
+            <h1 className="text-3xl font-black">/GUILD</h1>
           </div>
         </div>
 
@@ -199,104 +217,123 @@ export default function GuildPage() {
             <Card>
               <CardContent>
                 <div className="flex flex-row gap-2 items-center w-full">
-                  <div className="flex items-start gap-2 w-full">
-                    <div>
-                      <h2 className="text-2xl font-black">
-                        {guild.name} {guild.tag && <span className="text-lg text-muted-foreground">[{guild.tag}]</span>}
-                      </h2>
-                      {guild.description && <p className="text-sm text-muted-foreground mt-1">{guild.description}</p>}
+                  <div className="flex flex-col gap-1 w-full">
+                    <div className="flex flex-row items-center gap-2">
+                      <h2 className="text-2xl font-black">{guild.name}</h2>
+                      <p>
+                        {guild.tag && <span className="text-xs font-bold text-muted-foreground">[{guild.tag}]</span>}
+                      </p>
+                      {isOwner && <FaCrown className="text-yellow-500 text-sm" />}
                     </div>
-                    {isOwner && <FaCrown className="text-yellow-500 text-2xl" />}
+
+                    {guild.description && <p className="text-sm text-muted-foreground">{guild.description}</p>}
                   </div>
 
-                  <div className="flex flex-row items-center gap-4">
-                    <div className="bg-muted rounded-lg p-4 text-center">
-                      <p className="text-2xl font-bold">{guild.total_members}</p>
-                      <p className="text-xs text-muted-foreground">Membros</p>
-                    </div>
-                    <div className="bg-muted rounded-lg p-4 text-center">
-                      <p className="text-2xl font-bold">{guild.total_xp.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">XP Total</p>
-                    </div>
-                  </div>
-                </div>
-
-                {isOwner && (
-                  <div className="space-y-4 mb-6">
-                    {/* Convites Pendentes dentro do card da guilda usando invites do hook */}
-                    {isOwner && invites.filter(
-                      (invite) => invite.status === "pending" && invite.guild_id === guild.id
-                    ).length > 0 && (
-                      <div className="space-y-3">
-                        <h3 className="font-bold text-sm">Convites Pendentes</h3>
-                        <div className="space-y-3">
-                          {invites
-                            .filter((invite) => invite.status === "pending" && invite.guild_id === guild.id)
-                            .map((invite) => (
-                              <div
-                                key={invite.id}
-                                className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                              >
-                                <div>
-                                  <p className="font-bold">{(invite as any).invited_username || invite.invited_user_id}</p>
-                                  <p className="text-xs text-muted-foreground">Enviado em {new Date(invite.created_at).toLocaleString()}</p>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleCancelInvite(invite.id)}
-                                  >
-                                    <FaXmark />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
+                  <div className="flex flex-row items-center gap-3">
+                    {isOwner && (
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        onClick={() => setShowInviteDialog(true)}
+                        title="Convidar membro"
+                      >
+                        <FaUserPlus />
+                      </Button>
                     )}
-                    <div className="space-y-3">
-                      <h3 className="font-bold text-sm">Convidar Membro</h3>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="GitHub username ou nick do personagem"
-                          value={inviteUsername}
-                          onChange={(e) => setInviteUsername(e.target.value)}
-                          disabled={isSubmitting}
-                        />
+                    <Tooltip>
+                      <TooltipProvider>
+                        <TooltipTrigger>
+                          <Button
+                            className="hover:cursor-help"
+                            variant="secondary"
+                          >
+                            <FaUsers />
+                            <p className="text-xs">{guild.total_members} membros</p>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <div className="p-3 bg-secondary rounded-lg mb-1.5 transition-all shadow-sm">
+                            <p className="text-xs">Total de membros na guilda</p>
+                          </div>
+                        </TooltipContent>
+                      </TooltipProvider>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipProvider>
+                        <TooltipTrigger>
+                          <Button
+                            className="hover:cursor-help"
+                            variant="secondary"
+                          >
+                            <FaStar />
+                            <p className="text-xs">{guild.total_xp.toLocaleString()} XP</p>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <div className="p-3 bg-secondary rounded-lg mb-1.5 transition-all shadow-sm">
+                            <p className="text-xs">XP Total da guilda</p>
+                          </div>
+                        </TooltipContent>
+                      </TooltipProvider>
+                    </Tooltip>
+
+                    <div className="flex gap-2">
+                      {!isOwner && (
                         <Button
-                          onClick={handleInvite}
-                          disabled={isSubmitting}
+                          size={"icon"}
+                          variant="outline"
+                          onClick={handleLeaveGuild}
                         >
-                          <FaPlus />
+                          <FaRightFromBracket />
                         </Button>
-                      </div>
+                      )}
+                      {isOwner && (
+                        <Button
+                          size={"icon"}
+                          variant="destructive"
+                          onClick={() => setShowDeleteDialog(true)}
+                        >
+                          <FaTrash />
+                        </Button>
+                      )}
                     </div>
                   </div>
-                )}
-
-                <div className="flex gap-2">
-                  {!isOwner && (
-                    <Button
-                      variant="outline"
-                      onClick={handleLeaveGuild}
-                      className="w-full"
-                    >
-                      <FaRightFromBracket className="ml-auto w-fit text-xs" />
-                      Sair da Guilda
-                    </Button>
-                  )}
-                  {isOwner && (
-                    <Button
-                      variant="destructive"
-                      onClick={handleDeleteGuild}
-                      className="ml-auto w-fit text-xs"
-                    >
-                      <FaTrash />
-                      Deletar Guilda
-                    </Button>
-                  )}
                 </div>
+
+                {isOwner &&
+                  invites.filter((invite) => invite.status === "pending" && invite.guild_id === guild.id).length >
+                    0 && (
+                    <div className="space-y-3 mb-6">
+                      <h3 className="font-bold text-sm">Convites Pendentes</h3>
+                      <div className="space-y-3">
+                        {invites
+                          .filter((invite) => invite.status === "pending" && invite.guild_id === guild.id)
+                          .map((invite) => (
+                            <div
+                              key={invite.id}
+                              className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                            >
+                              <div>
+                                <p className="font-bold text-sm">
+                                  {(invite as any).invited_username || invite.invited_user_id}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Enviado em {new Date(invite.created_at).toLocaleDateString()}{" "}
+                                  {new Date(invite.created_at).toLocaleTimeString()}
+                                </p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleCancelInvite(invite.id)}
+                              >
+                                <FaXmark />
+                              </Button>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
               </CardContent>
             </Card>
           ) : (
@@ -404,6 +441,71 @@ export default function GuildPage() {
                 disabled={isSubmitting}
               >
                 Cancelar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Convidar Membro */}
+      <Dialog
+        open={showInviteDialog}
+        onOpenChange={setShowInviteDialog}
+      >
+        <DialogContent>
+          <DialogTitle>
+            <h2 className="text-xl font-bold">Convidar Membro</h2>
+          </DialogTitle>
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <Input
+                placeholder="insira o username do GitHub aqui"
+                value={inviteUsername}
+                onChange={(e) => setInviteUsername(e.target.value)}
+                disabled={isSubmitting}
+                maxLength={64}
+              />
+            </div>
+            <Button
+              onClick={handleInvite}
+              disabled={isSubmitting}
+              className="flex-1 w-full"
+            >
+              Enviar Convite
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Confirmar Deletar Guilda */}
+      <Dialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+      >
+        <DialogContent>
+          <DialogTitle>
+            <h2 className="text-xl font-bold text-red-600">Deletar Guilda</h2>
+          </DialogTitle>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja deletar a guilda <strong>{guild?.name}</strong>? Esta ação não pode ser desfeita e
+              todos os membros serão removidos.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteGuild}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                Deletar Guilda
               </Button>
             </div>
           </div>

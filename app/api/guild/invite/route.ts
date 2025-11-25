@@ -126,4 +126,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro ao enviar convite" }, { status: 500 });
   }
 }
-

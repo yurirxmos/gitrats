@@ -100,12 +100,13 @@ export function Navbar() {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8 text-xs">
           <Link
-            href="/docs"
+            href="/leaderboard"
             className="flex flex-row items-center gap-2 hover:underline"
           >
-            <FaFileCode />
-            /docs
+            <FaTrophy />
+            /leaderboard
           </Link>
+
           <Link
             href="/reports"
             className="flex flex-row items-center gap-2 hover:underline"
@@ -115,19 +116,11 @@ export function Navbar() {
           </Link>
 
           <Link
-            href="/leaderboard"
+            href="/docs"
             className="flex flex-row items-center gap-2 hover:underline"
           >
-            <FaTrophy />
-            /leaderboard
-          </Link>
-
-          <Link
-            href="/guild"
-            className="flex flex-row items-center gap-2 hover:underline"
-          >
-            <FaUsers />
-            /guild
+            <FaFileCode />
+            /docs
           </Link>
 
           {user ? (
@@ -148,8 +141,16 @@ export function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="bg-foreground text-background p-1 rounded-md shadow-md mt-1 w-32 text-center gap-2 border-none"
+                className="bg-foreground text-background p-1 rounded-md shadow-md mt-1 w-28 text-center gap-2 border-none"
               >
+                <DropdownMenuItem
+                  className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  onClick={() => router.push("/guild")}
+                >
+                  <FaUsers />
+                  guild
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
                   onClick={() => router.push("/configs")}
@@ -162,7 +163,7 @@ export function Navbar() {
                   onClick={toggleTheme}
                 >
                   {theme === "dark" ? <FaSun /> : <FaMoon />}
-                  {theme === "dark" ? "light mode" : "dark mode"}
+                  theme
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
