@@ -3,7 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { QueryProvider } from "@/contexts/query-provider";
 import { UserProvider } from "@/contexts/user-context";
-import favicon from "@/public/favicon.png";
+import { RouteAwareHeader } from "@/components/RouteAwareHeader";
 
 // Base URL do site - altere usando a variável de ambiente NEXT_PUBLIC_SITE_URL em produção
 const siteUrl = "https://gitrats.rxmos.dev.br";
@@ -50,6 +50,8 @@ const structuredData = {
   ],
 };
 
+// Removido uso de window para evitar mismatch de hidratação
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -91,7 +93,11 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <QueryProvider>
-            <UserProvider>{children}</UserProvider>
+            <UserProvider>
+              {/* Componente cliente para controlar Navbar e espaçamento conforme a rota */}
+              <RouteAwareHeader />
+              {children}
+            </UserProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

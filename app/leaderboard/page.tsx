@@ -144,7 +144,6 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] animate-[grid-move_2s_linear_infinite]">
-      <Navbar />
       {isLoading ? (
         <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10">
           {user && (
@@ -208,11 +207,7 @@ export default function Leaderboard() {
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10">
-          {user && (
-            <LeaderboardProfileCard
-              onCreateCharacter={() => setIsOnboardingOpen(true)}
-            />
-          )}
+          {user && <LeaderboardProfileCard onCreateCharacter={() => setIsOnboardingOpen(true)} />}
           <main className={user ? "flex-1 max-w-4xl" : "flex-1 max-w-6xl"}>
             <div className="space-y-8">
               <div className="flex items-center justify-between">

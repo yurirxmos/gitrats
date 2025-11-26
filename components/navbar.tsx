@@ -21,6 +21,7 @@ import { DropdownMenuLabel, DropdownMenuSeparator } from "./ui/dropdown-menu";
 import {
   FaArrowRight,
   FaBars,
+  FaBug,
   FaFileCode,
   FaGear,
   FaGears,
@@ -49,13 +50,6 @@ export function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Prefetch de rotas comuns para melhorar a navegação em dev
-  useEffect(() => {
-    router.prefetch("/leaderboard");
-    router.prefetch("/configs");
-    router.prefetch("/docs");
-  }, [router]);
-
   const handleLogin = async () => {
     try {
       const client = supabase ?? createClient();
@@ -83,11 +77,19 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="w-full py-5 px-4 sm:px-10 flex justify-between items-center bg-background relative">
+      <nav className="w-full py-2 px-4 sm:px-10 flex items-center bg-background/20 backdrop-blur-sm z-50 fixed">
+        <Link
+          href="/docs"
+          className="flex flex-row items-center gap-2 text-xs hover:underline flex-1"
+        >
+          <FaFileCode />
+          /docs
+        </Link>
+
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 absolute left-1/2 -translate-x-1/2"
         >
           <Image
             src={logo}
@@ -98,31 +100,7 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex items-center gap-8 text-xs">
-          <Link
-            href="/leaderboard"
-            className="flex flex-row items-center gap-2 hover:underline"
-          >
-            <FaTrophy />
-            /leaderboard
-          </Link>
-
-          <Link
-            href="/reports"
-            className="flex flex-row items-center gap-2 hover:underline"
-          >
-            <FaPaperPlane />
-            /reports
-          </Link>
-
-          <Link
-            href="/docs"
-            className="flex flex-row items-center gap-2 hover:underline"
-          >
-            <FaFileCode />
-            /docs
-          </Link>
-
+        <div className="hidden md:flex items-center gap-8 text-xs flex-1 justify-end">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -141,32 +119,53 @@ export function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="bg-foreground text-background p-1 rounded-md shadow-md mt-1 w-28 text-center gap-2 border-none"
+                className="bg-foreground text-background p-1 rounded-md shadow-md mt-1 w-40 gap-2 border-none"
               >
                 <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  onClick={() => router.push("/leaderboard")}
+                >
+                  <FaTrophy />
+                  leaderboard
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
                   onClick={() => router.push("/guild")}
                 >
                   <FaUsers />
                   guild
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  onClick={() => router.push("/reports")}
+                >
+                  <FaBug />
+                  reports
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  onClick={() => router.push("/leaderboard")}
+                >
+                  <FaFileCode />
+                  docs
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-secondary/10 py-1" />
+                <DropdownMenuItem
+                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
                   onClick={() => router.push("/configs")}
                 >
                   <FaGear />
                   configs
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
                   onClick={toggleTheme}
                 >
                   {theme === "dark" ? <FaSun /> : <FaMoon />}
                   theme
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 justify-between hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
+                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
                   onClick={handleLogout}
                 >
                   <FaPowerOff />
@@ -189,7 +188,7 @@ export function Navbar() {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 hover:bg-secondary/20 rounded-md"
+          className="md:hidden p-2 hover:bg-secondary/20 rounded-md flex-1 flex justify-end"
         >
           {mobileMenuOpen ? <FaXmark className="w-5 h-5" /> : <FaBars className="w-5 h-5" />}
         </button>

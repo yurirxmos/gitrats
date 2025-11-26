@@ -161,7 +161,6 @@ export default function GuildPage() {
   if (!user || !hasCharacter) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
         <main className="flex-1 flex items-center justify-center p-8">
           <Card>
             <CardContent className="p-8 text-center">
@@ -176,7 +175,6 @@ export default function GuildPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
         <main className="flex-1 max-w-6xl mx-auto w-full p-8">
           <Skeleton className="h-10 w-48 mb-8" />
           <div className="grid md:grid-cols-2 gap-6">
@@ -190,7 +188,6 @@ export default function GuildPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px]">
-      <Navbar />
       <main className="flex-1 max-w-6xl mx-auto w-full p-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -252,7 +249,7 @@ export default function GuildPage() {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
-                          <div className="p-3 bg-secondary rounded-lg mb-1.5 transition-all shadow-sm">
+                          <div className="p-3 bg-secondary rounded-lg mt-1.5 transition-all shadow-sm">
                             <p className="text-xs">Total de membros na guilda</p>
                           </div>
                         </TooltipContent>
@@ -270,7 +267,7 @@ export default function GuildPage() {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
-                          <div className="p-3 bg-secondary rounded-lg mb-1.5 transition-all shadow-sm">
+                          <div className="p-3 bg-secondary rounded-lg mt-1.5 transition-all shadow-sm">
                             <p className="text-xs">XP Total da guilda</p>
                           </div>
                         </TooltipContent>

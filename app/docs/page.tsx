@@ -23,8 +23,6 @@ export default function Docs() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-
       <main className="flex-1 max-w-6xl mx-auto px-8 py-12 w-full">
         <div className="flex flex-row items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">/docs</h1>
