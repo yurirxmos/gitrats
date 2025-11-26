@@ -9,7 +9,7 @@ import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
 import { AchievementBadge } from "@/components/achievement-badge";
 import { getCharacterAvatar } from "@/lib/character-assets";
 import { getXpForLevel } from "@/lib/xp-system";
-import { getCurrentRank, getNextRank } from "@/lib/class-evolution";
+import { getCurrentRank, getNextRank, CLASS_RANKINGS } from "@/lib/class-evolution";
 import React, { useState } from "react";
 import { useUserContext } from "@/contexts/user-context";
 import { FaPen } from "react-icons/fa6";
@@ -39,6 +39,7 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
   const [editName, setEditName] = useState<string>(userProfile?.character_name || "");
   const [savingName, setSavingName] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isEvolutionOpen, setIsEvolutionOpen] = useState(false);
 
   const openEditDialog = () => {
     setEditName(userProfile?.character_name || "");
@@ -110,7 +111,10 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
               {isHorizontal ? (
                 <div className="flex flex-row items-start gap-6 w-full">
                   <div className="flex flex-col items-center text-center space-y-3 shrink-0">
-                    <div className="relative w-36 h-36 bg-muted rounded-lg overflow-hidden">
+                    <div
+                      className="relative w-36 h-36 bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setIsEvolutionOpen(true)}
+                    >
                       <Image
                         src={getCharacterAvatar(userProfile.character_class, userProfile.level)}
                         alt={userProfile.character_name}
@@ -256,7 +260,10 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
               ) : (
                 <>
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="relative w-32 h-32 bg-muted rounded-lg overflow-hidden">
+                    <div
+                      className="relative w-32 h-32 bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setIsEvolutionOpen(true)}
+                    >
                       <Image
                         src={getCharacterAvatar(userProfile.character_class, userProfile.level)}
                         alt={userProfile.character_name}
@@ -435,6 +442,80 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
               {savingName ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isEvolutionOpen}
+        onOpenChange={setIsEvolutionOpen}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Evoluções de {userProfile?.character_class}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {userProfile &&
+              CLASS_RANKINGS[userProfile.character_class.toLowerCase()]?.map((rank, index) => {
+                const isCurrentRank = userProfile.level >= rank.minLevel && userProfile.level <= rank.maxLevel;
+                const isCompleted = userProfile.level > rank.maxLevel;
+                const isLocked = userProfile.level < rank.minLevel;
+
+                return (
+                  <div
+                    key={index}
+                    className={`flex items-center gap-4 p-4 rounded-lg border ${
+                      isCurrentRank
+                        ? "bg-foreground/5 border-foreground"
+                        : isCompleted
+                          ? "bg-muted/50 border-muted"
+                          : "bg-background border-muted opacity-50"
+                    }`}
+                  >
+                    <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden shrink-0">
+                      <Image
+                        src={getCharacterAvatar(userProfile.character_class, rank.minLevel)}
+                        alt={rank.name}
+                        fill
+                        className="object-contain"
+                      />
+                      {isLocked && (
+                        <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                          <span className="text-2xl">🔒</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-lg">{rank.name}</h4>
+                        {isCurrentRank && (
+                          <span className="text-xs bg-foreground text-background px-2 py-1 rounded-full font-bold">
+                            ATUAL
+                          </span>
+                        )}
+                        {isCompleted && (
+                          <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full font-bold">
+                            COMPLETO
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Nível {rank.minLevel} - {rank.maxLevel === 999 ? "∞" : rank.maxLevel}
+                      </p>
+                      {isCurrentRank && (
+                        <p className="text-sm font-bold mt-1">Você está no nível {userProfile.level}</p>
+                      )}
+                      {isLocked && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Faltam {rank.minLevel - userProfile.level} níveis
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
         </DialogContent>
       </Dialog>
     </aside>

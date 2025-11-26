@@ -34,6 +34,7 @@ import {
   FaXmark,
 } from "react-icons/fa6";
 import { HelpCircleIcon } from "lucide-react";
+import { Badge } from "./ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export function Navbar() {
@@ -112,6 +113,7 @@ export function Navbar() {
             className="w-5 h-5 dark:invert"
           />
           <h1 className="text-lg font-black uppercase">Gitrats</h1>
+          <Badge className="ml-1 text-[10px] px-1 py-0">BETA</Badge>
         </Link>
 
         {/* Desktop Menu */}
@@ -166,7 +168,10 @@ export function Navbar() {
                   {theme === "dark" ? <FaSun /> : <FaMoon />}
                   theme
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} variant="destructive">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  variant="destructive"
+                >
                   <FaPowerOff />
                   logout
                 </DropdownMenuItem>
