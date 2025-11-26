@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/contexts/theme-context";
 import { QueryProvider } from "@/contexts/query-provider";
 import { UserProvider } from "@/contexts/user-context";
 import { Header } from "@/components/layout-controller/header-controller";
-import { Footer, FooterController } from "@/components/layout-controller/footer-controller";
+import { FooterController } from "@/components/layout-controller/footer-controller";
 
 const kodeMono = Kode_Mono({ subsets: ["latin"], variable: "--font-kode-mono" });
 
