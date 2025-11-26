@@ -27,10 +27,6 @@ export async function GET(req: NextRequest) {
       .eq("guild_id", guildId)
       .order("joined_at", { ascending: true });
 
-    console.log("🔍 Guild ID:", guildId);
-    console.log("🔍 Members raw:", members);
-    console.log("🔍 Members error:", membersError);
-
     if (membersError) {
       console.error("Erro ao buscar membros:", membersError);
       throw membersError;
@@ -50,8 +46,6 @@ export async function GET(req: NextRequest) {
           .select("name, class, level, total_xp")
           .eq("user_id", member.user_id)
           .maybeSingle();
-
-        console.log(`🔍 Character for user ${member.user_id}:`, characterData, "Error:", charError);
 
         return {
           user_id: member.user_id,

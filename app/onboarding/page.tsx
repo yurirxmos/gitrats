@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { GitHubConnectStep } from "@/components/onboarding/github-connect-step";
 import { CharacterCreationStep } from "@/components/onboarding/character-creation-step";
@@ -9,7 +9,7 @@ import { useUser } from "@/hooks/use-user";
 import { useUserContext } from "@/contexts/user-context";
 import { createClient } from "@/lib/supabase/client";
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
@@ -137,5 +137,31 @@ export default function OnboardingPage() {
         {step === 3 && <ReadyStep onFinish={handleFinish} />}
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="w-full max-w-md md:max-w-2xl bg-card border border-border rounded-lg p-6 md:p-8 shadow-lg">
+            <div className="w-full flex items-center justify-center mb-6">
+              <div className="flex gap-2 w-full md:w-96">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-2 flex-1 rounded-full bg-muted"
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="text-center">Carregando...</div>
+          </div>
+        </div>
+      }
+    >
+      <OnboardingContent />
+    </Suspense>
   );
 }

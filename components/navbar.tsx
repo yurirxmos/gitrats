@@ -35,6 +35,8 @@ import {
   FaUsers,
   FaXmark,
 } from "react-icons/fa6";
+import { HelpCircleIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export function Navbar() {
   const { user, loading } = useUserContext();
@@ -82,17 +84,28 @@ export function Navbar() {
   return (
     <>
       <nav className="w-full py-2 px-4 sm:px-10 flex items-center bg-background/20 backdrop-blur-sm z-50 fixed">
-        <Link
-          href="/docs"
-          className="flex flex-row items-center gap-2 text-xs hover:underline flex-1"
-        >
-          <FaFileCode />
-          /docs
-        </Link>
+        <div>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                variant={"ghost"}
+                size={"icon"}
+                className=""
+                onClick={() => router.push("/docs")}
+              >
+                <HelpCircleIcon />{" "}
+              </Button>
+            </TooltipTrigger>
+
+            <TooltipContent>
+              <p>Ajuda</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         {/* Logo */}
         <Link
-          href="/"
+          href="/leaderboard"
           className="flex items-center gap-1 absolute left-1/2 -translate-x-1/2"
         >
           <Image

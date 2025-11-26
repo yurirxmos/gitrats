@@ -177,9 +177,9 @@ export default function GuildPage() {
       <div className="min-h-screen flex flex-col bg-background">
         <main className="flex-1 max-w-6xl mx-auto w-full p-8">
           <Skeleton className="h-10 w-48 mb-8" />
-          <div className="grid md:grid-cols-2 gap-6">
-            <Skeleton className="h-96" />
-            <Skeleton className="h-96" />
+          <div className="grid md:grid-rows-2 gap-6">
+            <Skeleton className="h-60" />
+            <Skeleton className="h-60" />
           </div>
         </main>
       </div>

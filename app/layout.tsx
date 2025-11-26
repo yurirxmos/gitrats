@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { Kode_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { QueryProvider } from "@/contexts/query-provider";
 import { UserProvider } from "@/contexts/user-context";
 import { RouteAwareHeader } from "@/components/RouteAwareHeader";
+
+const kodeMono = Kode_Mono({ subsets: ["latin"], variable: "--font-kode-mono" });
 
 // Base URL do site - altere usando a variável de ambiente NEXT_PUBLIC_SITE_URL em produção
 const siteUrl = "https://gitrats.rxmos.dev.br";
@@ -38,7 +41,7 @@ export const metadata: Metadata = {
   },
 };
 
-// Dados estruturados JSON-LD para melhor compatibilidade com rich results
+/* Dados estruturados JSON-LD para melhor compatibilidade com rich results
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -49,6 +52,7 @@ const structuredData = {
     // Adicione links sociais aqui se houver
   ],
 };
+*/
 
 // Removido uso de window para evitar mismatch de hidratação
 
@@ -61,6 +65,7 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       suppressHydrationWarning
+      className={kodeMono.variable}
     >
       <head>
         {/* Script para aplicar tema baseado em localStorage */}
@@ -84,11 +89,12 @@ export default function RootLayout({
           }}
         />
 
-        {/* JSON-LD: structured data para SEO */}
+        {/* JSON-LD: structured data para SEO 
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
+        */}
       </head>
       <body>
         <ThemeProvider>

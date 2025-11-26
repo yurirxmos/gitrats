@@ -6,7 +6,7 @@ import { OnboardingModal } from "@/components/onboarding-modal";
 import { EvolutionModal } from "@/components/evolution-modal";
 import { XpBreakdownDialog } from "@/components/xp-breakdown-dialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FaTrophy, FaMedal, FaGithub } from "react-icons/fa6";
+import { FaTrophy, FaMedal, FaGithub, FaCrown } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
@@ -206,7 +206,7 @@ export default function Leaderboard() {
           </main>
         </div>
       ) : (
-        <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10">
+        <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10 p-8">
           {user && <LeaderboardProfileCard onCreateCharacter={() => setIsOnboardingOpen(true)} />}
           <main className={user ? "flex-1 max-w-4xl" : "flex-1 max-w-6xl"}>
             <div className="space-y-8">
@@ -219,6 +219,7 @@ export default function Leaderboard() {
                   <Button
                     variant={viewMode === "players" ? "default" : "outline"}
                     size="sm"
+                    className="text-[10px]"
                     onClick={() => setViewMode("players")}
                   >
                     Jogadores
@@ -226,6 +227,7 @@ export default function Leaderboard() {
                   <Button
                     variant={viewMode === "guilds" ? "default" : "outline"}
                     size="sm"
+                    className="text-[10px]"
                     onClick={() => setViewMode("guilds")}
                   >
                     Guildas
@@ -277,24 +279,24 @@ export default function Leaderboard() {
                               <p className={`text-xs ${getRankColorClass(leaderboard[1]?.level || 1)}`}>
                                 {getCurrentRank(leaderboard[1]?.character_class || "orc", leaderboard[1]?.level || 1)}
                               </p>
-                              <button
+                              <p
                                 onClick={() =>
                                   window.open(`https://github.com/${leaderboard[1]?.github_username}`, "_blank")
                                 }
-                                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+                                className="flex flex-row opacity-50 items-center text-[10px] gap-1 mt-1 hover:cursor-pointer"
                               >
-                                <FaGithub className="text-xs" />@{leaderboard[1]?.github_username}
-                              </button>
+                                <FaGithub className="w-3! shrink-0" />@{leaderboard[1]?.github_username}
+                              </p>
                             </div>
                             <div className="bg-gray-400/20 w-full rounded-t-lg p-4 text-center border-2 border-gray-400/50">
                               <p className="font-black text-xl">#{leaderboard[1]?.rank}</p>
                               <p className="text-sm font-bold">Level {leaderboard[1]?.level}</p>
-                              <button
+                              <p
                                 onClick={() => setXpDialogPlayer(leaderboard[1])}
                                 className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                               >
                                 {leaderboard[1]?.total_xp?.toLocaleString() || 0} XP
-                              </button>
+                              </p>
                               <div className="flex justify-around mt-2 text-xs">
                                 <div>
                                   <p className="font-bold">{leaderboard[1]?.total_commits || 0}</p>
@@ -347,24 +349,24 @@ export default function Leaderboard() {
                               <p className={`text-sm ${getRankColorClass(leaderboard[0]?.level || 1)}`}>
                                 {getCurrentRank(leaderboard[0]?.character_class || "orc", leaderboard[0]?.level || 1)}
                               </p>
-                              <button
+                              <p
                                 onClick={() =>
                                   window.open(`https://github.com/${leaderboard[0]?.github_username}`, "_blank")
                                 }
-                                className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1 mx-auto"
+                                className="flex flex-row opacity-50 items-center text-[10px] gap-1 mt-1 hover:cursor-pointer"
                               >
-                                <FaGithub className="text-xs" />@{leaderboard[0]?.github_username}
-                              </button>
+                                <FaGithub className="w-3! shrink-0" />@{leaderboard[0]?.github_username}
+                              </p>
                             </div>
                             <div className="bg-yellow-500/20 w-full rounded-t-lg p-6 text-center border-2 border-yellow-500/50">
                               <p className="font-black text-2xl">#{leaderboard[0]?.rank}</p>
                               <p className="text-base font-bold">Level {leaderboard[0]?.level}</p>
-                              <button
+                              <span
                                 onClick={() => setXpDialogPlayer(leaderboard[0])}
                                 className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                               >
                                 {leaderboard[0]?.total_xp?.toLocaleString() || 0} XP
-                              </button>
+                              </span>
                               <div className="flex justify-around mt-3 text-sm">
                                 <div>
                                   <p className="font-bold">{leaderboard[0]?.total_commits || 0}</p>
@@ -417,24 +419,24 @@ export default function Leaderboard() {
                               <p className={`text-xs ${getRankColorClass(leaderboard[2]?.level || 1)}`}>
                                 {getCurrentRank(leaderboard[2]?.character_class || "orc", leaderboard[2]?.level || 1)}
                               </p>
-                              <button
+                              <p
                                 onClick={() =>
                                   window.open(`https://github.com/${leaderboard[2]?.github_username}`, "_blank")
                                 }
-                                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+                                className="flex flex-row opacity-50 items-center text-[10px] gap-1 mt-1 hover:cursor-pointer"
                               >
-                                <FaGithub className="text-xs" />@{leaderboard[2]?.github_username}
-                              </button>
+                                <FaGithub className="w-3! shrink-0" />@{leaderboard[2]?.github_username}
+                              </p>
                             </div>
                             <div className="bg-amber-700/20 w-full rounded-t-lg p-2 text-center border-2 border-amber-700/50">
                               <p className="font-black text-xl">#{leaderboard[2]?.rank}</p>
                               <p className="text-sm font-bold">Level {leaderboard[2]?.level}</p>
-                              <button
+                              <span
                                 onClick={() => setXpDialogPlayer(leaderboard[2])}
                                 className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                               >
                                 {leaderboard[2]?.total_xp?.toLocaleString() || 0} XP
-                              </button>
+                              </span>
                               <div className="flex justify-around mt-2 text-xs">
                                 <div>
                                   <p className="font-bold">{leaderboard[2]?.total_commits || 0}</p>
@@ -501,22 +503,22 @@ export default function Leaderboard() {
                                       {getCurrentRank(player.character_class, player.level)}
                                     </span>
                                     <span>•</span>
-                                    <button
+                                    <span
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         window.open(`https://github.com/${player.github_username}`, "_blank");
                                       }}
-                                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                      className="flex items-center gap-1 hover:text-foreground hover:cursor-pointer transition-colors"
                                     >
                                       <FaGithub className="text-xs" />
                                       <span>@{player.github_username}</span>
-                                    </button>
+                                    </span>
                                   </div>
                                 </div>
                                 <div className="flex gap-6 shrink-0">
                                   <div className="text-center">
                                     <p className="font-bold text-base">Level {player.level}</p>
-                                    <button
+                                    <span
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setXpDialogPlayer(player);
@@ -524,7 +526,7 @@ export default function Leaderboard() {
                                       className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                                     >
                                       {player.total_xp.toLocaleString()} XP
-                                    </button>
+                                    </span>
                                   </div>
                                   <div className="text-center">
                                     <p className="font-bold text-base">{player.total_commits}</p>
@@ -589,22 +591,22 @@ export default function Leaderboard() {
                                       {getCurrentRank(player.character_class, player.level)}
                                     </span>
                                     <span>•</span>
-                                    <button
+                                    <span
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         window.open(`https://github.com/${player.github_username}`, "_blank");
                                       }}
-                                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                      className="flex items-center gap-1 hover:text-foreground hover:cursor-pointer transition-colors"
                                     >
                                       <FaGithub className="text-xs" />
                                       <span>@{player.github_username}</span>
-                                    </button>
+                                    </span>
                                   </div>
                                 </div>
                                 <div className="flex gap-6 shrink-0">
                                   <div className="text-center">
                                     <p className="font-bold text-base">Level {player.level}</p>
-                                    <button
+                                    <span
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setXpDialogPlayer(player);
@@ -612,7 +614,7 @@ export default function Leaderboard() {
                                       className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                                     >
                                       {player.total_xp.toLocaleString()} XP
-                                    </button>
+                                    </span>
                                   </div>
                                   <div className="text-center">
                                     <p className="font-bold text-base">{player.total_commits}</p>
@@ -657,29 +659,14 @@ export default function Leaderboard() {
                                 <span className="text-muted-foreground font-bold text-lg">#{guild.rank}</span>
                               )}
                             </div>
-                            <div className="grid grid-cols-2 gap-1 w-20 h-20 shrink-0">
-                              {guild.top_members?.slice(0, 4).map((member, idx) => (
-                                <div
-                                  key={idx}
-                                  className="relative bg-muted rounded overflow-hidden"
-                                >
-                                  {member.character_class && (
-                                    <Image
-                                      src={getCharacterAvatar(member.character_class, member.level || 1)}
-                                      alt=""
-                                      fill
-                                      className="object-contain"
-                                    />
-                                  )}
-                                </div>
-                              ))}
-                            </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-bold text-lg">
                                 {guild.name}{" "}
                                 {guild.tag && <span className="text-sm text-muted-foreground">[{guild.tag}]</span>}
                               </h3>
-                              <p className="text-sm text-muted-foreground">Líder: @{guild.owner_username}</p>
+                              <span className="flex flex-row items-center gap-1.5 text-sm text-muted-foreground">
+                                <FaCrown className="text-amber-400" />@{guild.owner_username}
+                              </span>
                             </div>
                             <div className="flex gap-6 shrink-0">
                               <div className="text-center">
