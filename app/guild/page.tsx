@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useGuild } from "@/hooks/use-guild";
+import GuildMemberLeaderboard from "@/components/guild-member-leaderboard";
 import { useUserContext } from "@/contexts/user-context";
 import { getCharacterAvatar } from "@/lib/character-assets";
 import { getCurrentRank } from "@/lib/class-evolution";
@@ -348,7 +349,10 @@ export default function GuildPage() {
             </Card>
           )}
 
-          {/* Membros */}
+          {/* Ranking interno da guilda */}
+          {guild && members.length > 0 && <GuildMemberLeaderboard members={members} />}
+
+          {/* Membros (lista bruta) */}
           {guild && (
             <Card className="md:col-span-2">
               <CardContent>

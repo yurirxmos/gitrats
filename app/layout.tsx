@@ -4,7 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { QueryProvider } from "@/contexts/query-provider";
 import { UserProvider } from "@/contexts/user-context";
-import { RouteAwareHeader } from "@/components/RouteAwareHeader";
+import { Header } from "@/components/layout-controller/header-controller";
+import { Footer, FooterController } from "@/components/layout-controller/footer-controller";
 
 const kodeMono = Kode_Mono({ subsets: ["latin"], variable: "--font-kode-mono" });
 
@@ -101,8 +102,13 @@ export default function RootLayout({
           <QueryProvider>
             <UserProvider>
               {/* Componente cliente para controlar Navbar e espaçamento conforme a rota */}
-              <RouteAwareHeader />
+              <Header />
+
+              {/* Conteúdo da página */}
               {children}
+
+              {/* Componente cliente para controlar Footer e espaçamento conforme a rota */}
+              <FooterController />
             </UserProvider>
           </QueryProvider>
         </ThemeProvider>

@@ -65,17 +65,17 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <p className="text-muted-foreground">Carregando contribuidores...</p>
+                <p className="text-muted-foreground text-xs">Carregando contribuidores...</p>
               ) : contributors.length === 0 ? (
-                <p className="text-muted-foreground">Nenhum contribuidor com este achievement ainda.</p>
+                <p className="text-muted-foreground text-xs">Nenhum contribuidor com este achievement ainda.</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="flex flex-row items-center flex-wrap gap-4">
                   {contributors.map((user) => (
                     <Card
                       key={user.user_id}
                       className="overflow-hidden"
                     >
-                      <CardContent className="p-4">
+                      <CardContent className="p-4 w-64">
                         <div className="flex flex-col items-center gap-3">
                           <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden">
                             <Image
@@ -85,9 +85,9 @@ export default function Reports() {
                               className="object-contain"
                             />
                           </div>
-                          <div className="text-center space-y-1">
-                            <h3 className="font-bold text-lg">{user.character_name}</h3>
-                            <p className="text-sm text-muted-foreground">@{user.github_username}</p>
+                          <div className="text-center space-y-1 w-full">
+                            <h3 className="font-bold text-lg truncate">{user.character_name}</h3>
+                            <p className="text-sm text-muted-foreground truncate">@{user.github_username}</p>
                             <div className="flex items-center justify-center gap-2 text-sm">
                               <span className="font-bold">Level {user.level}</span>
                               <span className="text-muted-foreground">•</span>
