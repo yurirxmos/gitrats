@@ -111,7 +111,12 @@ export const CLASS_DESCRIPTIONS: Record<
     name: "Mago",
     title: "Code Architect/Wizard",
     description: "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em problemas complexos.",
-    strengths: ["+10% XP em commits", "+10% XP em Pull Requests", "+30% XP em issues resolvidas", "+30% XP em achievements"],
+    strengths: [
+      "+10% XP em commits",
+      "+10% XP em Pull Requests",
+      "+30% XP em issues resolvidas",
+      "+30% XP em achievements",
+    ],
     playstyle: "Estratégico, impacto e qualidade",
   },
 };

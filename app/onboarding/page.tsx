@@ -14,15 +14,16 @@ function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
-  const { hasCharacter, isLoadingCharacter } = useUserContext();
+  // Usando flag geral de loading do contexto (auth + perfil)
+  const { hasCharacter, loading } = useUserContext();
 
   const stepParam = searchParams.get("step");
   const [step, setStep] = useState(stepParam ? parseInt(stepParam) : 1);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Exibir skeleton enquanto verifica character
-  if (isLoadingCharacter) {
+  // Exibir skeleton enquanto contexto ainda está carregando perfil/personagem
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md md:max-w-2xl bg-card border border-border rounded-lg p-6 md:p-8 shadow-lg">
