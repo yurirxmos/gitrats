@@ -50,8 +50,6 @@ export default function Profile() {
 
         <div className="space-y-3">
           <LeaderboardProfileCard
-            userProfile={userProfile}
-            hasCharacter={hasCharacter}
             onCreateCharacter={() => setIsOnboardingOpen(true)}
             orientation="horizontal"
           />

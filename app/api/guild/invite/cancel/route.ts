@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     const { invite_id } = await req.json();
     console.log("[CANCEL_INVITE] Tentando cancelar convite:", invite_id, "por usuário:", user.id);
-    
+
     if (!invite_id) {
       return NextResponse.json({ error: "ID do convite é obrigatório" }, { status: 400 });
     }
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     console.log("[CANCEL_INVITE] Criando admin client...");
     const admin = createAdminClient();
     console.log("[CANCEL_INVITE] Admin client criado, buscando convite...");
-    
+
     const { data: invite, error: inviteError } = await admin
       .from("guild_invites")
       .select("id, guild_id, status")
@@ -64,12 +64,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (invite.guild_id !== membership.guild_id) {
-      console.error(
-        "[CANCEL_INVITE] Guild ID mismatch. Convite:",
-        invite.guild_id,
-        "Membership:",
-        membership.guild_id
-      );
+      console.error("[CANCEL_INVITE] Guild ID mismatch. Convite:", invite.guild_id, "Membership:", membership.guild_id);
       return NextResponse.json({ error: "Convite não pertence à sua guilda" }, { status: 403 });
     }
 

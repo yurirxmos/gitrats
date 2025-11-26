@@ -19,22 +19,15 @@ import { Input } from "@/components/ui/input";
 import type { UserProfile } from "@/lib/types";
 
 interface Props {
-  userProfile: UserProfile | null;
-  hasCharacter: boolean | null;
   onCreateCharacter: () => void;
   orientation?: "vertical" | "horizontal";
 }
 
-export default function LeaderboardProfileCard({
-  userProfile,
-  hasCharacter,
-  onCreateCharacter,
-  orientation = "vertical",
-}: Props) {
+export default function LeaderboardProfileCard({ onCreateCharacter, orientation = "vertical" }: Props) {
   const isHorizontal = orientation === "horizontal";
   const containerClass = isHorizontal ? "w-full" : "w-80 shrink-0";
   const contentClass = isHorizontal ? "flex flex-row items-start gap-6" : "space-y-6";
-  const { refreshUserProfile } = useUserContext();
+  const { userProfile, hasCharacter, refreshUserProfile } = useUserContext();
 
   const getRankColorClass = (level: number): string => {
     if (level >= 10) return "text-red-500 animate-pulse";

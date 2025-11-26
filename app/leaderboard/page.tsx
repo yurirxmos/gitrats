@@ -6,7 +6,7 @@ import { OnboardingModal } from "@/components/onboarding-modal";
 import { EvolutionModal } from "@/components/evolution-modal";
 import { XpBreakdownDialog } from "@/components/xp-breakdown-dialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FaTrophy, FaMedal, FaGithub, FaStarHalfStroke } from "react-icons/fa6";
+import { FaTrophy, FaMedal, FaGithub } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
@@ -20,7 +20,6 @@ import { getXpForLevel } from "@/lib/xp-system";
 import { getCurrentRank, getNextRank } from "@/lib/class-evolution";
 import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
 import { AchievementBadge } from "@/components/achievement-badge";
-import { GiBoltShield } from "react-icons/gi";
 import LeaderboardProfileCard from "@/components/leaderboard-profile-card";
 import type { LeaderboardEntry, UserProfile, GuildLeaderboardEntry } from "@/lib/types";
 
@@ -32,7 +31,6 @@ export default function Leaderboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
-  const [totalCharacters, setTotalCharacters] = useState<number>(0);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [showEvolutionModal, setShowEvolutionModal] = useState(false);
   const [xpDialogPlayer, setXpDialogPlayer] = useState<LeaderboardEntry | null>(null);
@@ -55,7 +53,7 @@ export default function Leaderboard() {
     const loadAllData = async () => {
       if (hasLoadedRef.current) return;
       setIsLoading(true);
-      await Promise.all([loadLeaderboard(), loadGuildLeaderboard(), loadStats()]);
+      await Promise.all([loadLeaderboard(), loadGuildLeaderboard()]);
       setIsLoading(false);
       hasLoadedRef.current = true;
       if (user && !userLoading && hasCharacter && userProfile && typeof window !== "undefined") {
@@ -69,23 +67,6 @@ export default function Leaderboard() {
     if (!userLoading) loadAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLoading]);
-
-  const syncGitHubData = async () => {
-    if (!user) return;
-    try {
-      const supabase = createClient();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) return;
-      const response = await fetch("/api/github/sync", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return;
-      await refreshUserProfile();
-      await loadLeaderboard();
-    } catch {}
-  };
 
   const loadLeaderboard = async () => {
     try {
@@ -104,7 +85,7 @@ export default function Leaderboard() {
       }
 
       const response = await fetch("/api/leaderboard?limit=50", {
-        next: { revalidate: 30 },
+        cache: "no-store",
       });
       if (!response.ok) throw new Error("Erro ao carregar leaderboard");
       const { data, lastUpdate: updateTime } = await response.json();
@@ -134,7 +115,7 @@ export default function Leaderboard() {
       }
 
       const response = await fetch("/api/leaderboard/guilds", {
-        next: { revalidate: 30 },
+        cache: "no-store",
       });
       if (!response.ok) throw new Error("Erro ao carregar leaderboard de guildas");
       const { data } = await response.json();
@@ -144,35 +125,6 @@ export default function Leaderboard() {
       }
     } catch {
       setGuildLeaderboard([]);
-    }
-  };
-
-  const loadStats = async () => {
-    try {
-      const CACHE_KEY = "gitrats_stats";
-      const TTL = 5 * 60 * 1000; // 5 min
-      if (typeof window !== "undefined") {
-        const cached = sessionStorage.getItem(CACHE_KEY);
-        if (cached) {
-          const { data, timestamp } = JSON.parse(cached);
-          if (Date.now() - timestamp < TTL) {
-            setTotalCharacters(data.total_characters || 0);
-            return;
-          }
-        }
-      }
-
-      const response = await fetch("/api/stats", {
-        next: { revalidate: 60 },
-      });
-      if (!response.ok) throw new Error("Erro ao carregar estatísticas");
-      const { data } = await response.json();
-      setTotalCharacters(data.total_characters || 0);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
-      }
-    } catch {
-      setTotalCharacters(0);
     }
   };
 
@@ -258,8 +210,6 @@ export default function Leaderboard() {
         <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10">
           {user && (
             <LeaderboardProfileCard
-              userProfile={userProfile}
-              hasCharacter={hasCharacter}
               onCreateCharacter={() => setIsOnboardingOpen(true)}
             />
           )}
