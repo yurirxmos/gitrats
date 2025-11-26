@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/theme-context";
 import { Avatar } from "./ui/avatar";
 import { Badge } from "./ui/badge";
+import { useGuild } from "@/hooks/use-guild";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +50,9 @@ export function Navbar() {
   });
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { invites } = useGuild();
+  const hasGuildInvite = invites && invites.length > 0;
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogin = async () => {
     try {
@@ -102,19 +106,24 @@ export function Navbar() {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8 text-xs flex-1 justify-end">
           {user ? (
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={setMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
                   className="flex flex-row items-center gap-1.5 hover:cursor-pointer px-3 py-0.5"
                   variant={"secondary"}
                 >
                   <p className="text-[10px]">{user.user_metadata?.user_name || user.email}</p>
-                  <Avatar className="w-5 h-5">
-                    <img
-                      src={user.user_metadata?.avatar_url || "/default-avatar.png"}
-                      alt="User Avatar"
-                    />
-                  </Avatar>
+                  <span className="relative inline-flex">
+                    <Avatar className="w-5 h-5">
+                      <img
+                        src={user.user_metadata?.avatar_url || "/default-avatar.png"}
+                        alt="User Avatar"
+                      />
+                    </Avatar>
+                    {hasGuildInvite && (
+                      <span className="absolute -top-0.5 -right-0.5 block h-2 w-2 rounded-full bg-red-500 animate-pulse ring-1 ring-background" />
+                    )}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -132,7 +141,7 @@ export function Navbar() {
                   className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
                   onClick={() => router.push("/guild")}
                 >
-                  <FaUsers />
+                  <FaUsers className={hasGuildInvite && menuOpen ? "text-red-500 animate-pulse" : ""} />
                   guild
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -144,12 +153,12 @@ export function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
-                  onClick={() => router.push("/leaderboard")}
+                  onClick={() => router.push("/docs")}
                 >
                   <FaFileCode />
                   docs
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-secondary/10 py-1" />
+                <DropdownMenuSeparator className="bg-secondary/10" />
                 <DropdownMenuItem
                   className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
                   onClick={() => router.push("/configs")}
