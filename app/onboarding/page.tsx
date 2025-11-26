@@ -29,7 +29,10 @@ function OnboardingContent() {
           <div className="w-full flex items-center justify-center mb-6">
             <div className="flex gap-2 w-full md:w-96">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-2 flex-1" />
+                <Skeleton
+                  key={i}
+                  className="h-2 flex-1"
+                />
               ))}
             </div>
           </div>

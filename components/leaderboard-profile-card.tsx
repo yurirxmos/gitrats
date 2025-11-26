@@ -127,7 +127,7 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                           onClick={openEditDialog}
                           aria-label="Editar nome do personagem"
                         >
-                          <FaPen className="w-2.5 h-2.5" />
+                          <FaPen className="w-2.5!" />
                         </Button>
                       </div>
 
@@ -273,7 +273,7 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                           onClick={openEditDialog}
                           aria-label="Editar nome do personagem"
                         >
-                          <FaPen className="w-2.5 h-2.5" />
+                          <FaPen className="w-2.5!" />
                         </Button>
                       </div>
                       <p className={`text-sm ${getRankColorClass(userProfile.level)}`}>

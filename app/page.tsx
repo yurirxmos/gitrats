@@ -18,16 +18,6 @@ export default function Home() {
   useAutoSync(hasCharacter);
 
   useEffect(() => {
-    if (!loading) {
-      if (user && hasCharacter) {
-        router.replace("/leaderboard");
-      } else if (user && !hasCharacter) {
-        router.replace("/onboarding");
-      }
-    }
-  }, [user, hasCharacter, loading, router]);
-
-  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 

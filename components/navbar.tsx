@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@/assets/github.png";
@@ -9,24 +9,22 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/theme-context";
 import { Avatar } from "./ui/avatar";
-import { Badge } from "./ui/badge";
 import { useGuild } from "@/hooks/use-guild";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@radix-ui/react-dropdown-menu";
+} from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
-import { DropdownMenuLabel, DropdownMenuSeparator } from "./ui/dropdown-menu";
 import {
-  FaArrowRight,
   FaBars,
   FaBug,
   FaFileCode,
   FaGear,
-  FaGears,
   FaGithub,
+  FaLaptopCode,
   FaMoon,
   FaPaperPlane,
   FaPowerOff,
@@ -143,53 +141,32 @@ export function Navbar() {
                 align="end"
                 className="bg-foreground text-background p-1 rounded-md shadow-md mt-1 w-40 gap-2 border-none"
               >
-                <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
-                  onClick={() => router.push("/leaderboard")}
-                >
+                <DropdownMenuItem onClick={() => router.push("/leaderboard")}>
                   <FaTrophy />
                   leaderboard
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
-                  onClick={() => router.push("/guild")}
-                >
+                <DropdownMenuItem onClick={() => router.push("/guild")}>
                   <FaUsers className={hasGuildInvite && menuOpen ? "text-red-500 animate-pulse" : ""} />
                   guild
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
-                  onClick={() => router.push("/reports")}
-                >
+                <DropdownMenuItem onClick={() => router.push("/reports")}>
                   <FaBug />
                   reports
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
-                  onClick={() => router.push("/docs")}
-                >
+                <DropdownMenuItem onClick={() => router.push("/docs")}>
                   <FaFileCode />
                   docs
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-secondary/10" />
-                <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
-                  onClick={() => router.push("/configs")}
-                >
+                <DropdownMenuItem onClick={() => router.push("/configs")}>
                   <FaGear />
                   configs
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
-                  onClick={toggleTheme}
-                >
+                <DropdownMenuItem onClick={toggleTheme}>
                   {theme === "dark" ? <FaSun /> : <FaMoon />}
                   theme
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="flex flex-row items-center gap-2 hover:cursor-pointer hover:bg-secondary/20 hover:border-none rounded-sm p-2"
-                  onClick={handleLogout}
-                >
+                <DropdownMenuItem onClick={handleLogout} variant="destructive">
                   <FaPowerOff />
                   logout
                 </DropdownMenuItem>
@@ -201,7 +178,7 @@ export function Navbar() {
               className="flex flex-row items-center gap-1.5 hover:cursor-pointer px-3 py-0.5"
               variant={"secondary"}
             >
-              <FaArrowRight />
+              <FaLaptopCode />
               <p className="text-[10px]">/entrar</p>
             </Button>
           )}
