@@ -51,11 +51,11 @@ export const CLASS_XP_MULTIPLIERS: Record<CharacterClass, ClassMultipliers> = {
 
   // Mage: Inteligência, planejamento, impacto estratégico
   mage: {
-    commits: 1.0, // normal
+    commits: 1.1, // +10%
     largeCommits: 0.9, // Reduzido penalidade de 0.8
-    pullRequests: 1.15, // Reduzido de 1.25
+    pullRequests: 1.1, // +10%
     codeReviews: 1.15, // Reduzido de 1.25
-    issuesResolved: 1.3, // Ajustado para 1.3 conforme solicitado
+    issuesResolved: 1.3, // +30%
     achievements: 1.3, // Reduzido de 1.5
     starsAndForks: 1.3, // Reduzido de 2.0 (maior nerf)
     releases: 1.15, // Reduzido de 1.25
@@ -86,9 +86,9 @@ export const CLASS_DESCRIPTIONS: Record<
     description: "Desenvolvedores que preferem ação direta, commits frequentes e entregas rápidas. Gostam de XGH.",
     strengths: [
       "+25% XP em commits",
+      "+40% XP em commits grandes (>100 linhas)",
       "-10% XP em Pull Requests",
       "-10% XP em issues resolvidas",
-      "+20% XP em releases - EM BREVE",
     ],
     playstyle: "Agressivo, direto, produtividade bruta",
   },
@@ -101,8 +101,8 @@ export const CLASS_DESCRIPTIONS: Record<
     strengths: [
       "+15% XP em commits",
       "+25% XP em Pull Requests",
-      "+30% XP em Code Reviews - EM BREVE",
       "+15% XP em issues resolvidas",
+      "+15% XP em repositórios externos",
     ],
     playstyle: "Colaborativo, versátil, trabalho em equipe",
   },
@@ -111,7 +111,7 @@ export const CLASS_DESCRIPTIONS: Record<
     name: "Mago",
     title: "Code Architect/Wizard",
     description: "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em problemas complexos.",
-    strengths: ["+30% XP em issues resolvidas", "+30% XP em stars e forks - EM BREVE", "Sem bônus em commits"],
+    strengths: ["+10% XP em commits", "+10% XP em Pull Requests", "+30% XP em issues resolvidas", "+30% XP em achievements"],
     playstyle: "Estratégico, impacto e qualidade",
   },
 };
