@@ -8,17 +8,41 @@ import { ReadyStep } from "@/components/onboarding/ready-step";
 import { useUser } from "@/hooks/use-user";
 import { useUserContext } from "@/contexts/user-context";
 import { createClient } from "@/lib/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
-  const { hasCharacter } = useUserContext();
+  const { hasCharacter, isLoadingCharacter } = useUserContext();
 
   const stepParam = searchParams.get("step");
   const [step, setStep] = useState(stepParam ? parseInt(stepParam) : 1);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Exibir skeleton enquanto verifica character
+  if (isLoadingCharacter) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md md:max-w-2xl bg-card border border-border rounded-lg p-6 md:p-8 shadow-lg">
+          <div className="w-full flex items-center justify-center mb-6">
+            <div className="flex gap-2 w-full md:w-96">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-2 flex-1" />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-3/4 mx-auto" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-10 w-32 mx-auto mt-6" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const stepFromUrl = stepParam ? parseInt(stepParam) : 1;

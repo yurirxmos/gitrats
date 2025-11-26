@@ -8,7 +8,7 @@ import { Navbar } from "@/components/navbar";
 export function RouteAwareHeader() {
   const pathname = usePathname();
   const isOnboarding = pathname?.startsWith("/onboarding");
-  const isHome = pathname === "/home";
+  const isHome = pathname === "/";
 
   if (isOnboarding) return null;
 
