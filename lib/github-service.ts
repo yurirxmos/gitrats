@@ -143,7 +143,9 @@ export class GitHubService {
         throw new Error(`Usuário ${username} não encontrado`);
       }
 
-      const collections = ["contributionsCollection", ...years.map((y) => `contributionsCollection${y}`)];
+      // Usar APENAS anos específicos - contributionsCollection sem ano já retorna o ano atual,
+      // então incluí-lo causaria duplicação com contributionsCollection2025
+      const collections = years.map((y) => `contributionsCollection${y}`);
 
       let totalCommits = 0;
       let totalPRs = 0;

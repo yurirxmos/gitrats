@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
     const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
     const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
 
-    // Cálculo de XP por tipo de atividade (valores base: commit 10, PR 50, issue 25)
+    // Cálculo simplificado para baseline: valores médios (commit=10, PR=50, issue=25) + multiplicadores de classe
+    // Nota: O sistema real considera linhas de código, tipo de repositório, etc. Este é apenas um baseline aproximado.
     const xpFromCommits = Math.floor(activitiesSinceJoin.commits * 10 * commitMultiplier);
     const xpFromPRs = Math.floor(activitiesSinceJoin.prs * 50 * prMultiplier);
     const xpFromIssues = Math.floor(activitiesSinceJoin.issues * 25 * issueMultiplier);
