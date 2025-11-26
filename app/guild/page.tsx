@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,6 +59,13 @@ export default function GuildPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleCreateGuild = async () => {
     if (!guildName.trim()) {
@@ -195,12 +202,6 @@ export default function GuildPage() {
             <h1 className="text-3xl font-black">/GUILD</h1>
           </div>
         </div>
-
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-6">
-            <p className="text-red-500 text-sm">{error}</p>
-          </div>
-        )}
 
         {success && (
           <div className="bg-green-500/10 border border-green-500/50 rounded-lg p-4 mb-6">
@@ -470,6 +471,11 @@ export default function GuildPage() {
             >
               Enviar Convite
             </Button>
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+                <p className="text-red-500 text-sm">{error}</p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
