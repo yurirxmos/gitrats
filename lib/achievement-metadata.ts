@@ -2,7 +2,7 @@
 // Metadados dos achievements: ícones, títulos e descrições
 
 import { IconType } from "react-icons";
-import { FaTrophy, FaBug } from "react-icons/fa6";
+import { FaTrophy, FaBug, FaCrown } from "react-icons/fa6";
 
 export interface AchievementMetadata {
   code: string;
@@ -19,6 +19,13 @@ export const achievementMetadata: Record<string, AchievementMetadata> = {
     description: "Esse usuário contribuiu reportando bugs/exploits",
     icon: FaBug,
     color: "text-yellow-500",
+  },
+  game_master: {
+    code: "game_master",
+    title: "Game Master",
+    description: "Mestre do jogo, criador e administrador da plataforma",
+    icon: FaCrown,
+    color: "text-purple-500",
   },
 };
 

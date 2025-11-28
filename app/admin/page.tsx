@@ -366,14 +366,24 @@ export default function AdminPage() {
               Conceda achievements especiais para usuários que contribuíram de forma significativa.
             </p>
 
-            <Button
-              onClick={() => grantAchievement("Contribuidor da Távola")}
-              disabled={loading}
-              variant="default"
-              className="bg-yellow-600 hover:bg-yellow-700"
-            >
-              Contribuidor da Távola (+10 XP)
-            </Button>
+            <div className="flex gap-3 flex-wrap">
+              <Button
+                onClick={() => grantAchievement("Contribuidor da Távola")}
+                disabled={loading}
+                variant="default"
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                Contribuidor da Távola (+10 XP)
+              </Button>
+              <Button
+                onClick={() => grantAchievement("Game Master")}
+                disabled={loading}
+                variant="default"
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                Game Master (0 XP)
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
