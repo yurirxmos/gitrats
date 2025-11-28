@@ -169,17 +169,8 @@ export class GitHubService {
         totalReviews,
       };
     } catch (error) {
-      const { data: events } = await this.octokit.rest.activity.listPublicEventsForUser({
-        username,
-        per_page: 100,
-      });
-
-      return {
-        totalCommits: this.countCommitsFromEvents(events),
-        totalPRs: this.countPRsFromEvents(events),
-        totalIssues: this.countIssuesFromEvents(events),
-        totalReviews: 0,
-      };
+      console.error("[GitHub Service] Erro ao buscar contribuições via GraphQL:", error);
+      throw error;
     }
   }
 
@@ -267,25 +258,8 @@ export class GitHubService {
 
       return { commits, prs, issues, reviews };
     } catch (error) {
-      const { data: events } = await this.octokit.rest.activity.listPublicEventsForUser({
-        username,
-        per_page: 100,
-      });
-
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-
-      const weekEvents = events.filter((e: any) => {
-        const eventDate = new Date(e.created_at);
-        return eventDate >= weekAgo;
-      });
-
-      return {
-        commits: this.countCommitsFromEvents(weekEvents),
-        prs: this.countPRsFromEvents(weekEvents),
-        issues: this.countIssuesFromEvents(weekEvents),
-        reviews: 0,
-      };
+      console.error("[GitHub Service] Erro ao buscar XP semanal via GraphQL:", error);
+      throw error;
     }
   }
 
@@ -466,38 +440,6 @@ export class GitHubService {
       console.error("[GitHub Service] Erro ao verificar rate limit:", error);
       return null;
     }
-  }
-
-  /**
-   * Busca eventos públicos de um usuário
-   * NOTA: Limitado aos últimos ~30 eventos. Use getCommitsViaSearch para commits.
-   */
-  async getPublicEventsForUser(username: string, perPage: number = 30) {
-    try {
-      const { data } = await this.octokit.rest.activity.listPublicEventsForUser({
-        username,
-        per_page: perPage,
-      });
-      return data;
-    } catch (error) {
-      console.error(`[GitHub Service] Erro ao buscar eventos para ${username}:`, error);
-      return [];
-    }
-  }
-
-  // Helpers para fallback REST API
-  private countCommitsFromEvents(events: Record<string, any>[]): number {
-    return events
-      .filter((event) => event.type === "PushEvent")
-      .reduce((sum, event) => sum + (event.payload?.commits?.length || 1), 0);
-  }
-
-  private countPRsFromEvents(events: Record<string, any>[]): number {
-    return events.filter((event) => event.type === "PullRequestEvent" && event.payload?.action === "opened").length;
-  }
-
-  private countIssuesFromEvents(events: Record<string, any>[]): number {
-    return events.filter((event) => event.type === "IssuesEvent" && event.payload?.action === "opened").length;
   }
 }
 
