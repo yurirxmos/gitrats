@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { getAdminUser } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -8,14 +9,9 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const adminUser = await getAdminUser();
 
-    // Verificar se usuário é admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user || user.user_metadata?.user_name !== "yurirxmos") {
+    if (!adminUser) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
     }
 
@@ -30,11 +26,7 @@ export async function POST(request: NextRequest) {
     const adminSupabase = createAdminClient();
 
     // Verificar se já existe
-    const { data: existing } = await adminSupabase
-      .from("achievements")
-      .select("id")
-      .eq("code", code)
-      .maybeSingle();
+    const { data: existing } = await adminSupabase.from("achievements").select("id").eq("code", code).maybeSingle();
 
     if (existing) {
       return NextResponse.json({ error: "Achievement com este código já existe" }, { status: 400 });

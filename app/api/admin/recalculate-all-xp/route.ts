@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import GitHubService from "@/lib/github-service";
 import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import { getClassXpMultiplier } from "@/lib/classes";
+import { getAdminUser } from "@/lib/auth-utils";
 
 /**
  * ADMIN - Recalcula XP de TODOS os usuários do zero
@@ -11,6 +12,12 @@ import { getClassXpMultiplier } from "@/lib/classes";
  */
 export async function POST(request: NextRequest) {
   try {
+    const adminUser = await getAdminUser();
+
+    if (!adminUser) {
+      return NextResponse.json({ error: "Acesso negado: apenas admin" }, { status: 403 });
+    }
+
     // Verificar se está em localhost
     const hostname = request.headers.get("host") || "";
     const isLocalhost =

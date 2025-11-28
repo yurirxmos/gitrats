@@ -34,29 +34,26 @@ export default function AdminPage() {
         return;
       }
 
-      const githubUsername = user.user_metadata?.user_name;
-
-      if (githubUsername !== "yurirxmos") {
-        setChecking(false);
-        setIsAuthorized(false);
-        return;
-      }
-
-      setIsAuthorized(true);
-      setChecking(false);
-
-      // Buscar estatísticas
+      // Verificar role na tabela users
       try {
         const res = await fetch("/api/admin/stats");
         if (res.ok) {
           const data = await res.json();
           if (data.success) {
             setStats(data.data);
+            setIsAuthorized(true);
+          } else {
+            setIsAuthorized(false);
           }
+        } else {
+          setIsAuthorized(false);
         }
       } catch (error) {
-        console.error("Erro ao buscar estatísticas:", error);
+        console.error("Erro ao verificar admin:", error);
+        setIsAuthorized(false);
       }
+
+      setChecking(false);
     };
 
     checkAdmin();
@@ -364,7 +361,7 @@ export default function AdminPage() {
               </Button>
               <Button
                 onClick={async () => {
-                  const username = prompt("Digite o username para analisar XP (ex: yurirxmos):");
+                  const username = prompt("Digite o username para analisar XP:");
                   if (!username) return;
                   setLoading(true);
                   setAnalyzeResult(null);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { getClassXpMultiplier } from "@/lib/classes";
+import { getAdminUser } from "@/lib/auth-utils";
 
 /**
  * ADMIN: Analisa a origem do XP de um usuário
@@ -9,6 +10,12 @@ import { getClassXpMultiplier } from "@/lib/classes";
  */
 export async function POST(request: NextRequest) {
   try {
+    const adminUser = await getAdminUser();
+
+    if (!adminUser) {
+      return NextResponse.json({ error: "Acesso negado: apenas admin" }, { status: 403 });
+    }
+
     const body = await request.json();
     const username = body.username;
 
