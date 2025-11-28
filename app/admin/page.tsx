@@ -23,6 +23,8 @@ export default function AdminPage() {
   const [stats, setStats] = useState({ totalUsers: 0, totalGuilds: 0, totalXp: 0 });
   const [showUsersDialog, setShowUsersDialog] = useState(false);
   const [usersList, setUsersList] = useState<Array<{ github_username: string; created_at: string }>>([]);
+  const [showCreateAchievementDialog, setShowCreateAchievementDialog] = useState(false);
+  const [newAchievement, setNewAchievement] = useState({ code: "", name: "", description: "", xp_reward: 0 });
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -167,6 +169,37 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Erro ao deletar usuário:", error);
       setDeleteResult({ error: String(error) });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createAchievement = async () => {
+    if (!newAchievement.code || !newAchievement.name) {
+      alert("Código e nome são obrigatórios");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/admin/create-achievement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAchievement),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Achievement criado com sucesso!");
+        setShowCreateAchievementDialog(false);
+        setNewAchievement({ code: "", name: "", description: "", xp_reward: 0 });
+      } else {
+        alert(data.error || "Erro ao criar achievement");
+      }
+    } catch (error) {
+      console.error("Erro ao criar achievement:", error);
+      alert("Erro ao criar achievement");
     } finally {
       setLoading(false);
     }
@@ -383,6 +416,14 @@ export default function AdminPage() {
               >
                 Game Master (0 XP)
               </Button>
+              <Button
+                onClick={() => setShowCreateAchievementDialog(true)}
+                disabled={loading}
+                variant="outline"
+                className="border-green-600 text-green-600 hover:bg-green-50"
+              >
+                + Criar Novo Achievement
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -484,6 +525,75 @@ export default function AdminPage() {
                   </span>
                 </div>
               ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={showCreateAchievementDialog}
+          onOpenChange={setShowCreateAchievementDialog}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Criar Novo Achievement</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-bold mb-1 block">Código *</label>
+                <input
+                  type="text"
+                  placeholder="ex: game_master"
+                  value={newAchievement.code}
+                  onChange={(e) => setNewAchievement({ ...newAchievement, code: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-background"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-bold mb-1 block">Nome *</label>
+                <input
+                  type="text"
+                  placeholder="ex: Game Master"
+                  value={newAchievement.name}
+                  onChange={(e) => setNewAchievement({ ...newAchievement, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-background"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-bold mb-1 block">Descrição</label>
+                <input
+                  type="text"
+                  placeholder="ex: Mestre do jogo"
+                  value={newAchievement.description}
+                  onChange={(e) => setNewAchievement({ ...newAchievement, description: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-background"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-bold mb-1 block">XP Reward</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={newAchievement.xp_reward}
+                  onChange={(e) => setNewAchievement({ ...newAchievement, xp_reward: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border rounded bg-background"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={createAchievement}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  Criar Achievement
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateAchievementDialog(false)}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
