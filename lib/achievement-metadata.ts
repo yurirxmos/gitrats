@@ -10,6 +10,7 @@ export interface AchievementMetadata {
   description: string;
   icon: IconType;
   color?: string;
+  xp_reward: number;
 }
 
 export const achievementMetadata: Record<string, AchievementMetadata> = {
@@ -19,6 +20,7 @@ export const achievementMetadata: Record<string, AchievementMetadata> = {
     description: "Esse usuário contribuiu reportando bugs/exploits",
     icon: FaBug,
     color: "text-yellow-500",
+    xp_reward: 10,
   },
   game_master: {
     code: "game_master",
@@ -26,6 +28,7 @@ export const achievementMetadata: Record<string, AchievementMetadata> = {
     description: "Mestre do jogo, criador e administrador da plataforma",
     icon: FaCrown,
     color: "text-purple-500",
+    xp_reward: 0,
   },
 };
 
@@ -37,6 +40,7 @@ export const getAchievementMetadata = (code: string): AchievementMetadata => {
       description: "Achievement desbloqueado",
       icon: FaTrophy,
       color: "text-gray-500",
+      xp_reward: 0,
     }
   );
 };

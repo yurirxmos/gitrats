@@ -31,15 +31,16 @@ export const AchievementBadge = ({ code, size = "sm" }: AchievementBadgeProps) =
           <Icon className={`${iconSizes[size]} ${metadata.color || ""}`} />
         </div>
       </TooltipTrigger>
-      <TooltipContent
-        side="top"
-      >
-        <div className="space-y-2 p-2">
+      <TooltipContent side="top" className="max-w-2xs">
+        <div className="space-y-3 p-2">
           <p className="font-bold text-sm flex items-center gap-2 bg-secondary justify-center p-2 rounded-md text-foreground">
             <Icon className={`${metadata.color || ""}`} />
             {metadata.title}
           </p>
-          <p className="text-xs text-muted-background">{metadata.description}</p>
+          <p className="text-xs text-center text-muted-background">{metadata.description}</p>
+          <div className="bg-green-100 px-2 py-1 font-bold text-green-400 rounded border border-green-200 shadow-xs w-fit mx-auto">
+            +{metadata.xp_reward} XP
+          </div>
         </div>
       </TooltipContent>
     </Tooltip>
