@@ -5,7 +5,7 @@ import Image from "next/image";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { EvolutionModal } from "@/components/evolution-modal";
 import { XpBreakdownDialog } from "@/components/xp-breakdown-dialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FaTrophy, FaMedal, FaGithub, FaCrown } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import { getCurrentRank, getNextRank } from "@/lib/class-evolution";
 import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
 import { AchievementBadge } from "@/components/achievement-badge";
 import LeaderboardProfileCard from "@/components/leaderboard-profile-card";
-import type { LeaderboardEntry, UserProfile, GuildLeaderboardEntry } from "@/lib/types";
+import type { LeaderboardEntry, UserProfile, GuildLeaderboardEntry, GuildMember } from "@/lib/types";
 
 export default function Leaderboard() {
   const { user, userProfile, loading: userLoading, hasCharacter, refreshUserProfile } = useUserContext();
@@ -34,6 +34,9 @@ export default function Leaderboard() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [showEvolutionModal, setShowEvolutionModal] = useState(false);
   const [xpDialogPlayer, setXpDialogPlayer] = useState<LeaderboardEntry | null>(null);
+  const [selectedGuild, setSelectedGuild] = useState<GuildLeaderboardEntry | null>(null);
+  const [guildMembers, setGuildMembers] = useState<GuildMember[]>([]);
+  const [isGuildMembersLoading, setIsGuildMembersLoading] = useState(false);
   const hasLoadedRef = useRef(false);
 
   useAutoSync(hasCharacter === true);
@@ -125,6 +128,21 @@ export default function Leaderboard() {
       }
     } catch {
       setGuildLeaderboard([]);
+    }
+  };
+
+  const handleGuildClick = async (guild: GuildLeaderboardEntry) => {
+    setSelectedGuild(guild);
+    setIsGuildMembersLoading(true);
+    try {
+      const response = await fetch(`/api/guild/members?guild_id=${guild.id}`);
+      const data = await response.json();
+      setGuildMembers(data.members || []);
+    } catch (error) {
+      console.error("Erro ao buscar membros da guilda:", error);
+      setGuildMembers([]);
+    } finally {
+      setIsGuildMembersLoading(false);
     }
   };
 
@@ -647,7 +665,8 @@ export default function Leaderboard() {
                     guildLeaderboard.map((guild) => (
                       <Card
                         key={guild.id}
-                        className="border-none shadow-none hover:opacity-60 transition-all"
+                        className="border-none shadow-none hover:opacity-60 transition-all cursor-pointer"
+                        onClick={() => handleGuildClick(guild)}
                       >
                         <CardContent className="px-4">
                           <div className="flex items-center gap-4">
@@ -660,13 +679,13 @@ export default function Leaderboard() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-lg">
-                                {guild.name}{" "}
-                                {guild.tag && <span className="text-sm text-muted-foreground">[{guild.tag}]</span>}
-                              </h3>
-                              <span className="flex flex-row items-center gap-1.5 text-sm text-muted-foreground">
-                                <FaCrown className="text-amber-400" />@{guild.owner_username}
-                              </span>
+                              <div className="flex flex-row items-center gap-2">
+                                <h3 className="font-bold text-lg">{guild.name} </h3>
+                                {guild.tag && (
+                                  <span className="text-xs font-bold text-muted-foreground">[{guild.tag}]</span>
+                                )}
+                              </div>
+                              <span className="text-xs text-muted-foreground">@{guild.owner_username}</span>
                             </div>
                             <div className="flex gap-6 shrink-0">
                               <div className="text-center">
@@ -723,10 +742,10 @@ export default function Leaderboard() {
         onOpenChange={setShowWelcomeDialog}
       >
         <DialogContent className="max-w-md">
+          <DialogTitle asChild>
+            <h2 className="text-2xl font-bold mb-2 text-center">Bem-vindo ao Gitrats!</h2>
+          </DialogTitle>
           <div className="space-y-4 py-4">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Bem-vindo ao Gitrats!</h2>
-            </div>
             <div className="space-y-3 text-sm">
               <p className="text-muted-foreground text-center">
                 Ganhe <strong>XP</strong> automaticamente com suas atividades no GitHub:
@@ -756,6 +775,62 @@ export default function Leaderboard() {
           </div>
         </DialogContent>
       </Dialog>
+      {selectedGuild && (
+        <Dialog
+          open={!!selectedGuild}
+          onOpenChange={() => setSelectedGuild(null)}
+        >
+          <DialogContent className="max-w-2xl">
+            <DialogTitle asChild>
+              <h2 className="text-xl font-bold">Guilda {selectedGuild.name}</h2>
+            </DialogTitle>
+            <div className="space-y-4">
+              {isGuildMembersLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton
+                      key={i}
+                      className="h-10 w-full"
+                    />
+                  ))}
+                </div>
+              ) : guildMembers.length === 0 ? (
+                <p className="text-muted-foreground">Nenhum membro encontrado.</p>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {guildMembers.map((member) => (
+                    <div
+                      key={member.user_id}
+                      className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                    >
+                      <Image
+                        src={getCharacterAvatar(member.character_class || "orc", member.level || 1)}
+                        alt={member.character_name || ""}
+                        width={40}
+                        height={40}
+                        className="rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <p className="font-bold">{member.character_name || "Desconhecido"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          @{member.github_username} • Level {member.level || 1}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">{member.total_xp?.toLocaleString() || 0} XP</p>
+                        <p className="flex flex-row items-center justify-end gap-1 text-xs text-muted-foreground">
+                          {member.role === "owner" ? <FaCrown className="text-amber-400 opacity-80" /> : ""}
+                          {member.role === "owner" ? "Líder" : "Membro"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
