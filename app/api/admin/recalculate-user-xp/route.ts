@@ -4,6 +4,7 @@ import GitHubService from "@/lib/github-service";
 import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import { getClassXpMultiplier } from "@/lib/classes";
 import { getAdminUser } from "@/lib/auth-utils";
+import { recalculateGuildTotalsForUser } from "@/lib/guild";
 
 /**
  * Recalcula XP de um único usuário
@@ -131,6 +132,16 @@ export async function POST(request: NextRequest) {
 
     if (updateCharError) {
       return NextResponse.json({ error: updateCharError.message }, { status: 500 });
+    }
+
+    // Atualizar XP total das guildas onde o usuário é membro (utilidade compartilhada)
+    try {
+      await recalculateGuildTotalsForUser(supabase, userRow.id);
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Falha ao atualizar XP da guilda" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({

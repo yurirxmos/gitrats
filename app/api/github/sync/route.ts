@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import GitHubService from "@/lib/github-service";
 import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import { getClassXpMultiplier } from "@/lib/classes";
+import { recalculateGuildTotalsForUser } from "@/lib/guild";
 
 /**
  * Sincronização de atividades do GitHub usando GraphQL API
@@ -246,6 +247,13 @@ export async function POST(request: NextRequest) {
           })
           .eq("id", character.id);
 
+        // Atualizar guildas do usuário após mudança de XP
+        try {
+          await recalculateGuildTotalsForUser(supabase, userData.id);
+        } catch (e) {
+          console.error("[Sync] Falha ao atualizar XP da(s) guilda(s):", e);
+        }
+
         return NextResponse.json({
           success: true,
           message: `Correção aplicada! Você ganhou ${retroactiveXp} XP pelas suas atividades da última semana`,
@@ -355,6 +363,13 @@ export async function POST(request: NextRequest) {
           })
           .eq("id", character.id);
 
+        // Atualizar guildas do usuário após mudança de XP
+        try {
+          await recalculateGuildTotalsForUser(supabase, userData.id);
+        } catch (e) {
+          console.error("[Sync] Falha ao atualizar XP da(s) guilda(s):", e);
+        }
+
         return NextResponse.json({
           success: true,
           message: `Bem-vindo! Você ganhou ${initialXp} XP pelas suas atividades da última semana`,
@@ -431,6 +446,13 @@ export async function POST(request: NextRequest) {
           current_xp: newCurrentXp,
         })
         .eq("id", character.id);
+
+      // Atualizar guildas do usuário após mudança de XP
+      try {
+        await recalculateGuildTotalsForUser(supabase, userData.id);
+      } catch (e) {
+        console.error("[Sync] Falha ao atualizar XP da(s) guilda(s):", e);
+      }
 
       const leveledUp = newLevel > character.level;
 

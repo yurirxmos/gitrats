@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FaChartLine, FaCodeBranch, FaCodeCommit, FaCircleInfo } from "react-icons/fa6";
 import { getClassXpMultiplier } from "@/lib/classes";
@@ -31,6 +31,8 @@ interface XpAnalysis {
   xp_from_commits: number;
   xp_from_prs: number;
   xp_from_issues: number;
+  xp_from_achievements: number;
+  achievements: Array<{ code: string; name: string; xp_reward: number }>;
   total_xp_calculated: number;
 }
 
@@ -45,6 +47,12 @@ export function XpBreakdownDialog({
   const [analysis, setAnalysis] = useState<XpAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Resetar analysis quando userId mudar
+  useEffect(() => {
+    setAnalysis(null);
+    setError(null);
+  }, [userId]);
 
   const loadAnalysis = async () => {
     if (analysis) return; // Já carregou
@@ -187,6 +195,14 @@ export function XpBreakdownDialog({
                   </span>
                   <span className="font-bold text-purple-500">{analysis.xp_from_issues.toLocaleString()} XP</span>
                 </div>
+                {analysis.achievements && analysis.achievements.length > 0 && (
+                  <div className="flex items-center justify-between bg-muted rounded-lg p-3">
+                    <span>Achievements ({analysis.achievements.length})</span>
+                    <span className="font-bold text-amber-500">
+                      {analysis.xp_from_achievements.toLocaleString()} XP
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between bg-primary/20 rounded-lg p-4 font-bold">
                   <span>Total</span>
                   <span className="text-lg">{analysis.total_xp_calculated.toLocaleString()} XP</span>
