@@ -755,10 +755,10 @@ export default function Leaderboard() {
                   - <strong>10 XP</strong> por commit
                 </li>
                 <li>
-                  - <strong>50 XP</strong> por pull request
+                  - <strong>25 XP</strong> por pull request
                 </li>
                 <li>
-                  - <strong>25 XP</strong> por issue resolvida
+                  - <strong>35 XP</strong> por issue resolvida
                 </li>
               </ul>
               <p className="text-muted-foreground text-xs">

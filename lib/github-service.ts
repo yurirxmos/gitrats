@@ -20,6 +20,7 @@ export interface GitHubUserStats {
 export class GitHubService {
   private octokit: Octokit;
   private graphqlWithAuth: typeof graphql;
+  private authenticatedLogin?: string;
 
   constructor(accessToken?: string) {
     if (!accessToken) {
@@ -36,6 +37,17 @@ export class GitHubService {
         authorization: accessToken ? `token ${accessToken}` : "",
       },
     });
+  }
+
+  private async ensureAuthenticatedLogin(): Promise<string | undefined> {
+    if (this.authenticatedLogin !== undefined) return this.authenticatedLogin;
+    try {
+      const me = await this.octokit.rest.users.getAuthenticated();
+      this.authenticatedLogin = me.data.login;
+    } catch {
+      this.authenticatedLogin = undefined;
+    }
+    return this.authenticatedLogin;
   }
 
   /**
@@ -108,9 +120,35 @@ export class GitHubService {
       const currentYear = new Date().getFullYear();
       const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
 
+      const login = await this.ensureAuthenticatedLogin();
+      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
+
       const query = `
         query($username: String!) {
           user(login: $username) {
+            contributionsCollection {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+            ${years
+              .map(
+                (year) => `
+            contributionsCollection${year}: contributionsCollection(
+              from: "${year}-01-01T00:00:00Z", 
+              to: "${year}-12-31T23:59:59Z"
+            ) {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+            `
+              )
+              .join("")}
+          }
+          viewer {
             contributionsCollection {
               totalCommitContributions
               totalIssueContributions
@@ -137,9 +175,9 @@ export class GitHubService {
       `;
 
       const response: Record<string, any> = await this.graphqlWithAuth(query, { username });
-      const user = response.user;
+      const node = useViewer ? response.viewer : response.user;
 
-      if (!user) {
+      if (!node) {
         throw new Error(`Usuário ${username} não encontrado`);
       }
 
@@ -153,7 +191,7 @@ export class GitHubService {
       let totalReviews = 0;
 
       collections.forEach((key) => {
-        const collection = user[key];
+        const collection = node[key];
         if (collection && typeof collection === "object") {
           totalCommits += collection.totalCommitContributions || 0;
           totalPRs += collection.totalPullRequestContributions || 0;
@@ -182,9 +220,19 @@ export class GitHubService {
     startDate: string,
     endDate: string
   ): Promise<{ commits: number; prs: number; issues: number; reviews: number }> {
+    const login = await this.ensureAuthenticatedLogin();
+    const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
     const query = `
       query($username: String!, $from: DateTime!, $to: DateTime!) {
         user(login: $username) {
+          contributionsCollection(from: $from, to: $to) {
+            totalCommitContributions
+            totalPullRequestContributions
+            totalIssueContributions
+            totalPullRequestReviewContributions
+          }
+        }
+        viewer {
           contributionsCollection(from: $from, to: $to) {
             totalCommitContributions
             totalPullRequestContributions
@@ -200,7 +248,7 @@ export class GitHubService {
       to: endDate,
     });
 
-    const collection = response.user?.contributionsCollection;
+    const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
 
     if (!collection) {
       throw new Error("Dados de contribuição não encontrados");
@@ -226,9 +274,19 @@ export class GitHubService {
       const fromDate = startDate.toISOString();
       const toDate = now.toISOString();
 
+      const login = await this.ensureAuthenticatedLogin();
+      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
       const query = `
         query($username: String!, $from: DateTime!, $to: DateTime!) {
           user(login: $username) {
+            contributionsCollection(from: $from, to: $to) {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+          }
+          viewer {
             contributionsCollection(from: $from, to: $to) {
               totalCommitContributions
               totalIssueContributions
@@ -245,7 +303,7 @@ export class GitHubService {
         to: toDate,
       });
 
-      const collection = response.user?.contributionsCollection;
+      const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
 
       if (!collection) {
         throw new Error("Dados de contribuição não encontrados");
@@ -275,9 +333,19 @@ export class GitHubService {
       const fromDate = startDate.toISOString();
       const toDate = new Date().toISOString();
 
+      const login = await this.ensureAuthenticatedLogin();
+      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
       const query = `
         query($username: String!, $from: DateTime!, $to: DateTime!) {
           user(login: $username) {
+            contributionsCollection(from: $from, to: $to) {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+          }
+          viewer {
             contributionsCollection(from: $from, to: $to) {
               totalCommitContributions
               totalIssueContributions
@@ -294,7 +362,7 @@ export class GitHubService {
         to: toDate,
       });
 
-      const collection = response.user?.contributionsCollection;
+      const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
 
       if (!collection) {
         throw new Error("Dados de contribuição não encontrados");
@@ -325,9 +393,19 @@ export class GitHubService {
       const fromDate = startDate.toISOString();
       const toDate = endDate.toISOString();
 
+      const login = await this.ensureAuthenticatedLogin();
+      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
       const query = `
         query($username: String!, $from: DateTime!, $to: DateTime!) {
           user(login: $username) {
+            contributionsCollection(from: $from, to: $to) {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+          }
+          viewer {
             contributionsCollection(from: $from, to: $to) {
               totalCommitContributions
               totalIssueContributions
@@ -344,7 +422,7 @@ export class GitHubService {
         to: toDate,
       });
 
-      const collection = response.user?.contributionsCollection;
+      const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
 
       if (!collection) {
         throw new Error("Dados de contribuição não encontrados");

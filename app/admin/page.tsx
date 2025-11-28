@@ -49,8 +49,7 @@ export default function AdminPage() {
   useEffect(() => {
     const checkAdmin = async () => {
       if (!user) {
-        setChecking(false);
-        setIsAuthorized(false);
+        router.push("/");
         return;
       }
 
@@ -71,21 +70,21 @@ export default function AdminPage() {
               }
             }
           } else {
-            setIsAuthorized(false);
+            router.push("/");
           }
         } else {
-          setIsAuthorized(false);
+          router.push("/");
         }
       } catch (error) {
         console.error("Erro ao verificar admin:", error);
-        setIsAuthorized(false);
+        router.push("/");
       }
 
       setChecking(false);
     };
 
     checkAdmin();
-  }, [user]);
+  }, [user, router]);
 
   const loadUsersList = async () => {
     try {
@@ -264,16 +263,6 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Verificando permissões...</p>
-      </div>
-    );
-  }
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <h1 className="text-4xl font-bold">🚫 Acesso Negado</h1>
-        <p className="text-muted-foreground">Você não tem permissão para acessar esta página.</p>
-        <Button onClick={() => router.push("/leaderboard")}>Voltar ao Leaderboard</Button>
       </div>
     );
   }

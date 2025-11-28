@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
     const issuesMultiplier = getClassXpMultiplier(character.class, "issuesResolved");
 
     const commitsXp = Math.round(commitsAfterJoin * 10 * commitsMultiplier);
-    const prsXp = Math.round(prsAfterJoin * 50 * prsMultiplier);
-    const issuesXp = Math.round(issuesAfterJoin * 25 * issuesMultiplier);
+    const prsXp = Math.round(prsAfterJoin * 25 * prsMultiplier);
+    const issuesXp = Math.round(issuesAfterJoin * 35 * issuesMultiplier);
 
     // Buscar achievements concedidos e somar xp
     const { data: achRaw, error: achError } = await supabase

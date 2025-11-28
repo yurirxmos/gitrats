@@ -18,14 +18,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Acesso negado: apenas admin" }, { status: 403 });
     }
 
-    // Limitar a ambiente local para evitar uso acidental em produção
-    const hostname = request.headers.get("host") || "";
-    const isLocalhost =
-      hostname.includes("localhost") || hostname.includes("127.0.0.1") || hostname.startsWith("192.168.");
-    if (!isLocalhost) {
-      return NextResponse.json({ error: "Esta rota só funciona em desenvolvimento local" }, { status: 403 });
-    }
-
     const body = await request.json().catch(() => null);
     const username = body?.username?.trim();
     if (!username) {
@@ -60,8 +52,13 @@ export async function POST(request: NextRequest) {
     const githubStats = await githubService.getUserStats(userRow.github_username);
 
     // Definir janela: atividades consideradas desde 7 dias ANTES da criação (baseline precisa descontar histórico anterior)
-    const userCreatedAt = userRow.created_at ? new Date(userRow.created_at) : new Date(character.created_at);
-    const startWindow = new Date(userCreatedAt);
+    // Se a data estiver no futuro/ inválida, usa "hoje" para manter a janela correta de 7 dias.
+    const rawCreatedAt = userRow.created_at ? new Date(userRow.created_at) : new Date(character.created_at);
+    const now = new Date();
+    const safeCreatedAt = isNaN(rawCreatedAt.getTime()) ? now : rawCreatedAt;
+    const userCreatedAt = safeCreatedAt > now ? now : safeCreatedAt;
+
+    const startWindow = new Date(userCreatedAt.getTime());
     startWindow.setDate(startWindow.getDate() - 7);
 
     // Buscar atividades desde esta janela (commits/PRs/issues recentes que gerarão XP)
@@ -77,11 +74,11 @@ export async function POST(request: NextRequest) {
     const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
     const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
 
-    // Cálculo simplificado para baseline: valores médios (commit=10, PR=50, issue=25) + multiplicadores de classe
+    // Cálculo simplificado para baseline: valores médios (commit=10, PR=25, issue=35) + multiplicadores de classe
     // Nota: O sistema real considera linhas de código, tipo de repositório, etc. Este é apenas um baseline aproximado.
     const xpFromCommits = Math.floor(activitiesSinceJoin.commits * 10 * commitMultiplier);
-    const xpFromPRs = Math.floor(activitiesSinceJoin.prs * 50 * prMultiplier);
-    const xpFromIssues = Math.floor(activitiesSinceJoin.issues * 25 * issueMultiplier);
+    const xpFromPRs = Math.floor(activitiesSinceJoin.prs * 25 * prMultiplier);
+    const xpFromIssues = Math.floor(activitiesSinceJoin.issues * 35 * issueMultiplier);
     const activityXp = xpFromCommits + xpFromPRs + xpFromIssues;
 
     // Somar achievements existentes (XP agregado adicional)

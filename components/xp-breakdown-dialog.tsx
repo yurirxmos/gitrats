@@ -185,13 +185,13 @@ export function XpBreakdownDialog({
                 </div>
                 <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                   <span>
-                    {analysis.prs_after_join} PRs × 50 XP × {prMultiplier.toFixed(2)}
+                    {analysis.prs_after_join} PRs × 25 XP × {prMultiplier.toFixed(2)}
                   </span>
                   <span className="font-bold text-blue-500">{analysis.xp_from_prs.toLocaleString()} XP</span>
                 </div>
                 <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                   <span>
-                    {analysis.issues_after_join} issues × 25 XP × {issueMultiplier.toFixed(2)}
+                    {analysis.issues_after_join} issues × 35 XP × {issueMultiplier.toFixed(2)}
                   </span>
                   <span className="font-bold text-purple-500">{analysis.xp_from_issues.toLocaleString()} XP</span>
                 </div>

@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
 
     const xpBreakdown = {
       commits: Math.floor(acts.commits * 10 * commitsMult),
-      prs: Math.floor(acts.prs * 50 * prsMult),
-      issues: Math.floor(acts.issues * 25 * issuesMult),
+      prs: Math.floor(acts.prs * 25 * prsMult),
+      issues: Math.floor(acts.issues * 35 * issuesMult),
     };
 
     // achievements
