@@ -4,6 +4,7 @@ import GitHubService from "@/lib/github-service";
 import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import { getClassXpMultiplier } from "@/lib/classes";
 import { getAdminUser } from "@/lib/auth-utils";
+import { EmailService } from "@/lib/email-service";
 
 /**
  * ADMIN - Recalcula XP de TODOS os usuários do zero
@@ -128,6 +129,7 @@ export async function POST(request: NextRequest) {
 
         const totalXp = activityXp + achievementsXp;
 
+        const previousLevel = character.level || 0;
         const newLevel = getLevelFromXp(totalXp);
         const newCurrentXp = getCurrentXp(totalXp, newLevel);
 
@@ -182,6 +184,20 @@ export async function POST(request: NextRequest) {
             error: updateCharError.message,
           });
           continue;
+        }
+
+        // Enviar e-mail especial quando usuário atingir nível 10 pela primeira vez
+        if (newLevel >= 10 && previousLevel < 10) {
+          const { data: userEmailData } = await supabase.from("users").select("email").eq("id", userData.id).single();
+
+          if (userEmailData?.email) {
+            try {
+              await EmailService.sendLevel10Email(userEmailData.email, userData.github_username, character.class);
+              console.log(`[Recalc XP] E-mail de nível 10 enviado para ${userData.github_username}`);
+            } catch (emailError) {
+              console.error(`[Recalc XP] Erro ao enviar e-mail para ${userData.github_username}:`, emailError);
+            }
+          }
         }
 
         results.push({

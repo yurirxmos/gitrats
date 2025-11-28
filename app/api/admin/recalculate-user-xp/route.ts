@@ -5,6 +5,7 @@ import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import { getClassXpMultiplier } from "@/lib/classes";
 import { getAdminUser } from "@/lib/auth-utils";
 import { recalculateGuildTotalsForUser } from "@/lib/guild";
+import { EmailService } from "@/lib/email-service";
 
 /**
  * Recalcula XP de um único usuário
@@ -95,6 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     const totalXp = activityXp + achievementsXp;
+    const previousLevel = character.level;
     const newLevel = getLevelFromXp(totalXp);
     const newCurrentXp = getCurrentXp(totalXp, newLevel);
 
@@ -139,6 +141,22 @@ export async function POST(request: NextRequest) {
         { error: e instanceof Error ? e.message : "Falha ao atualizar XP da guilda" },
         { status: 500 }
       );
+    }
+
+    // Enviar e-mail especial quando usuário atingir nível 10 pela primeira vez
+    if (newLevel >= 10 && previousLevel < 10) {
+      // Buscar e-mail do usuário (assumindo que há uma coluna email na tabela users)
+      const { data: userData } = await supabase.from("users").select("email").eq("id", userRow.id).single();
+
+      if (userData?.email) {
+        try {
+          await EmailService.sendLevel10Email(userData.email, userRow.github_username, character.class);
+          console.log(`E-mail de nível 10 enviado para ${userRow.github_username}`);
+        } catch (emailError) {
+          // Não falhar a request se o e-mail falhar (log apenas)
+          console.error("Erro ao enviar e-mail de nível 10:", emailError);
+        }
+      }
     }
 
     return NextResponse.json({

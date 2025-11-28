@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { EmailService } from "@/lib/email-service";
 
 const MAX_GUILD_MEMBERS = 20;
 
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
     // Buscar dados da guilda
     const { data: guild } = await supabase
       .from("guilds")
-      .select("total_members")
+      .select("id, name, tag, total_members")
       .eq("id", membership.guild_id)
       .maybeSingle();
 
@@ -116,6 +117,32 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (inviteError) throw inviteError;
+
+    // Buscar e-mail do usuário convidado e dados do convidador
+    const { data: invitedUserData } = await adminClient
+      .from("users")
+      .select("email, github_username")
+      .eq("id", invitedUser.id)
+      .single();
+
+    const { data: inviterData } = await adminClient.from("users").select("github_username").eq("id", user.id).single();
+
+    // Enviar e-mail de convite
+    if (invitedUserData?.email && guild) {
+      try {
+        await EmailService.sendGuildInviteEmail(
+          invitedUserData.email,
+          invitedUserData.github_username,
+          guild.name,
+          guild.tag || "",
+          inviterData?.github_username || "um membro",
+          invite.id
+        );
+        console.log(`E-mail de convite enviado para ${invitedUserData.github_username}`);
+      } catch (emailError) {
+        console.error("Erro ao enviar e-mail de convite:", emailError);
+      }
+    }
 
     return NextResponse.json({
       message: "Convite enviado com sucesso",
