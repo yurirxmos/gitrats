@@ -8,7 +8,7 @@ import { Footer } from "@/components/footer";
 export function FooterController() {
   const pathname = usePathname();
 
-  if (pathname === "/" || pathname?.startsWith("/onboarding")) return null;
+  if (pathname === "/" || pathname?.startsWith("/onboarding") || pathname === "/admin") return null;
 
   return (
     <>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/use-user";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -19,6 +20,9 @@ export default function AdminPage() {
   const [singleRecalcResult, setSingleRecalcResult] = useState<any>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [stats, setStats] = useState({ totalUsers: 0, totalGuilds: 0, totalXp: 0 });
+  const [showUsersDialog, setShowUsersDialog] = useState(false);
+  const [usersList, setUsersList] = useState<Array<{ github_username: string; created_at: string }>>([]);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -38,10 +42,38 @@ export default function AdminPage() {
 
       setIsAuthorized(true);
       setChecking(false);
+
+      // Buscar estatísticas
+      try {
+        const res = await fetch("/api/admin/stats");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setStats(data.data);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar estatísticas:", error);
+      }
     };
 
     checkAdmin();
   }, [user]);
+
+  const loadUsersList = async () => {
+    try {
+      const res = await fetch("/api/admin/users");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setUsersList(data.data);
+          setShowUsersDialog(true);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar lista de usuários:", error);
+    }
+  };
 
   const resetUser = async () => {
     const username = prompt("Digite o username para RESETAR completamente:");
@@ -153,29 +185,41 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-4xl font-bold">Admin Panel</h1>
-          <Button
-            onClick={() => router.push("/leaderboard")}
-            variant="outline"
+          <h1 className="text-4xl font-bold">/ADMIN</h1>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Card
+            className="cursor-pointer hover:bg-accent transition-colors"
+            onClick={loadUsersList}
           >
-            Voltar ao Leaderboard
-          </Button>
+            <CardContent>
+              <h2 className="text-xl font-bold mb-4">Usuários</h2>
+              <p className="text-3xl">{stats.totalUsers}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent>
+              <h2 className="text-xl font-bold mb-4">Guildas</h2>
+              <p className="text-3xl">{stats.totalGuilds}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent>
+              <h2 className="text-xl font-bold mb-4">XP Total</h2>
+              <p className="text-3xl">{stats.totalXp.toLocaleString()}</p>
+            </CardContent>
+          </Card>
         </div>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent>
             <h2 className="text-xl font-bold mb-4">Ferramentas de Administração</h2>
             <div className="flex gap-4 flex-wrap">
-              <Button
-                onClick={resetUser}
-                disabled={loading}
-                variant="destructive"
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Resetar Usuário
-              </Button>
               <Button
                 onClick={deleteUser}
                 disabled={loading}
@@ -248,7 +292,7 @@ export default function AdminPage() {
                 variant="default"
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                ♻️ Recalcular XP de Todos
+                Recalcular XP de Todos
               </Button>
               <Button
                 onClick={async () => {
@@ -309,7 +353,7 @@ export default function AdminPage() {
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent>
             <h2 className="text-xl font-bold mb-4">🏆 Conceder Achievements</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Conceda achievements especiais para usuários que contribuíram de forma significativa.
@@ -396,6 +440,36 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         )}
+
+        <Dialog
+          open={showUsersDialog}
+          onOpenChange={setShowUsersDialog}
+        >
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Lista de Usuários ({usersList.length})</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              {usersList.map((user, idx) => (
+                <div
+                  key={idx}
+                  className="flex justify-between items-center p-3 border rounded hover:bg-accent"
+                >
+                  <span className="font-mono font-semibold">{user.github_username}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {new Date(user.created_at).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

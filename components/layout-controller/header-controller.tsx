@@ -7,10 +7,10 @@ import { Navbar } from "@/components/navbar";
 // Componente cliente para controlar Navbar e espaçamento conforme a rota
 export function Header() {
   const pathname = usePathname();
-  const isOnboarding = pathname?.startsWith("/onboarding");
+  const hiddenRoutes = pathname?.startsWith("/onboarding");
   const isHome = pathname === "/";
 
-  if (isOnboarding) return null;
+  if (hiddenRoutes) return null;
 
   return (
     <>
