@@ -218,28 +218,45 @@ export default function GuildPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold">Convites Recebidos ({invites.length})</h2>
-                  <Button variant="secondary" onClick={refreshInvites}>
+                  <Button
+                    variant="secondary"
+                    onClick={refreshInvites}
+                  >
                     <FaBell className="mr-2" /> Atualizar
                   </Button>
                 </div>
                 <div className="space-y-3">
                   {invites.map((invite) => (
-                    <div key={invite.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div
+                      key={invite.id}
+                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                    >
                       <div className="flex flex-col">
                         <p className="font-bold text-sm">
-                          {invite.guild_name} {invite.guild_tag ? (
+                          {invite.guild_name}{" "}
+                          {invite.guild_tag ? (
                             <span className="text-xs text-muted-foreground">[{invite.guild_tag}]</span>
                           ) : null}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Convidado por @{invite.invited_by_username} em {new Date(invite.created_at).toLocaleDateString()} {new Date(invite.created_at).toLocaleTimeString()}
+                          Convidado por @{invite.invited_by_username} em{" "}
+                          {new Date(invite.created_at).toLocaleDateString()}{" "}
+                          {new Date(invite.created_at).toLocaleTimeString()}
                         </p>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="default" onClick={() => handleAcceptInvite(invite.id)}>
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => handleAcceptInvite(invite.id)}
+                        >
                           <FaCheck className="mr-1" /> Aceitar
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleDeclineInvite(invite.id)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeclineInvite(invite.id)}
+                        >
                           <FaXmark className="mr-1" /> Recusar
                         </Button>
                       </div>

@@ -155,6 +155,13 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ githubUsername: username }),
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        setDeleteResult({ error: errorData.error || "Erro desconhecido" });
+        return;
+      }
+      
       const data = await res.json();
       setDeleteResult(data);
     } catch (error) {
