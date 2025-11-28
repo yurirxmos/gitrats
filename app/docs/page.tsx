@@ -250,7 +250,8 @@ export default function Docs() {
                     <span className="font-bold text-2xl text-blue-400">50 XP</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Cada PR criado/aberto por você (não conta quem aprova ou faz merge). Multiplicado pela classe do personagem.
+                    Cada PR criado/aberto por você (não conta quem aprova ou faz merge). Multiplicado pela classe do
+                    personagem.
                   </p>
                   <div className="pt-2 border-t border-border">
                     <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Guerreiro (+25%):</p>
