@@ -11,7 +11,7 @@ import * as FA6 from "react-icons/fa6";
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const [loading, setLoading] = useState(false);
   const [achievementResult, setAchievementResult] = useState<any>(null);
   const [analyzeResult, setAnalyzeResult] = useState<any>(null);
@@ -48,7 +48,14 @@ export default function AdminPage() {
 
   useEffect(() => {
     const checkAdmin = async () => {
+      // Aguardar carregamento do usuário
+      if (userLoading) {
+        return;
+      }
+
       if (!user) {
+        setChecking(false);
+        setIsAuthorized(false);
         router.push("/");
         return;
       }
@@ -61,6 +68,7 @@ export default function AdminPage() {
           if (data.success) {
             setStats(data.data);
             setIsAuthorized(true);
+            setChecking(false);
             // Carregar achievements
             const achievementsRes = await fetch("/api/admin/achievements");
             if (achievementsRes.ok) {
@@ -70,21 +78,25 @@ export default function AdminPage() {
               }
             }
           } else {
+            setChecking(false);
+            setIsAuthorized(false);
             router.push("/");
           }
         } else {
+          setChecking(false);
+          setIsAuthorized(false);
           router.push("/");
         }
       } catch (error) {
         console.error("Erro ao verificar admin:", error);
+        setChecking(false);
+        setIsAuthorized(false);
         router.push("/");
       }
-
-      setChecking(false);
     };
 
     checkAdmin();
-  }, [user, router]);
+  }, [user, userLoading, router]);
 
   const loadUsersList = async () => {
     try {
