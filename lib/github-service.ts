@@ -388,6 +388,103 @@ export class GitHubService {
     }
   }
 
+  /**
+   * Busca commits via GitHub Search API - MUITO mais confiável que Events API
+   * Baseado em: https://github.com/isabellaherman/gitmon
+   *
+   * Vantagens:
+   * ✅ Encontra TODOS os commits públicos (não só os 30 eventos recentes)
+   * ✅ Filtragem por data confiável usando committer-date
+   * ✅ Retorna dados reais de commit (SHA, mensagem, repositório)
+   * ✅ Funciona em todos os repositórios que o usuário commitou
+   * ✅ Rate limit melhor (5000/hora vs 1000/hora da Events API)
+   *
+   * @param username - Nome de usuário do GitHub
+   * @param startDate - Data de início OU número de dias atrás
+   * @param endDate - Data final (opcional, padrão é hoje)
+   */
+  async getCommitsViaSearch(
+    username: string,
+    startDate: Date | number = 7,
+    endDate?: Date
+  ): Promise<
+    Array<{
+      sha: string;
+      message: string;
+      repoName: string;
+      timestamp: Date;
+      url: string;
+    }>
+  > {
+    try {
+      // Se startDate é número, converter para data (dias atrás)
+      let fromDate: Date;
+      if (typeof startDate === "number") {
+        fromDate = new Date(Date.now() - startDate * 24 * 60 * 60 * 1000);
+      } else {
+        fromDate = startDate;
+      }
+
+      const toDate = endDate || new Date();
+      const fromDateStr = fromDate.toISOString().split("T")[0]; // YYYY-MM-DD
+      const toDateStr = toDate.toISOString().split("T")[0]; // YYYY-MM-DD
+
+      console.log(`[GitHub Search] Buscando commits de ${username} entre ${fromDateStr} e ${toDateStr}`);
+
+      // Busca commits usando Search API com filtro de data
+      const { data } = await this.octokit.rest.search.commits({
+        q: `author:${username} committer-date:${fromDateStr}..${toDateStr}`,
+        sort: "committer-date",
+        order: "desc",
+        per_page: 100,
+      });
+
+      console.log(`[GitHub Search] Encontrados ${data.items.length} commits para ${username}`);
+
+      return data.items.map((commit: any) => ({
+        sha: commit.sha,
+        message: commit.commit.message.split("\n")[0], // Apenas primeira linha
+        repoName: commit.repository?.full_name || "unknown",
+        timestamp: new Date(commit.commit.committer?.date || commit.commit.author.date),
+        url: commit.html_url,
+      }));
+    } catch (error) {
+      console.error(`[GitHub Search] Erro ao buscar commits para ${username}:`, error);
+      // Retorna array vazio em caso de falha ao invés de quebrar
+      return [];
+    }
+  }
+
+  /**
+   * Busca rate limit atual da API do GitHub
+   */
+  async getRateLimit() {
+    try {
+      const { data } = await this.octokit.rest.rateLimit.get();
+      return data.rate;
+    } catch (error) {
+      console.error("[GitHub Service] Erro ao verificar rate limit:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Busca eventos públicos de um usuário
+   * NOTA: Limitado aos últimos ~30 eventos. Use getCommitsViaSearch para commits.
+   */
+  async getPublicEventsForUser(username: string, perPage: number = 30) {
+    try {
+      const { data } = await this.octokit.rest.activity.listPublicEventsForUser({
+        username,
+        per_page: perPage,
+      });
+      return data;
+    } catch (error) {
+      console.error(`[GitHub Service] Erro ao buscar eventos para ${username}:`, error);
+      return [];
+    }
+  }
+
   // Helpers para fallback REST API
   private countCommitsFromEvents(events: Record<string, any>[]): number {
     return events
