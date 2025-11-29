@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 
 # sitemap location (replace with your real domain or leave as relative path)
-Sitemap: https://gitrats.rxmos.dev.br/itemap.xml
+Sitemap: https://gitrats.rxmos.dev.br/sitemap.xml

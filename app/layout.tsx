@@ -6,23 +6,25 @@ import { QueryProvider } from "@/contexts/query-provider";
 import { UserProvider } from "@/contexts/user-context";
 import { Header } from "@/components/layout-controller/header-controller";
 import { FooterController } from "@/components/layout-controller/footer-controller";
+import { SITE_URL } from "@/lib/site-config";
 
 const kodeMono = Kode_Mono({ subsets: ["latin"], variable: "--font-kode-mono" });
 
-// Base URL do site - altere usando a variável de ambiente NEXT_PUBLIC_SITE_URL em produção
-const siteUrl = "https://gitrats.rxmos.dev.br";
-
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "GitRats",
   description: "Transforme seus commits e pull requests em XP. Crie seu personagem e domine o leaderboard.",
+  applicationName: "GitRats",
+  keywords: ["gitrats", "git leaderboard", "gamificação git", "commits", "pull requests", "github"],
+  alternates: { canonical: SITE_URL },
   // Open Graph padrão
   openGraph: {
     title: "GitRats",
     description: "Transforme seus commits e pull requests em XP. Crie seu personagem e domine o leaderboard.",
-    url: siteUrl,
+    url: SITE_URL,
     siteName: "GitRats",
     // imagem social default (coloque um arquivo em /public/og-image.png ou ajuste)
-    images: [{ url: `${siteUrl}/og-image.png`, width: 802, height: 877, alt: "GitRats" }],
+    images: [{ url: `${SITE_URL}/og-image.png`, width: 802, height: 877, alt: "GitRats" }],
     locale: "pt_BR",
     type: "website",
   },
@@ -31,29 +33,38 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "GitRats",
     description: "Transforme seus commits e pull requests em XP.",
-    images: [`${siteUrl}/og-image.png`],
+    images: [`${SITE_URL}/og-image.png`],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   // Controle para robôs (padrão) — robots meta será gerado automaticamente no build.
   // Favicon e ícones simples
   icons: {
     // usar o favicon que existe em /public (favicon.png)
-    icon: "/public/favicon.png",
-    shortcut: "/public/favicon.png",
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
   },
 };
 
-/* Dados estruturados JSON-LD para melhor compatibilidade com rich results
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "GitRats",
-  url: siteUrl,
-  logo: `${siteUrl}/og-image.png`,
+  url: SITE_URL,
+  logo: `${SITE_URL}/og-image.png`,
   sameAs: [
-    // Adicione links sociais aqui se houver
+    "https://github.com/yuriramosdasilva/gitrats",
   ],
 };
-*/
 
 // Removido uso de window para evitar mismatch de hidratação
 
@@ -96,6 +107,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
         */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
       </head>
       <body>
         <ThemeProvider>
