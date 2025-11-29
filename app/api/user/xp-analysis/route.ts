@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { getClassXpMultiplier } from "@/lib/classes";
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "userId é obrigatório" }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // Buscar dados do usuário e personagem
     const { data: userData, error: userError } = await supabase
@@ -37,9 +37,7 @@ export async function GET(request: NextRequest) {
     // Buscar estatísticas do GitHub
     const { data: stats, error: statsError } = await supabase
       .from("github_stats")
-      .select(
-        "total_commits, total_prs, total_issues, baseline_commits, baseline_prs, baseline_issues"
-      )
+      .select("total_commits, total_prs, total_issues, baseline_commits, baseline_prs, baseline_issues")
       .eq("user_id", userId)
       .single();
 
@@ -61,7 +59,29 @@ export async function GET(request: NextRequest) {
     const xpFromCommits = Math.floor(commitsAfterJoin * 10 * commitMultiplier);
     const xpFromPRs = Math.floor(prsAfterJoin * 50 * prMultiplier);
     const xpFromIssues = Math.floor(issuesAfterJoin * 25 * issueMultiplier);
-    const totalXpCalculated = xpFromCommits + xpFromPRs + xpFromIssues;
+
+    // Buscar achievements do usuário
+    const { data: achievementsData } = await supabase
+      .from("user_achievements")
+      .select("achievement:achievements(code, name, xp_reward)")
+      .eq("user_id", userId);
+
+    let xpFromAchievements = 0;
+    const achievements = [];
+    if (achievementsData && achievementsData.length > 0) {
+      for (const item of achievementsData as any[]) {
+        if (item.achievement) {
+          xpFromAchievements += item.achievement.xp_reward || 0;
+          achievements.push({
+            code: item.achievement.code,
+            name: item.achievement.name,
+            xp_reward: item.achievement.xp_reward || 0,
+          });
+        }
+      }
+    }
+
+    const totalXpCalculated = xpFromCommits + xpFromPRs + xpFromIssues + xpFromAchievements;
 
     return NextResponse.json({
       total_commits: stats.total_commits,
@@ -79,13 +99,12 @@ export async function GET(request: NextRequest) {
       xp_from_commits: xpFromCommits,
       xp_from_prs: xpFromPRs,
       xp_from_issues: xpFromIssues,
+      xp_from_achievements: xpFromAchievements,
+      achievements,
       total_xp_calculated: totalXpCalculated,
     });
   } catch (error: any) {
     console.error("[XP Analysis] Erro:", error);
-    return NextResponse.json(
-      { error: error.message || "Erro ao calcular análise de XP" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || "Erro ao calcular análise de XP" }, { status: 500 });
   }
 }

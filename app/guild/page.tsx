@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useGuild } from "@/hooks/use-guild";
+import GuildMemberLeaderboard from "@/components/guild-member-leaderboard";
 import { useUserContext } from "@/contexts/user-context";
 import { getCharacterAvatar } from "@/lib/character-assets";
 import { getCurrentRank } from "@/lib/class-evolution";
@@ -59,6 +60,13 @@ export default function GuildPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleCreateGuild = async () => {
     if (!guildName.trim()) {
@@ -196,12 +204,6 @@ export default function GuildPage() {
           </div>
         </div>
 
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-6">
-            <p className="text-red-500 text-sm">{error}</p>
-          </div>
-        )}
-
         {success && (
           <div className="bg-green-500/10 border border-green-500/50 rounded-lg p-4 mb-6">
             <p className="text-green-500 text-sm">{success}</p>
@@ -210,6 +212,61 @@ export default function GuildPage() {
 
         <div className="flex flex-col gap-3">
           {/* Guilda Atual ou Criar Guilda */}
+          {/* Convites recebidos quando usuário não está em guilda */}
+          {!guild && invites.length > 0 && (
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">Convites Recebidos ({invites.length})</h2>
+                  <Button
+                    variant="secondary"
+                    onClick={refreshInvites}
+                  >
+                    <FaBell className="mr-2" /> Atualizar
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {invites.map((invite) => (
+                    <div
+                      key={invite.id}
+                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                    >
+                      <div className="flex flex-col">
+                        <p className="font-bold text-sm">
+                          {invite.guild_name}{" "}
+                          {invite.guild_tag ? (
+                            <span className="text-xs text-muted-foreground">[{invite.guild_tag}]</span>
+                          ) : null}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Convidado por @{invite.invited_by_username} em{" "}
+                          {new Date(invite.created_at).toLocaleDateString()}{" "}
+                          {new Date(invite.created_at).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => handleAcceptInvite(invite.id)}
+                        >
+                          <FaCheck className="mr-1" /> Aceitar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeclineInvite(invite.id)}
+                        >
+                          <FaXmark className="mr-1" /> Recusar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {guild ? (
             <Card>
               <CardContent>
@@ -347,7 +404,10 @@ export default function GuildPage() {
             </Card>
           )}
 
-          {/* Membros */}
+          {/* Ranking interno da guilda */}
+          {guild && members.length > 0 && <GuildMemberLeaderboard members={members} />}
+
+          {/* Membros (lista bruta) */}
           {guild && (
             <Card className="md:col-span-2">
               <CardContent>
@@ -470,6 +530,11 @@ export default function GuildPage() {
             >
               Enviar Convite
             </Button>
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+                <p className="text-red-500 text-sm">{error}</p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

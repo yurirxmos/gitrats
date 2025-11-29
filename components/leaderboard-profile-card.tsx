@@ -230,7 +230,7 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                     {Array.isArray(userProfile.achievement_codes) && userProfile.achievement_codes.length > 0 ? (
                       <>
                         <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
-                          <FaMedal className="shrink-0 w-2 h-2" />
+                          <GiBullseye />
                           <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
                         </div>
                         <div className="flex flex-wrap items-start gap-2">
@@ -246,7 +246,7 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                     ) : (
                       <>
                         <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
-                          <FaMedal className="shrink-0 w-2 h-2" />
+                          <GiBullseye />
                           <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
                         </div>
                         <p className="text-xs text-muted-foreground">Sem conquistas ainda</p>

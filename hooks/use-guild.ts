@@ -12,58 +12,28 @@ export function useGuild() {
   const [invites, setInvites] = useState<GuildInvite[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchGuild = async () => {
+  const fetchSummary = async () => {
     if (!user) {
       setGuild(null);
       setMembership(null);
       setMembers([]);
+      setInvites([]);
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch("/api/guild");
+      const response = await fetch("/api/guild/summary");
       const data = await response.json();
 
       setGuild(data.guild || null);
       setMembership(data.membership || null);
-
-      if (data.guild) {
-        await fetchMembers(data.guild.id);
-      } else {
-        setMembers([]);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar guilda:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMembers = async (guildId: string) => {
-    try {
-      const response = await fetch(`/api/guild/members?guild_id=${guildId}`);
-      const data = await response.json();
       setMembers(data.members || []);
-    } catch (error) {
-      console.error("Erro ao buscar membros:", error);
-    }
-  };
-
-  const fetchInvites = async () => {
-    if (!user) {
-      setInvites([]);
-      return;
-    }
-
-    try {
-      // Se for owner, usar endpoint que retorna convites enviados pela guilda
-      const endpoint = membership?.role === "owner" ? "/api/guild/invite/sent" : "/api/guild/invite/received";
-      const response = await fetch(endpoint);
-      const data = await response.json();
       setInvites(data.invites || []);
     } catch (error) {
-      console.error("Erro ao buscar convites:", error);
+      console.error("Erro ao buscar resumo da guilda:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,7 +49,7 @@ export function useGuild() {
       throw new Error(error.error || "Erro ao criar guilda");
     }
 
-    await fetchGuild();
+    await fetchSummary();
     return response.json();
   };
 
@@ -110,8 +80,7 @@ export function useGuild() {
       throw new Error(error.error || "Erro ao aceitar convite");
     }
 
-    await fetchGuild();
-    await fetchInvites();
+    await fetchSummary();
     return response.json();
   };
 
@@ -127,7 +96,7 @@ export function useGuild() {
       throw new Error(error.error || "Erro ao recusar convite");
     }
 
-    await fetchInvites();
+    await fetchSummary();
     return response.json();
   };
 
@@ -143,7 +112,7 @@ export function useGuild() {
       throw new Error(error.error || "Erro ao cancelar convite");
     }
 
-    await fetchInvites();
+    await fetchSummary();
     return response.json();
   };
 
@@ -157,7 +126,7 @@ export function useGuild() {
       throw new Error(error.error || "Erro ao sair da guilda");
     }
 
-    await fetchGuild();
+    await fetchSummary();
     return response.json();
   };
 
@@ -171,22 +140,14 @@ export function useGuild() {
       throw new Error(error.error || "Erro ao deletar guilda");
     }
 
-    await fetchGuild();
+    await fetchSummary();
     return response.json();
   };
 
   useEffect(() => {
-    fetchGuild();
+    fetchSummary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-
-  // Buscar convites quando a membership (e papel) estiver disponível
-  useEffect(() => {
-    if (user) {
-      fetchInvites();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [membership?.role, user]);
 
   return {
     guild,
@@ -201,8 +162,8 @@ export function useGuild() {
     declineInvite,
     leaveGuild,
     deleteGuild,
-    refreshGuild: fetchGuild,
-    refreshInvites: fetchInvites,
+    refreshGuild: fetchSummary,
+    refreshInvites: fetchSummary,
     cancelInvite,
   };
 }

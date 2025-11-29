@@ -87,8 +87,8 @@ export const CLASS_DESCRIPTIONS: Record<
     strengths: [
       "+25% XP em commits",
       "+40% XP em commits grandes (>100 linhas)",
-      "-10% XP em Pull Requests",
-      "-10% XP em issues resolvidas",
+      "-10% XP em Pull Requests criados",
+      "-10% XP em Code Reviews",
     ],
     playstyle: "Agressivo, direto, produtividade bruta",
   },
@@ -100,9 +100,9 @@ export const CLASS_DESCRIPTIONS: Record<
       "Guerreiros colaborativos que lutam em múltiplas frentes. Mestres em pull requests e trabalho em equipe.",
     strengths: [
       "+15% XP em commits",
-      "+25% XP em Pull Requests",
+      "+25% XP em Pull Requests criados",
+      "+30% XP em Code Reviews",
       "+15% XP em issues resolvidas",
-      "+15% XP em repositórios externos",
     ],
     playstyle: "Colaborativo, versátil, trabalho em equipe",
   },
@@ -113,7 +113,7 @@ export const CLASS_DESCRIPTIONS: Record<
     description: "Arquitetos estratégicos que preferem impacto e qualidade. Mestres em problemas complexos.",
     strengths: [
       "+10% XP em commits",
-      "+10% XP em Pull Requests",
+      "+10% XP em Pull Requests criados",
       "+30% XP em issues resolvidas",
       "+30% XP em achievements",
     ],

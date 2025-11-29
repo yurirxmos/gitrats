@@ -200,7 +200,7 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-background border-t border-border">
+        <div className="md:hidden bg-background border-t border-border absolute top-15 w-full z-50">
           <div className="flex flex-col gap-4 p-4">
             <Link
               href="/docs"

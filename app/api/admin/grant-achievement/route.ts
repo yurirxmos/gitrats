@@ -2,12 +2,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { grantSimpleAchievement } from "@/lib/simple-achievements";
+import { getAdminUser } from "@/lib/auth-utils";
 
 /**
  * Endpoint para conceder achievements manualmente via admin panel
  */
 export async function POST(request: NextRequest) {
   try {
+    const adminUser = await getAdminUser();
+
+    if (!adminUser) {
+      return NextResponse.json({ error: "Acesso negado: apenas admin" }, { status: 403 });
+    }
+
     const body = await request.json();
     const { username, achievementType: requestedAchievementType } = body;
 

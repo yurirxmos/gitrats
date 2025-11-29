@@ -3,10 +3,17 @@ import { createAdminClient } from "@/lib/supabase/server";
 import GitHubService from "@/lib/github-service";
 import { getClassXpMultiplier } from "@/lib/classes";
 import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
+import { getAdminUser } from "@/lib/auth-utils";
 
 // Admin util: verifica cálculo para um username seguindo a regra dos 7 dias antes
 export async function POST(request: NextRequest) {
   try {
+    const adminUser = await getAdminUser();
+
+    if (!adminUser) {
+      return NextResponse.json({ error: "Acesso negado: apenas admin" }, { status: 403 });
+    }
+
     const body = await request.json();
     const username: string = body.username;
     if (!username) return NextResponse.json({ error: "username é obrigatório" }, { status: 400 });
@@ -46,8 +53,8 @@ export async function POST(request: NextRequest) {
 
     const xpBreakdown = {
       commits: Math.floor(acts.commits * 10 * commitsMult),
-      prs: Math.floor(acts.prs * 50 * prsMult),
-      issues: Math.floor(acts.issues * 25 * issuesMult),
+      prs: Math.floor(acts.prs * 25 * prsMult),
+      issues: Math.floor(acts.issues * 35 * issuesMult),
     };
 
     // achievements

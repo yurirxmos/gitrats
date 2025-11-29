@@ -1,27 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { getAdminUser } from "@/lib/auth-utils";
 
 /**
  * DELETE - Deletar conta de um usuário (apenas admin)
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const adminUser = await getAdminUser();
 
-    // Verificar se o usuário logado é admin (usa o client ligado à sessão)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-    }
-
-    const adminUsername = user.user_metadata?.user_name;
-    if (adminUsername !== "yurirxmos") {
+    if (!adminUser) {
       return NextResponse.json({ error: "Acesso negado: apenas admin" }, { status: 403 });
     }
+
+    const supabase = await createClient();
 
     // Obter o githubUsername do body
     const body = await request.json();

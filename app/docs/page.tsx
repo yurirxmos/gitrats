@@ -85,10 +85,10 @@ export default function Docs() {
                     <strong>Commits</strong> - 10 XP base × multiplicador de classe
                   </li>
                   <li>
-                    <strong>Pull Requests</strong> - 50 XP base × multiplicador de classe
+                    <strong>Pull Requests (criados por você)</strong> - 25 XP base × multiplicador de classe
                   </li>
                   <li>
-                    <strong>Issues Resolvidas</strong> - 25 XP base × multiplicador de classe
+                    <strong>Issues Resolvidas</strong> - 35 XP base × multiplicador de classe
                   </li>
                 </ul>
                 <p className="text-sm font-bold text-orange-400 mt-3 mb-2">Em Desenvolvimento</p>
@@ -165,7 +165,7 @@ export default function Docs() {
                   <li>Multiplicadores abaixo de 1.0 reduzem o XP ganho</li>
                   <li>Escolha a classe que combina com seu estilo de desenvolvimento!</li>
                   <li>
-                    <strong className="text-orange-500">XP Base Atual:</strong> 10 XP/commit, 50 XP/PR, 25 XP/issue
+                    <strong className="text-orange-500">XP Base Atual:</strong> 10 XP/commit, 25 XP/PR, 35 XP/issue
                   </li>
                 </ul>
               </div>
@@ -247,14 +247,15 @@ export default function Docs() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center p-3 bg-blue-500/10 border border-blue-500/30 rounded">
                     <span className="text-sm font-bold text-blue-400">XP Base</span>
-                    <span className="font-bold text-2xl text-blue-400">50 XP</span>
+                    <span className="font-bold text-2xl text-blue-400">25 XP</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Cada PR aberto ou merged. Multiplicado pela classe do personagem.
+                    Cada PR criado/aberto por você (não conta quem aprova ou faz merge). Multiplicado pela classe do
+                    personagem.
                   </p>
                   <div className="pt-2 border-t border-border">
                     <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Guerreiro (+25%):</p>
-                    <p className="text-xs text-muted-foreground">1 PR = 50 × 1.25 = 62 XP</p>
+                    <p className="text-xs text-muted-foreground">1 PR = 25 × 1.25 = 31.25 XP</p>
                   </div>
                 </div>
               </CardContent>
@@ -266,14 +267,14 @@ export default function Docs() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center p-3 bg-purple-500/10 border border-purple-500/30 rounded">
                     <span className="text-sm font-bold text-purple-400">XP Base</span>
-                    <span className="font-bold text-2xl text-purple-400">25 XP</span>
+                    <span className="font-bold text-2xl text-purple-400">35 XP</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Cada issue fechada. Multiplicado pela classe do personagem.
                   </p>
                   <div className="pt-2 border-t border-border">
                     <p className="text-xs text-orange-400 font-bold mb-1">Exemplo com Mago (+30%):</p>
-                    <p className="text-xs text-muted-foreground">1 issue = 25 × 1.3 = 32.5 XP</p>
+                    <p className="text-xs text-muted-foreground">1 issue = 35 × 1.3 = 45.5 XP</p>
                   </div>
                 </div>
               </CardContent>

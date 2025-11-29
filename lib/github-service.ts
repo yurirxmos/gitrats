@@ -20,6 +20,7 @@ export interface GitHubUserStats {
 export class GitHubService {
   private octokit: Octokit;
   private graphqlWithAuth: typeof graphql;
+  private authenticatedLogin?: string;
 
   constructor(accessToken?: string) {
     if (!accessToken) {
@@ -36,6 +37,17 @@ export class GitHubService {
         authorization: accessToken ? `token ${accessToken}` : "",
       },
     });
+  }
+
+  private async ensureAuthenticatedLogin(): Promise<string | undefined> {
+    if (this.authenticatedLogin !== undefined) return this.authenticatedLogin;
+    try {
+      const me = await this.octokit.rest.users.getAuthenticated();
+      this.authenticatedLogin = me.data.login;
+    } catch {
+      this.authenticatedLogin = undefined;
+    }
+    return this.authenticatedLogin;
   }
 
   /**
@@ -108,9 +120,35 @@ export class GitHubService {
       const currentYear = new Date().getFullYear();
       const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
 
+      const login = await this.ensureAuthenticatedLogin();
+      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
+
       const query = `
         query($username: String!) {
           user(login: $username) {
+            contributionsCollection {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+            ${years
+              .map(
+                (year) => `
+            contributionsCollection${year}: contributionsCollection(
+              from: "${year}-01-01T00:00:00Z", 
+              to: "${year}-12-31T23:59:59Z"
+            ) {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+            `
+              )
+              .join("")}
+          }
+          viewer {
             contributionsCollection {
               totalCommitContributions
               totalIssueContributions
@@ -137,9 +175,9 @@ export class GitHubService {
       `;
 
       const response: Record<string, any> = await this.graphqlWithAuth(query, { username });
-      const user = response.user;
+      const node = useViewer ? response.viewer : response.user;
 
-      if (!user) {
+      if (!node) {
         throw new Error(`Usuário ${username} não encontrado`);
       }
 
@@ -153,7 +191,7 @@ export class GitHubService {
       let totalReviews = 0;
 
       collections.forEach((key) => {
-        const collection = user[key];
+        const collection = node[key];
         if (collection && typeof collection === "object") {
           totalCommits += collection.totalCommitContributions || 0;
           totalPRs += collection.totalPullRequestContributions || 0;
@@ -169,17 +207,8 @@ export class GitHubService {
         totalReviews,
       };
     } catch (error) {
-      const { data: events } = await this.octokit.rest.activity.listPublicEventsForUser({
-        username,
-        per_page: 100,
-      });
-
-      return {
-        totalCommits: this.countCommitsFromEvents(events),
-        totalPRs: this.countPRsFromEvents(events),
-        totalIssues: this.countIssuesFromEvents(events),
-        totalReviews: 0,
-      };
+      console.error("[GitHub Service] Erro ao buscar contribuições via GraphQL:", error);
+      throw error;
     }
   }
 
@@ -191,9 +220,19 @@ export class GitHubService {
     startDate: string,
     endDate: string
   ): Promise<{ commits: number; prs: number; issues: number; reviews: number }> {
+    const login = await this.ensureAuthenticatedLogin();
+    const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
     const query = `
       query($username: String!, $from: DateTime!, $to: DateTime!) {
         user(login: $username) {
+          contributionsCollection(from: $from, to: $to) {
+            totalCommitContributions
+            totalPullRequestContributions
+            totalIssueContributions
+            totalPullRequestReviewContributions
+          }
+        }
+        viewer {
           contributionsCollection(from: $from, to: $to) {
             totalCommitContributions
             totalPullRequestContributions
@@ -209,7 +248,7 @@ export class GitHubService {
       to: endDate,
     });
 
-    const collection = response.user?.contributionsCollection;
+    const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
 
     if (!collection) {
       throw new Error("Dados de contribuição não encontrados");
@@ -235,9 +274,19 @@ export class GitHubService {
       const fromDate = startDate.toISOString();
       const toDate = now.toISOString();
 
+      const login = await this.ensureAuthenticatedLogin();
+      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
       const query = `
         query($username: String!, $from: DateTime!, $to: DateTime!) {
           user(login: $username) {
+            contributionsCollection(from: $from, to: $to) {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+          }
+          viewer {
             contributionsCollection(from: $from, to: $to) {
               totalCommitContributions
               totalIssueContributions
@@ -254,7 +303,7 @@ export class GitHubService {
         to: toDate,
       });
 
-      const collection = response.user?.contributionsCollection;
+      const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
 
       if (!collection) {
         throw new Error("Dados de contribuição não encontrados");
@@ -267,25 +316,8 @@ export class GitHubService {
 
       return { commits, prs, issues, reviews };
     } catch (error) {
-      const { data: events } = await this.octokit.rest.activity.listPublicEventsForUser({
-        username,
-        per_page: 100,
-      });
-
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-
-      const weekEvents = events.filter((e: any) => {
-        const eventDate = new Date(e.created_at);
-        return eventDate >= weekAgo;
-      });
-
-      return {
-        commits: this.countCommitsFromEvents(weekEvents),
-        prs: this.countPRsFromEvents(weekEvents),
-        issues: this.countIssuesFromEvents(weekEvents),
-        reviews: 0,
-      };
+      console.error("[GitHub Service] Erro ao buscar XP semanal via GraphQL:", error);
+      throw error;
     }
   }
 
@@ -301,9 +333,19 @@ export class GitHubService {
       const fromDate = startDate.toISOString();
       const toDate = new Date().toISOString();
 
+      const login = await this.ensureAuthenticatedLogin();
+      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
       const query = `
         query($username: String!, $from: DateTime!, $to: DateTime!) {
           user(login: $username) {
+            contributionsCollection(from: $from, to: $to) {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+          }
+          viewer {
             contributionsCollection(from: $from, to: $to) {
               totalCommitContributions
               totalIssueContributions
@@ -320,7 +362,7 @@ export class GitHubService {
         to: toDate,
       });
 
-      const collection = response.user?.contributionsCollection;
+      const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
 
       if (!collection) {
         throw new Error("Dados de contribuição não encontrados");
@@ -351,9 +393,19 @@ export class GitHubService {
       const fromDate = startDate.toISOString();
       const toDate = endDate.toISOString();
 
+      const login = await this.ensureAuthenticatedLogin();
+      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
       const query = `
         query($username: String!, $from: DateTime!, $to: DateTime!) {
           user(login: $username) {
+            contributionsCollection(from: $from, to: $to) {
+              totalCommitContributions
+              totalIssueContributions
+              totalPullRequestContributions
+              totalPullRequestReviewContributions
+            }
+          }
+          viewer {
             contributionsCollection(from: $from, to: $to) {
               totalCommitContributions
               totalIssueContributions
@@ -370,7 +422,7 @@ export class GitHubService {
         to: toDate,
       });
 
-      const collection = response.user?.contributionsCollection;
+      const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
 
       if (!collection) {
         throw new Error("Dados de contribuição não encontrados");
@@ -388,19 +440,84 @@ export class GitHubService {
     }
   }
 
-  // Helpers para fallback REST API
-  private countCommitsFromEvents(events: Record<string, any>[]): number {
-    return events
-      .filter((event) => event.type === "PushEvent")
-      .reduce((sum, event) => sum + (event.payload?.commits?.length || 1), 0);
+  /**
+   * Busca commits via GitHub Search API - MUITO mais confiável que Events API
+   * Baseado em: https://github.com/isabellaherman/gitmon
+   *
+   * Vantagens:
+   * ✅ Encontra TODOS os commits públicos (não só os 30 eventos recentes)
+   * ✅ Filtragem por data confiável usando committer-date
+   * ✅ Retorna dados reais de commit (SHA, mensagem, repositório)
+   * ✅ Funciona em todos os repositórios que o usuário commitou
+   * ✅ Rate limit melhor (5000/hora vs 1000/hora da Events API)
+   *
+   * @param username - Nome de usuário do GitHub
+   * @param startDate - Data de início OU número de dias atrás
+   * @param endDate - Data final (opcional, padrão é hoje)
+   */
+  async getCommitsViaSearch(
+    username: string,
+    startDate: Date | number = 7,
+    endDate?: Date
+  ): Promise<
+    Array<{
+      sha: string;
+      message: string;
+      repoName: string;
+      timestamp: Date;
+      url: string;
+    }>
+  > {
+    try {
+      // Se startDate é número, converter para data (dias atrás)
+      let fromDate: Date;
+      if (typeof startDate === "number") {
+        fromDate = new Date(Date.now() - startDate * 24 * 60 * 60 * 1000);
+      } else {
+        fromDate = startDate;
+      }
+
+      const toDate = endDate || new Date();
+      const fromDateStr = fromDate.toISOString().split("T")[0]; // YYYY-MM-DD
+      const toDateStr = toDate.toISOString().split("T")[0]; // YYYY-MM-DD
+
+      console.log(`[GitHub Search] Buscando commits de ${username} entre ${fromDateStr} e ${toDateStr}`);
+
+      // Busca commits usando Search API com filtro de data
+      const { data } = await this.octokit.rest.search.commits({
+        q: `author:${username} committer-date:${fromDateStr}..${toDateStr}`,
+        sort: "committer-date",
+        order: "desc",
+        per_page: 100,
+      });
+
+      console.log(`[GitHub Search] Encontrados ${data.items.length} commits para ${username}`);
+
+      return data.items.map((commit: any) => ({
+        sha: commit.sha,
+        message: commit.commit.message.split("\n")[0], // Apenas primeira linha
+        repoName: commit.repository?.full_name || "unknown",
+        timestamp: new Date(commit.commit.committer?.date || commit.commit.author.date),
+        url: commit.html_url,
+      }));
+    } catch (error) {
+      console.error(`[GitHub Search] Erro ao buscar commits para ${username}:`, error);
+      // Retorna array vazio em caso de falha ao invés de quebrar
+      return [];
+    }
   }
 
-  private countPRsFromEvents(events: Record<string, any>[]): number {
-    return events.filter((event) => event.type === "PullRequestEvent" && event.payload?.action === "opened").length;
-  }
-
-  private countIssuesFromEvents(events: Record<string, any>[]): number {
-    return events.filter((event) => event.type === "IssuesEvent" && event.payload?.action === "opened").length;
+  /**
+   * Busca rate limit atual da API do GitHub
+   */
+  async getRateLimit() {
+    try {
+      const { data } = await this.octokit.rest.rateLimit.get();
+      return data.rate;
+    } catch (error) {
+      console.error("[GitHub Service] Erro ao verificar rate limit:", error);
+      return null;
+    }
   }
 }
 

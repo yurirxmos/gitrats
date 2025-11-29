@@ -1,8 +1,9 @@
+// Explica o PORQUÊ: Next.js 16 descontinuou middleware.ts em favor de proxy.ts para reescrever e manipular requisições.
 import { updateSession } from "@/lib/supabase/middleware";
 import { type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+export async function proxy(request: NextRequest) {
+  return updateSession(request);
 }
 
 export const config = {

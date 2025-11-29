@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/server";
 import GitHubService from "@/lib/github-service";
 import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import { getClassXpMultiplier } from "@/lib/classes";
+import { getAdminUser } from "@/lib/auth-utils";
+import { EmailService } from "@/lib/email-service";
 
 /**
  * ADMIN - Recalcula XP de TODOS os usuários do zero
@@ -11,13 +13,10 @@ import { getClassXpMultiplier } from "@/lib/classes";
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verificar se está em localhost
-    const hostname = request.headers.get("host") || "";
-    const isLocalhost =
-      hostname.includes("localhost") || hostname.includes("127.0.0.1") || hostname.startsWith("192.168.");
+    const adminUser = await getAdminUser();
 
-    if (!isLocalhost) {
-      return NextResponse.json({ error: "Esta rota só funciona em desenvolvimento local" }, { status: 403 });
+    if (!adminUser) {
+      return NextResponse.json({ error: "Acesso negado: apenas admin" }, { status: 403 });
     }
 
     const supabase = createAdminClient();
@@ -33,7 +32,10 @@ export async function POST(request: NextRequest) {
           id,
           class,
           name,
-          created_at
+          created_at,
+          level,
+          total_xp,
+          current_xp
         ),
         github_stats(
           total_commits,
@@ -108,11 +110,11 @@ export async function POST(request: NextRequest) {
         const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
         const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
 
-        // Cálculo simplificado para baseline: valores médios (commit=10, PR=50, issue=25) + multiplicadores de classe
+        // Cálculo simplificado para baseline: valores médios (commit=10, PR=25, issue=35) + multiplicadores de classe
         // Nota: O sistema real considera linhas de código, tipo de repositório, etc. Este é apenas um baseline aproximado.
         const xpFromCommits = Math.floor(activitiesSinceJoin.commits * 10 * commitMultiplier);
-        const xpFromPRs = Math.floor(activitiesSinceJoin.prs * 50 * prMultiplier);
-        const xpFromIssues = Math.floor(activitiesSinceJoin.issues * 25 * issueMultiplier);
+        const xpFromPRs = Math.floor(activitiesSinceJoin.prs * 25 * prMultiplier);
+        const xpFromIssues = Math.floor(activitiesSinceJoin.issues * 35 * issueMultiplier);
         const activityXp = xpFromCommits + xpFromPRs + xpFromIssues;
 
         // Somar achievements existentes do usuário
@@ -130,6 +132,7 @@ export async function POST(request: NextRequest) {
 
         const totalXp = activityXp + achievementsXp;
 
+        const previousLevel = character.level || 0;
         const newLevel = getLevelFromXp(totalXp);
         const newCurrentXp = getCurrentXp(totalXp, newLevel);
 
@@ -185,6 +188,8 @@ export async function POST(request: NextRequest) {
           });
           continue;
         }
+
+        // Removido: e-mail de nível 10
 
         results.push({
           username: userData.github_username,

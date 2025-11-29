@@ -1,33 +1,40 @@
 // lib/achievement-metadata.ts
-// Metadados dos achievements: ícones, títulos e descrições
+// Metadados visuais dos achievements: apenas ícones e cores
 
 import { IconType } from "react-icons";
-import { FaTrophy, FaBug } from "react-icons/fa6";
+import { FaTrophy, FaBug, FaCrown, FaPersonRays } from "react-icons/fa6";
 
 export interface AchievementMetadata {
-  code: string;
-  title: string;
-  description: string;
   icon: IconType;
-  color?: string;
+  color: string;
 }
 
 export const achievementMetadata: Record<string, AchievementMetadata> = {
   contribuidor_da_tavola: {
-    code: "contribuidor_da_tavola",
-    title: "Contribuidor da Távola",
-    description: "Esse usuário contribuiu reportando bugs/exploits",
     icon: FaBug,
     color: "text-yellow-500",
+  },
+  game_master: {
+    icon: FaCrown,
+    color: "text-purple-500",
+  },
+  rei_ogro_de_origem: {
+    icon: FaPersonRays,
+    color: "text-green-500",
+  },
+  mago_arcanista_de_origem: {
+    icon: FaPersonRays,
+    color: "text-blue-500",
+  },
+    paladino_de_origem: {
+    icon: FaPersonRays,
+    color: "text-amber-500",
   },
 };
 
 export const getAchievementMetadata = (code: string): AchievementMetadata => {
   return (
     achievementMetadata[code] || {
-      code,
-      title: code,
-      description: "Achievement desbloqueado",
       icon: FaTrophy,
       color: "text-gray-500",
     }
