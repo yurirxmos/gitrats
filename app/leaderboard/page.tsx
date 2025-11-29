@@ -229,9 +229,9 @@ export default function Leaderboard() {
           <main className={user ? "flex-1 max-w-4xl" : "flex-1 max-w-6xl"}>
             <div className="space-y-8">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FaTrophy className="text-2xl text-foreground" />
-                  <h1 className="text-2xl font-black">LEADERBOARD</h1>
+                <div className="flex items-center text-md md:text-2xl gap-2 text-foreground font-black">
+                  <FaTrophy />
+                  <h1>LEADERBOARD</h1>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -495,7 +495,7 @@ export default function Leaderboard() {
                                     className="object-contain"
                                   />
                                 </div>
-                                <div className="flex-1 min-w-0">
+                                <div className="flex flex-col justify-center md:justify-start items-center flex-1 min-w-0">
                                   <div>
                                     <div className="flex items-center gap-2">
                                       {player.guild_tag && (
@@ -516,11 +516,11 @@ export default function Leaderboard() {
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
                                     <span className={getRankColorClass(player.level)}>
                                       {getCurrentRank(player.character_class, player.level)}
                                     </span>
-                                    <span>•</span>
+                                    <span className="hidden md:block">•</span>
                                     <span
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -586,7 +586,7 @@ export default function Leaderboard() {
                                     className="object-contain"
                                   />
                                 </div>
-                                <div className="flex-1 min-w-0">
+                                <div className="flex flex-col justify-center md:justify-start items-start flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     {player.guild_tag && (
                                       <span className="text-xs font-bold text-muted-foreground">
@@ -604,11 +604,11 @@ export default function Leaderboard() {
                                       ))}
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <div className="flex items-center flex-col md:flex-row gap-2 text-sm text-muted-foreground">
                                     <span className={`text-sm ${getRankColorClass(player.level)}`}>
                                       {getCurrentRank(player.character_class, player.level)}
                                     </span>
-                                    <span>•</span>
+                                    <span className="hidden md:block">•</span>
                                     <span
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -669,7 +669,7 @@ export default function Leaderboard() {
                         onClick={() => handleGuildClick(guild)}
                       >
                         <CardContent className="px-4">
-                          <div className="flex items-center gap-4">
+                          <div className="flex flex-col items-center gap-4">
                             <div className="w-12 flex items-center justify-center shrink-0">
                               {guild.rank === 1 && <FaTrophy className="text-yellow-500 text-2xl" />}
                               {guild.rank === 2 && <FaMedal className="text-gray-400 text-2xl" />}
@@ -678,7 +678,7 @@ export default function Leaderboard() {
                                 <span className="text-muted-foreground font-bold text-lg">#{guild.rank}</span>
                               )}
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex flex-col justify-center md:justify-start items-center flex-1 min-w-0">
                               <div className="flex flex-row items-center gap-2">
                                 <h3 className="font-bold text-lg">{guild.name} </h3>
                                 {guild.tag && (

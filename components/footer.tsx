@@ -7,8 +7,8 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <div className="text-xs w-full opacity-50 flex flex-row justify-between items-center px-15 py-5">
-      <p>GitRats © {new Date().getFullYear()}. Todos os direitos reservados.</p>
+    <div className="text-xs w-full opacity-50 flex flex-col md:flex-row justify-between items-center px-15 py-5">
+      <p>GitRats © {new Date().getFullYear()}. <span className="hidden md:block">Todos os direitos reservados.</span></p>
 
       <div className="flex flex-row items-center gap-5">
         <Link
