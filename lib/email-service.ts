@@ -1,4 +1,4 @@
-import { resendClient } from "./resend-client";
+import { getResendClient } from "./resend-client";
 
 interface SendEmailParams {
   to: string | string[];
@@ -36,6 +36,7 @@ export class EmailService {
         throw new Error("É necessário fornecer html ou templateId");
       }
 
+      const resendClient = getResendClient();
       const { data, error } = await resendClient.emails.send(emailPayload);
 
       if (error) {

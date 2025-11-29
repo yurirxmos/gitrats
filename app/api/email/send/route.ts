@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resendClient } from "@/lib/resend-client";
+import { getResendClient } from "@/lib/resend-client";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Campos obrigatórios: to, subject, html" }, { status: 400 });
     }
 
+    const resendClient = getResendClient();
     const { data, error } = await resendClient.emails.send({
       from,
       to,

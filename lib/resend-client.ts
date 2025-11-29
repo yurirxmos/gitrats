@@ -1,7 +1,15 @@
 import { Resend } from "resend";
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error("RESEND_API_KEY não está configurada");
-}
+let cachedClient: Resend | null = null;
 
-export const resendClient = new Resend(process.env.RESEND_API_KEY);
+export function getResendClient() {
+  if (cachedClient) return cachedClient;
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY não está configurada");
+  }
+
+  cachedClient = new Resend(apiKey);
+  return cachedClient;
+}
