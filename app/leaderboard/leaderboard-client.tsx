@@ -5,6 +5,7 @@ import Image from "next/image";
 import { FaCrown, FaGithub, FaMedal, FaTrophy } from "react-icons/fa6";
 import { AchievementBadge } from "@/components/achievement-badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -200,36 +201,38 @@ export default function LeaderboardClient({
         <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10 p-8">
           {user && <LeaderboardProfileCard onCreateCharacter={() => setIsOnboardingOpen(true)} />}
           <main className={user ? "flex-1 max-w-4xl" : "flex-1 max-w-6xl"}>
-            <div className="space-y-8">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center text-md md:text-2xl gap-2 text-foreground font-black">
                   <FaTrophy />
                   <h1>LEADERBOARD</h1>
                 </div>
+
                 <div className="flex items-center gap-2">
-                  {lastUpdate && (
-                    <p className="text-[10px] text-muted-foreground">
-                      Atualizado em {new Date(lastUpdate).toLocaleString()}
-                    </p>
-                  )}
-                  <Button
-                    variant={viewMode === "players" ? "default" : "outline"}
-                    size="sm"
-                    className="text-[10px]"
-                    onClick={() => setViewMode("players")}
+                  <Select
+                    value={viewMode}
+                    onValueChange={(v) => setViewMode(v as "players" | "guilds")}
                   >
-                    Jogadores
-                  </Button>
-                  <Button
-                    variant={viewMode === "guilds" ? "default" : "outline"}
-                    size="sm"
-                    className="text-[10px]"
-                    onClick={() => setViewMode("guilds")}
-                  >
-                    Guildas
-                  </Button>
+                    <SelectTrigger
+                      className="w-32 text-xs font-bold hover:cursor-pointer"
+                      size="sm"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="players">Jogadores</SelectItem>
+                      <SelectItem value="guilds">Guildas</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+
+              {lastUpdate && (
+                <p className="text-[10px] text-muted-foreground text-right">
+                  Atualizado em {new Date(lastUpdate).toLocaleString()}
+                </p>
+              )}
+
               {viewMode === "players" ? (
                 leaderboard.length === 0 ? (
                   <div className="text-center py-20">
@@ -646,7 +649,7 @@ export default function LeaderboardClient({
                         onClick={() => handleGuildClick(guild)}
                       >
                         <CardContent className="px-4">
-                          <div className="flex flex-col items-center gap-4">
+                          <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
                             <div className="w-12 flex items-center justify-center shrink-0">
                               {guild.rank === 1 && <FaTrophy className="text-yellow-500 text-2xl" />}
                               {guild.rank === 2 && <FaMedal className="text-gray-400 text-2xl" />}
@@ -655,7 +658,7 @@ export default function LeaderboardClient({
                                 <span className="text-muted-foreground font-bold text-lg">#{guild.rank}</span>
                               )}
                             </div>
-                            <div className="flex flex-col justify-center md:justify-start items-center flex-1 min-w-0">
+                            <div className="flex flex-col justify-center md:justify-start md:items-start items-center flex-1 min-w-0">
                               <div className="flex flex-row items-center gap-2">
                                 <h3 className="font-bold text-lg">{guild.name} </h3>
                                 {guild.tag && (
