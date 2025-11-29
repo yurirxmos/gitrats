@@ -144,20 +144,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Enviar e-mail especial quando usuário atingir nível 10 pela primeira vez
-    if (newLevel >= 10 && previousLevel < 10) {
-      // Buscar e-mail do usuário (assumindo que há uma coluna email na tabela users)
-      const { data: userData } = await supabase.from("users").select("email").eq("id", userRow.id).single();
-
-      if (userData?.email) {
-        try {
-          await EmailService.sendLevel10Email(userData.email, userRow.github_username, character.class);
-          console.log(`E-mail de nível 10 enviado para ${userRow.github_username}`);
-        } catch (emailError) {
-          // Não falhar a request se o e-mail falhar (log apenas)
-          console.error("Erro ao enviar e-mail de nível 10:", emailError);
-        }
-      }
-    }
+    // Removido: e-mail de nível 10
 
     return NextResponse.json({
       success: true,

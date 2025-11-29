@@ -32,7 +32,10 @@ export async function POST(request: NextRequest) {
           id,
           class,
           name,
-          created_at
+          created_at,
+          level,
+          total_xp,
+          current_xp
         ),
         github_stats(
           total_commits,
@@ -186,19 +189,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Enviar e-mail especial quando usuário atingir nível 10 pela primeira vez
-        if (newLevel >= 10 && previousLevel < 10) {
-          const { data: userEmailData } = await supabase.from("users").select("email").eq("id", userData.id).single();
-
-          if (userEmailData?.email) {
-            try {
-              await EmailService.sendLevel10Email(userEmailData.email, userData.github_username, character.class);
-              console.log(`[Recalc XP] E-mail de nível 10 enviado para ${userData.github_username}`);
-            } catch (emailError) {
-              console.error(`[Recalc XP] Erro ao enviar e-mail para ${userData.github_username}:`, emailError);
-            }
-          }
-        }
+        // Removido: e-mail de nível 10
 
         results.push({
           username: userData.github_username,
