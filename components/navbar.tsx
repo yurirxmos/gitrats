@@ -85,7 +85,7 @@ export function Navbar() {
       <nav className="w-full py-2 px-4 sm:px-10 flex items-center bg-background/20 backdrop-blur-sm z-50 fixed">
         <div>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 variant={"ghost"}
                 size={"icon"}

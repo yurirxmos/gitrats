@@ -291,7 +291,7 @@ export default function GuildPage() {
                     )}
                     <Tooltip>
                       <TooltipProvider>
-                        <TooltipTrigger>
+                        <TooltipTrigger asChild>
                           <Button
                             className="hover:cursor-help"
                             variant="secondary"

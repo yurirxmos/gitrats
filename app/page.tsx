@@ -42,9 +42,11 @@ export default function Home() {
       constructor(canvasWidth: number, canvasHeight: number) {
         this.x = Math.random() * canvasWidth;
         this.y = Math.random() * canvasHeight;
-        this.velocityY = Math.random() * 2 - 4;
-        this.gravity = 0.3;
-        this.bounce = 0.85;
+        // Aumenta velocidade inicial para um pulo mais visível
+        this.velocityY = -(Math.random() * 3 + 4); // entre -7 e -4
+        this.gravity = 0.28;
+        // Mantém energia do pulo praticamente constante
+        this.bounce = 1.0;
         this.opacity = Math.random();
         this.opacityDirection = Math.random() > 0.5 ? 0.01 : -0.01;
       }
@@ -57,9 +59,10 @@ export default function Home() {
           this.y = canvasHeight - PIXEL_SIZE;
           this.velocityY = -Math.abs(this.velocityY) * this.bounce;
 
-          // Mantém energia mínima para continuar pulando
-          if (Math.abs(this.velocityY) < 2) {
-            this.velocityY = -4;
+          // Garante impulso mínimo para continuar pingando
+          // Evita que a energia decaia e o pixel "cole" no chão
+          if (Math.abs(this.velocityY) < 3) {
+            this.velocityY = -(3 + Math.random() * 2); // entre -5 e -3
           }
         }
 
@@ -71,6 +74,11 @@ export default function Home() {
         } else if (this.opacity <= 0.2) {
           this.opacity = 0.2;
           this.opacityDirection = 0.01;
+        }
+
+        // Se por qualquer motivo ficar praticamente parado no fundo, reimpulsiona
+        if (this.y + PIXEL_SIZE >= canvasHeight - 0.5 && Math.abs(this.velocityY) < 0.05) {
+          this.velocityY = -(3 + Math.random() * 2);
         }
       }
 

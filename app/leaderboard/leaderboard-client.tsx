@@ -175,7 +175,7 @@ export default function LeaderboardClient({
                     key={i}
                     className="border-none shadow-none"
                   >
-                    <CardContent className="px-4">
+                    <CardContent className="px-0 md:px-4">
                       <div className="flex items-center gap-4">
                         <Skeleton className="w-12 h-6" />
                         <Skeleton className="w-16 h-16 rounded-lg" />
@@ -462,7 +462,7 @@ export default function LeaderboardClient({
                             key={player.user_id}
                             className="transition-all hover:opacity-60 border-none shadow-none"
                           >
-                            <CardContent className="px-4 border-none shadow-none">
+                            <CardContent className="border-none shadow-none max-w-xs">
                               <div className="flex items-center md:flex-row flex-col gap-4">
                                 <div className="w-12 flex items-center justify-center shrink-0">
                                   {getRankIcon(player.rank)}
@@ -475,16 +475,18 @@ export default function LeaderboardClient({
                                     className="object-contain"
                                   />
                                 </div>
-                                <div className="flex flex-col justify-center md:justify-start items-center flex-1 min-w-0">
-                                  <div>
-                                    <div className="flex items-center gap-2">
+                                <div className="flex flex-col justify-center md:justify-start items-center flex-1 min-w-0 w-full">
+                                  <div className="w-full">
+                                    <div className="flex items-center justify-center gap-2 min-w-0 w-full overflow-hidden">
                                       {player.guild_tag && (
-                                        <span className="text-xs font-bold text-muted-foreground">
+                                        <span className="text-xs font-bold text-muted-foreground shrink-0">
                                           [{player.guild_tag}]
                                         </span>
                                       )}
-                                      <h3 className="font-bold text-base">{player.character_name}</h3>
-                                      <div className="flex items-center gap-1">
+                                      <h3 className="font-bold text-base truncate">
+                                        {player.character_name}
+                                      </h3>
+                                      <div className="flex items-center gap-1 shrink-0">
                                         {(player.achievement_codes || []).slice(0, 3).map((code) => (
                                           <AchievementBadge
                                             key={code}
@@ -567,14 +569,16 @@ export default function LeaderboardClient({
                                   />
                                 </div>
                                 <div className="flex flex-col justify-center md:justify-start items-start flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
                                     {player.guild_tag && (
-                                      <span className="text-xs font-bold text-muted-foreground">
+                                      <span className="text-xs font-bold text-muted-foreground shrink-0">
                                         [{player.guild_tag}]
                                       </span>
                                     )}
-                                    <h3 className="font-bold text-base">{player.character_name}</h3>
-                                    <div className="flex items-center gap-1">
+                                    <h3 className="font-bold text-base truncate min-w-0 flex-1">
+                                      {player.character_name}
+                                    </h3>
+                                    <div className="flex items-center gap-1 shrink-0">
                                       {(player.achievement_codes || []).slice(0, 3).map((code) => (
                                         <AchievementBadge
                                           key={code}
