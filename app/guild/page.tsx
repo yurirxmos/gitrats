@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Navbar } from "@/components/navbar";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useGuild } from "@/hooks/use-guild";
 import GuildMemberLeaderboard from "@/components/guild-member-leaderboard";
 import { useUserContext } from "@/contexts/user-context";
@@ -16,20 +15,16 @@ import { getCurrentRank } from "@/lib/class-evolution";
 import {
   FaUsers,
   FaPlus,
-  FaTrophy,
   FaRightFromBracket,
   FaTrash,
   FaCheck,
   FaXmark,
   FaCrown,
   FaBell,
-  FaShare,
   FaUserPlus,
   FaStar,
 } from "react-icons/fa6";
-import { DialogTitle } from "@radix-ui/react-dialog";
-import { Tooltip } from "@/components/ui/tooltip";
-import { TooltipContent, TooltipProvider, TooltipTrigger } from "@radix-ui/react-tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function GuildPage() {
   const { user, hasCharacter } = useUserContext();
@@ -305,10 +300,11 @@ export default function GuildPage() {
                             <p className="text-xs">{guild.total_members} membros</p>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <div className="p-3 bg-secondary rounded-lg mt-1.5 transition-all shadow-sm">
-                            <p className="text-xs">Total de membros na guilda</p>
-                          </div>
+                        <TooltipContent
+                          side="bottom"
+                          variant="secondary"
+                        >
+                          <p className="text-xs">Total de membros na guilda</p>
                         </TooltipContent>
                       </TooltipProvider>
                     </Tooltip>
@@ -323,10 +319,11 @@ export default function GuildPage() {
                             <p className="text-xs">{guild.total_xp.toLocaleString()} XP</p>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <div className="p-3 bg-secondary rounded-lg mt-1.5 transition-all shadow-sm">
-                            <p className="text-xs">XP Total da guilda</p>
-                          </div>
+                        <TooltipContent
+                          side="bottom"
+                          variant="secondary"
+                        >
+                          <p className="text-xs">XP Total da guilda</p>
                         </TooltipContent>
                       </TooltipProvider>
                     </Tooltip>
@@ -411,14 +408,21 @@ export default function GuildPage() {
           {guild && (
             <Card className="md:col-span-2">
               <CardContent>
-                <h2 className="text-xl font-bold mb-4">Membros ({guild.total_members})</h2>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <CardTitle>
+                  <div className="flex flex-row justify-between items-center mb-4">
+                    <FaUsers className="mr-2" />
+                    <h2 className="text-xl font-bold">Membros</h2>
+                    <h2 className="ml-auto"> ({guild.total_members})</h2>
+                  </div>
+                </CardTitle>
+
+                <div className="space-y-2">
                   {members.map((member) => (
                     <div
                       key={member.user_id}
-                      className="flex items-center gap-3 p-3 bg-muted rounded-lg"
+                      className="flex items-center gap-3 p-3 bg-muted rounded-lg text-xs"
                     >
-                      <div className="relative w-16 h-16 bg-background rounded-lg overflow-hidden shrink-0">
+                      <div className="relative w-5 h-5 bg-background rounded-full overflow-hidden shrink-0">
                         {member.character_class && (
                           <Image
                             src={getCharacterAvatar(member.character_class, member.level || 1)}
@@ -428,15 +432,15 @@ export default function GuildPage() {
                           />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 flex flex-row items-center gap-3">
                         <div className="flex items-center gap-1">
-                          <p className="font-bold text-sm truncate">{member.character_name}</p>
                           {member.role === "owner" && <FaCrown className="text-yellow-500 text-xs shrink-0" />}
+                          <p className="font-bold text-xs truncate">{member.character_name}</p>
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {member.character_class && getCurrentRank(member.character_class, member.level || 1)}
                         </p>
-                        <p className="text-xs text-muted-foreground">@{member.github_username}</p>
+                        <p className="text-[10px] opacity-20 ml-auto">@{member.github_username}</p>
                       </div>
                     </div>
                   ))}
