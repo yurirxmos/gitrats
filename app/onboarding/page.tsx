@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { GitHubConnectStep } from "@/components/onboarding/github-connect-step";
 import { CharacterCreationStep } from "@/components/onboarding/character-creation-step";
 import { ReadyStep } from "@/components/onboarding/ready-step";
-import { useUser } from "@/hooks/use-user";
 import { useUserContext } from "@/contexts/user-context";
 import { createClient } from "@/lib/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,14 +12,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useUser();
-  // Usando flag geral de loading do contexto (auth + perfil)
-  const { hasCharacter, loading } = useUserContext();
+  const { user, hasCharacter, loading } = useUserContext();
 
   const stepParam = searchParams.get("step");
   const [step, setStep] = useState(stepParam ? parseInt(stepParam) : 1);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const stepFromUrl = stepParam ? parseInt(stepParam) : 1;
+    if (stepFromUrl >= 1 && stepFromUrl <= 3) {
+      setStep(stepFromUrl);
+    }
+  }, [stepParam]);
 
   // Exibir skeleton enquanto contexto ainda está carregando perfil/personagem
   if (loading) {
@@ -47,13 +51,6 @@ function OnboardingContent() {
       </div>
     );
   }
-
-  useEffect(() => {
-    const stepFromUrl = stepParam ? parseInt(stepParam) : 1;
-    if (stepFromUrl >= 1 && stepFromUrl <= 3) {
-      setStep(stepFromUrl);
-    }
-  }, [stepParam]);
 
   const updateStep = (newStep: number) => {
     setStep(newStep);
