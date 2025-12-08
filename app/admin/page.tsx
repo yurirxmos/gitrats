@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/use-user";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import * as FA6 from "react-icons/fa6";
 
 export default function AdminPage() {
@@ -20,6 +21,8 @@ export default function AdminPage() {
   const [resyncResult, setResyncResult] = useState<any>(null);
   const [recalcResult, setRecalcResult] = useState<any>(null);
   const [singleRecalcResult, setSingleRecalcResult] = useState<any>(null);
+  const [recalcInProgress, setRecalcInProgress] = useState(false);
+  const [recalcProgress, setRecalcProgress] = useState(0);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
   const [stats, setStats] = useState({ totalUsers: 0, totalGuilds: 0, totalXp: 0 });
@@ -97,6 +100,19 @@ export default function AdminPage() {
 
     checkAdmin();
   }, [user, userLoading, router]);
+
+  useEffect(() => {
+    if (!recalcInProgress) return undefined;
+
+    const intervalId = setInterval(() => {
+      setRecalcProgress((current) => {
+        const next = current + Math.random() * 12 + 5;
+        return next >= 90 ? 90 : next;
+      });
+    }, 600);
+
+    return () => clearInterval(intervalId);
+  }, [recalcInProgress]);
 
   const loadUsersList = async () => {
     try {
@@ -339,6 +355,8 @@ export default function AdminPage() {
 
                       setLoading(true);
                       setRecalcResult(null);
+                      setRecalcInProgress(true);
+                      setRecalcProgress(12);
 
                       try {
                         const res = await fetch("/api/admin/recalculate-all-xp", {
@@ -347,11 +365,14 @@ export default function AdminPage() {
                         });
                         const data = await res.json();
                         setRecalcResult(data);
+                        setRecalcProgress(100);
                       } catch (error) {
                         console.error("Erro ao recalcular XP:", error);
                         setRecalcResult({ error: String(error) });
+                        setRecalcProgress(100);
                       } finally {
                         setLoading(false);
+                        setTimeout(() => setRecalcInProgress(false), 300);
                       }
                     }}
                     disabled={loading}
@@ -501,9 +522,26 @@ export default function AdminPage() {
           <Card>
             <CardContent className="pt-6">
               <h2 className="text-xl font-bold mb-4">Resultado do Recálculo de XP</h2>
+              {recalcInProgress && (
+                <div className="mb-4 space-y-2">
+                  <div className="text-sm text-muted-foreground">Recalculando XP de todos os usuários...</div>
+                  <Progress value={recalcProgress} />
+                </div>
+              )}
               <pre className="bg-muted p-4 rounded text-xs overflow-auto max-h-96">
                 {JSON.stringify(recalcResult, null, 2)}
               </pre>
+            </CardContent>
+          </Card>
+        )}
+        {recalcInProgress && !recalcResult && (
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-xl font-bold mb-4">Recalculando XP de Todos</h2>
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground">Aguarde enquanto processamos...</div>
+                <Progress value={recalcProgress} />
+              </div>
             </CardContent>
           </Card>
         )}
