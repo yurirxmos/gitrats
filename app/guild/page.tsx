@@ -316,10 +316,7 @@ export default function GuildPage() {
                             <p className="text-xs">{guild.total_xp.toLocaleString()} XP</p>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          variant="secondary"
-                        >
+                        <TooltipContent side="bottom">
                           <p className="text-xs">XP Total da guilda</p>
                         </TooltipContent>
                       </TooltipProvider>
