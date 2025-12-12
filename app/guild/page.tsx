@@ -300,10 +300,7 @@ export default function GuildPage() {
                             <p className="text-xs">{guild.total_members} membros</p>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          variant="secondary"
-                        >
+                        <TooltipContent side="bottom">
                           <p className="text-xs">Total de membros na guilda</p>
                         </TooltipContent>
                       </TooltipProvider>
