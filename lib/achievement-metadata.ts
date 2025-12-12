@@ -2,7 +2,7 @@
 // Metadados visuais dos achievements: apenas ícones e cores
 
 import { IconType } from "react-icons";
-import { FaTrophy, FaBug, FaCrown, FaPersonRays } from "react-icons/fa6";
+import { FaTrophy, FaBug, FaCrown, FaPersonRays, FaRedhat } from "react-icons/fa6";
 
 export interface AchievementMetadata {
   icon: IconType;
@@ -26,9 +26,13 @@ export const achievementMetadata: Record<string, AchievementMetadata> = {
     icon: FaPersonRays,
     color: "text-blue-500",
   },
-    paladino_de_origem: {
+  paladino_de_origem: {
     icon: FaPersonRays,
     color: "text-amber-500",
+  },
+  whitehat_hacker: {
+    icon: FaRedhat,
+    color: "text-white",
   },
 };
 
