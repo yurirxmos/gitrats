@@ -19,6 +19,7 @@ interface CharacterData {
 
 interface UserData {
   notifications_enabled: boolean;
+  role?: string | null;
 }
 
 export async function fetchUserCharacter(): Promise<CharacterData | null> {
@@ -67,7 +68,7 @@ export async function fetchUserRank(userId: string): Promise<number> {
 export async function fetchUserProfile(
   userId: string,
   userMetadata: any
-): Promise<{ profile: UserProfile; notificationsEnabled: boolean } | null> {
+): Promise<{ profile: UserProfile; notificationsEnabled: boolean; role?: string | null } | null> {
   const [characterData, userData, rank] = await Promise.allSettled([
     fetchUserCharacter(),
     fetchUserData(),
@@ -118,6 +119,7 @@ export async function fetchUserProfile(
   return {
     profile,
     notificationsEnabled: user?.notifications_enabled ?? true,
+    role: user?.role ?? null,
   };
 }
 

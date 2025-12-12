@@ -21,6 +21,7 @@ import { Button } from "./ui/button";
 import {
   FaBars,
   FaBug,
+  FaCrown,
   FaFileCode,
   FaGear,
   FaGithub,
@@ -38,7 +39,7 @@ import { Badge } from "./ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export function Navbar() {
-  const { user, loading } = useUserContext();
+  const { user, loading, isAdmin } = useUserContext();
   const router = useRouter();
   // Criar o client de forma lazily no estado para evitar exceptions em render
   const [supabase, setSupabase] = useState(() => {
@@ -143,6 +144,22 @@ export function Navbar() {
                 align="end"
                 className="bg-foreground text-background p-1 rounded-md shadow-md mt-1 w-40 gap-2 border-none"
               >
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem
+                      className="group"
+                      onClick={() => router.push("/admin")}
+                    >
+                      <div className="bg-amber-500 p-1 rounded-full group-hover:bg-background transition-colors">
+                        <FaCrown className="text-background group-hover:text-amber-500 transition-colors" />
+                      </div>
+
+                      <p>admin</p>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-secondary/10" />
+                  </>
+                )}
+
                 <DropdownMenuItem onClick={() => router.push("/leaderboard")}>
                   <FaTrophy />
                   leaderboard
@@ -234,6 +251,17 @@ export function Navbar() {
               <FaUsers />
               /guild
             </Link>
+
+            {user && isAdmin && (
+              <Link
+                href="/admin"
+                className="flex flex-row items-center gap-2 hover:underline text-sm bg-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <FaCrown className="text-amber-500" />
+                /admin
+              </Link>
+            )}
 
             {user ? (
               <>

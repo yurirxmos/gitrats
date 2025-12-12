@@ -51,5 +51,5 @@ export async function updateSession(request: NextRequest) {
     console.error("[SUPABASE_MIDDLEWARE] Exceção:", e);
   }
 
-  return supabaseResponse;
+  return { response: supabaseResponse, supabase } as const;
 }

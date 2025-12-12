@@ -13,6 +13,8 @@ interface UserContextType {
   loading: boolean;
   hasCharacter: boolean;
   notificationsEnabled: boolean;
+  role: string | null;
+  isAdmin: boolean;
   refreshUserProfile: () => Promise<void>;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
   updateNotifications: (enabled: boolean) => Promise<void>;
@@ -136,6 +138,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const hasCharacter = !!profileData?.profile;
   const userProfile = profileData?.profile ?? null;
   const notificationsEnabled = profileData?.notificationsEnabled ?? true;
+  const role = profileData?.role ?? null;
+  const isAdmin = role === "admin";
 
   return (
     <UserContext.Provider
@@ -145,6 +149,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         loading,
         hasCharacter,
         notificationsEnabled,
+        role,
+        isAdmin,
         refreshUserProfile,
         updateUserProfile,
         updateNotifications,

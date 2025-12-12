@@ -1,18 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@/hooks/use-user";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import * as FA6 from "react-icons/fa6";
 
 export default function AdminPage() {
-  const router = useRouter();
-  const { user, loading: userLoading } = useUser();
   const [loading, setLoading] = useState(false);
   const [achievementResult, setAchievementResult] = useState<any>(null);
   const [analyzeResult, setAnalyzeResult] = useState<any>(null);
@@ -23,8 +19,6 @@ export default function AdminPage() {
   const [singleRecalcResult, setSingleRecalcResult] = useState<any>(null);
   const [recalcInProgress, setRecalcInProgress] = useState(false);
   const [recalcProgress, setRecalcProgress] = useState(0);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [checking, setChecking] = useState(true);
   const [stats, setStats] = useState({ totalUsers: 0, totalGuilds: 0, totalXp: 0 });
   const [showUsersDialog, setShowUsersDialog] = useState(false);
   const [usersList, setUsersList] = useState<Array<{ github_username: string; created_at: string }>>([]);
@@ -50,56 +44,30 @@ export default function AdminPage() {
     .filter((key) => iconSearchTerm === "" || key.toLowerCase().includes(iconSearchTerm.toLowerCase()));
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      // Aguardar carregamento do usuário
-      if (userLoading) {
-        return;
-      }
-
-      if (!user) {
-        setChecking(false);
-        setIsAuthorized(false);
-        router.push("/");
-        return;
-      }
-
-      // Verificar role na tabela users
+    const loadAdminData = async () => {
       try {
         const res = await fetch("/api/admin/stats");
         if (res.ok) {
           const data = await res.json();
           if (data.success) {
             setStats(data.data);
-            setIsAuthorized(true);
-            setChecking(false);
-            // Carregar achievements
-            const achievementsRes = await fetch("/api/admin/achievements");
-            if (achievementsRes.ok) {
-              const achievementsData = await achievementsRes.json();
-              if (achievementsData.success) {
-                setAchievements(achievementsData.data);
-              }
-            }
-          } else {
-            setChecking(false);
-            setIsAuthorized(false);
-            router.push("/");
           }
-        } else {
-          setChecking(false);
-          setIsAuthorized(false);
-          router.push("/");
+        }
+
+        const achievementsRes = await fetch("/api/admin/achievements");
+        if (achievementsRes.ok) {
+          const achievementsData = await achievementsRes.json();
+          if (achievementsData.success) {
+            setAchievements(achievementsData.data);
+          }
         }
       } catch (error) {
-        console.error("Erro ao verificar admin:", error);
-        setChecking(false);
-        setIsAuthorized(false);
-        router.push("/");
+        console.error("Erro ao carregar dados de admin:", error);
       }
     };
 
-    checkAdmin();
-  }, [user, userLoading, router]);
+    loadAdminData();
+  }, []);
 
   useEffect(() => {
     if (!recalcInProgress) return undefined;
@@ -286,14 +254,6 @@ export default function AdminPage() {
       setLoading(false);
     }
   };
-
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Verificando permissões...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen p-8">
