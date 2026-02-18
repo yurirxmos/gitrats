@@ -6,7 +6,14 @@ export async function GET(request: Request) {
   console.log("[AUTH_CALLBACK] Iniciado");
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const rawNext = searchParams.get("next");
+  const DEFAULT_REDIRECT_PATH = "/leaderboard";
+  const next =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext.startsWith("/onboarding") || rawNext === "/leaderboard"
+        ? rawNext
+        : DEFAULT_REDIRECT_PATH
+      : DEFAULT_REDIRECT_PATH;
 
   console.log("[AUTH_CALLBACK] Params:", { hasCode: !!code, next });
 
@@ -22,7 +29,9 @@ export async function GET(request: Request) {
           },
           setAll(cookiesToSet) {
             try {
-              cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options),
+              );
             } catch {
               // The `setAll` method was called from a Server Component.
               // This can be ignored if you have middleware refreshing
@@ -30,7 +39,7 @@ export async function GET(request: Request) {
             }
           },
         },
-      }
+      },
     );
 
     console.log("[AUTH_CALLBACK] Trocando code por session...");
@@ -53,7 +62,11 @@ export async function GET(request: Request) {
         hasToken: !!providerToken,
       });
 
-      const { data: existingUser } = await supabase.from("users").select("id").eq("id", user.id).single();
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", user.id)
+        .single();
 
       console.log("[AUTH_CALLBACK] Existing user check:", {
         exists: !!existingUser,
@@ -62,12 +75,16 @@ export async function GET(request: Request) {
       });
 
       if (existingUser) {
-        console.log("[AUTH_CALLBACK] Atualizando token do usuário existente...");
+        console.log(
+          "[AUTH_CALLBACK] Atualizando token do usuário existente...",
+        );
         const { error: updateError } = await supabase
           .from("users")
           .update({
             github_access_token: providerToken,
-            github_username: user.user_metadata.user_name || user.user_metadata.preferred_username,
+            github_username:
+              user.user_metadata.user_name ||
+              user.user_metadata.preferred_username,
             github_avatar_url: user.user_metadata.avatar_url,
           })
           .eq("id", user.id);
@@ -81,12 +98,16 @@ export async function GET(request: Request) {
         console.log("[AUTH_CALLBACK] Criando novo usuário...", {
           userId: user.id,
           githubId: user.user_metadata.provider_id,
-          username: user.user_metadata.user_name || user.user_metadata.preferred_username,
+          username:
+            user.user_metadata.user_name ||
+            user.user_metadata.preferred_username,
         });
         const { error: insertError } = await supabase.from("users").insert({
           id: user.id,
           github_id: user.user_metadata.provider_id,
-          github_username: user.user_metadata.user_name || user.user_metadata.preferred_username,
+          github_username:
+            user.user_metadata.user_name ||
+            user.user_metadata.preferred_username,
           github_avatar_url: user.user_metadata.avatar_url,
           github_access_token: providerToken,
           name: user.user_metadata.full_name || user.user_metadata.name,

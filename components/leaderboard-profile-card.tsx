@@ -9,11 +9,22 @@ import { ClassBonusIndicator } from "@/components/class-bonus-indicator";
 import { AchievementBadge } from "@/components/achievement-badge";
 import { getCharacterAvatar } from "@/lib/character-assets";
 import { getXpForLevel } from "@/lib/xp-system";
-import { getCurrentRank, getNextRank, CLASS_RANKINGS } from "@/lib/class-evolution";
+import {
+  getCurrentRank,
+  getNextRank,
+  CLASS_RANKINGS,
+} from "@/lib/class-evolution";
 import React, { useState } from "react";
 import { useUserContext } from "@/contexts/user-context";
 import { FaPen } from "react-icons/fa6";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 import type { UserProfile } from "@/lib/types";
@@ -23,10 +34,15 @@ interface Props {
   orientation?: "vertical" | "horizontal";
 }
 
-export default function LeaderboardProfileCard({ onCreateCharacter, orientation = "vertical" }: Props) {
+export default function LeaderboardProfileCard({
+  onCreateCharacter,
+  orientation = "vertical",
+}: Props) {
   const isHorizontal = orientation === "horizontal";
   const containerClass = isHorizontal ? "w-full" : "w-80 shrink-0";
-  const contentClass = isHorizontal ? "flex flex-row items-start gap-6" : "space-y-6";
+  const contentClass = isHorizontal
+    ? "flex flex-row items-start gap-6"
+    : "space-y-6";
   const { userProfile, hasCharacter, refreshUserProfile } = useUserContext();
 
   const getRankColorClass = (level: number): string => {
@@ -36,7 +52,9 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
   };
 
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editName, setEditName] = useState<string>(userProfile?.character_name || "");
+  const [editName, setEditName] = useState<string>(
+    userProfile?.character_name || "",
+  );
   const [savingName, setSavingName] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isEvolutionOpen, setIsEvolutionOpen] = useState(false);
@@ -89,7 +107,9 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
         <CardContent className={contentClass}>
           {hasCharacter === false ? (
             <div className="text-center py-10 space-y-4">
-              <p className="text-sm text-muted-foreground">Você ainda não criou seu personagem</p>
+              <p className="text-sm text-muted-foreground">
+                Você ainda não criou seu personagem
+              </p>
               <Button
                 onClick={onCreateCharacter}
                 className="w-full bg-foreground hover:opacity-90 text-background font-bold"
@@ -99,7 +119,9 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
             </div>
           ) : hasCharacter && !userProfile ? (
             <div className="text-center py-10 space-y-2">
-              <p className="text-sm text-muted-foreground">Carregando personagem...</p>
+              <p className="text-sm text-muted-foreground">
+                Carregando personagem...
+              </p>
               <div className="flex flex-row justify-center gap-2">
                 <div className="w-6 h-6 bg-muted animate-pulse rounded" />
                 <div className="w-6 h-6 bg-muted animate-pulse rounded delay-150" />
@@ -116,7 +138,10 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                       onClick={() => setIsEvolutionOpen(true)}
                     >
                       <Image
-                        src={getCharacterAvatar(userProfile.character_class, userProfile.level)}
+                        src={getCharacterAvatar(
+                          userProfile.character_class,
+                          userProfile.level,
+                        )}
                         alt={userProfile.character_name}
                         fill
                         className="object-contain"
@@ -124,7 +149,9 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                     </div>
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="flex flex-row items-center gap-2">
-                        <h3 className="font-black text-xl">{userProfile.character_name}</h3>
+                        <h3 className="font-black text-xl">
+                          {userProfile.character_name}
+                        </h3>
                         <Button
                           variant="outline"
                           className="p-1 h-6 w-6 min-w-0"
@@ -135,18 +162,33 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                         </Button>
                       </div>
 
-                      <p className={`text-sm ${getRankColorClass(userProfile.level)}`}>
-                        {getCurrentRank(userProfile.character_class, userProfile.level)}
+                      <p
+                        className={`text-sm ${getRankColorClass(userProfile.level)}`}
+                      >
+                        {getCurrentRank(
+                          userProfile.character_class,
+                          userProfile.level,
+                        )}
                       </p>
                     </div>
-                    <ClassBonusIndicator characterClass={userProfile.character_class as "orc" | "warrior" | "mage"} />
+                    <ClassBonusIndicator
+                      characterClass={
+                        userProfile.character_class as
+                          | "orc"
+                          | "warrior"
+                          | "mage"
+                      }
+                    />
                   </div>
                   <div className="flex-1">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="font-bold">Level {userProfile.level}</span>
+                        <span className="font-bold">
+                          Level {userProfile.level}
+                        </span>
                         <span className="text-sm text-muted-foreground">
-                          {userProfile.current_xp} / {getXpForLevel(userProfile.level + 1)} XP
+                          {userProfile.current_xp} /{" "}
+                          {getXpForLevel(userProfile.level + 1)} XP
                         </span>
                       </div>
                       <div className="bg-muted rounded-full h-3 overflow-hidden">
@@ -158,13 +200,19 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                         />
                       </div>
                       {(() => {
-                        const nextRank = getNextRank(userProfile.character_class, userProfile.level);
-                        const isMaxRankEvolution = nextRank && nextRank.levelRequired === 10;
+                        const nextRank = getNextRank(
+                          userProfile.character_class,
+                          userProfile.level,
+                        );
+                        const isMaxRankEvolution =
+                          nextRank && nextRank.levelRequired === 10;
                         return (
                           <div className="pt-2 space-y-1">
                             {nextRank && (
                               <div className="flex justify-between">
-                                <p className="text-xs text-muted-foreground">Evolução:</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Evolução:
+                                </p>
                                 <p
                                   className={`font-bold text-xs ${isMaxRankEvolution ? "text-red-500 animate-pulse" : ""}`}
                                 >
@@ -174,19 +222,27 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                             )}
                             {userProfile.created_at && (
                               <div className="flex justify-between">
-                                <p className="text-xs text-muted-foreground">Nascimento:</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Nascimento:
+                                </p>
                                 <p className="font-bold text-xs">
-                                  {new Date(userProfile.created_at).toLocaleDateString("pt-BR")}
+                                  {new Date(
+                                    userProfile.created_at,
+                                  ).toLocaleDateString("pt-BR")}
                                 </p>
                               </div>
                             )}
                             {userProfile.guild_name && (
                               <div className="flex justify-between">
-                                <p className="text-xs text-muted-foreground">Guilda:</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Guilda:
+                                </p>
                                 <p className="font-bold text-xs">
                                   {userProfile.guild_name}
                                   {userProfile.guild_tag && (
-                                    <span className="text-muted-foreground">[{userProfile.guild_tag}]</span>
+                                    <span className="text-muted-foreground">
+                                      [{userProfile.guild_tag}]
+                                    </span>
                                   )}
                                 </p>
                               </div>
@@ -197,41 +253,60 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                     </div>
                     <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
                       <GiBoltShield />
-                      <span className="text-xs font-bold text-muted-foreground uppercase">/STATS</span>
+                      <span className="text-xs font-bold text-muted-foreground uppercase">
+                        /STATS
+                      </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
                         <div className="flex justify-between">
-                          <span className=" text-muted-foreground">Ranking</span>
-                          <span className="font-bold">#{userProfile.rank || "-"}</span>
+                          <span className=" text-muted-foreground">
+                            Ranking
+                          </span>
+                          <span className="font-bold">
+                            #{userProfile.rank || "-"}
+                          </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total XP</span>
-                          <span className="font-bold">{userProfile.total_xp.toLocaleString()}</span>
+                          <span className="text-muted-foreground">
+                            Total XP
+                          </span>
+                          <span className="font-bold">
+                            {userProfile.total_xp.toLocaleString()}
+                          </span>
                         </div>
                       </div>
                       <div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Commits</span>
-                          <span className="font-bold">{userProfile.total_commits}</span>
+                          <span className="font-bold">
+                            {userProfile.total_commits}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">PRs</span>
-                          <span className="font-bold">{userProfile.total_prs}</span>
+                          <span className="font-bold">
+                            {userProfile.total_prs}
+                          </span>
                         </div>
                       </div>
                       <div className="col-span-2">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Issues</span>
-                          <span className="font-bold">{userProfile.total_issues}</span>
+                          <span className="font-bold">
+                            {userProfile.total_issues}
+                          </span>
                         </div>
                       </div>
                     </div>
-                    {Array.isArray(userProfile.achievement_codes) && userProfile.achievement_codes.length > 0 ? (
+                    {Array.isArray(userProfile.achievement_codes) &&
+                    userProfile.achievement_codes.length > 0 ? (
                       <>
                         <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
                           <GiBullseye />
-                          <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
+                          <span className="text-xs font-bold text-muted-foreground uppercase">
+                            /ACHIEVEMENTS
+                          </span>
                         </div>
                         <div className="flex flex-wrap items-start gap-2">
                           {userProfile.achievement_codes.map((code) => (
@@ -247,13 +322,19 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                       <>
                         <div className="flex flex-row items-center gap-1.5 mb-2 mt-4">
                           <GiBullseye />
-                          <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
+                          <span className="text-xs font-bold text-muted-foreground uppercase">
+                            /ACHIEVEMENTS
+                          </span>
                         </div>
-                        <p className="text-xs text-muted-foreground">Sem conquistas ainda</p>
+                        <p className="text-xs text-muted-foreground">
+                          Sem conquistas ainda
+                        </p>
                       </>
                     )}
                     <div className="flex flex-row justify-start text-muted-foreground mt-3">
-                      <small className="text-[8px]">Sincronização automática a cada 10 minutos</small>
+                      <small className="text-[8px]">
+                        Sincronização automática a cada 10 minutos
+                      </small>
                     </div>
                   </div>
                 </div>
@@ -265,7 +346,10 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                       onClick={() => setIsEvolutionOpen(true)}
                     >
                       <Image
-                        src={getCharacterAvatar(userProfile.character_class, userProfile.level)}
+                        src={getCharacterAvatar(
+                          userProfile.character_class,
+                          userProfile.level,
+                        )}
                         alt={userProfile.character_name}
                         fill
                         className="object-contain"
@@ -273,7 +357,9 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                     </div>
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="flex flex-row items-center gap-2">
-                        <h3 className="font-black text-xl">{userProfile.character_name}</h3>
+                        <h3 className="font-black text-xl">
+                          {userProfile.character_name}
+                        </h3>
                         <Button
                           variant="outline"
                           className="p-1 h-6 w-6 min-w-0"
@@ -283,16 +369,24 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                           <FaPen className="w-2.5!" />
                         </Button>
                       </div>
-                      <p className={`text-sm ${getRankColorClass(userProfile.level)}`}>
-                        {getCurrentRank(userProfile.character_class, userProfile.level)}
+                      <p
+                        className={`text-sm ${getRankColorClass(userProfile.level)}`}
+                      >
+                        {getCurrentRank(
+                          userProfile.character_class,
+                          userProfile.level,
+                        )}
                       </p>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="font-bold">Level {userProfile.level}</span>
+                      <span className="font-bold">
+                        Level {userProfile.level}
+                      </span>
                       <span className="text-sm text-muted-foreground">
-                        {userProfile.current_xp} / {getXpForLevel(userProfile.level + 1)} XP
+                        {userProfile.current_xp} /{" "}
+                        {getXpForLevel(userProfile.level + 1)} XP
                       </span>
                     </div>
                     <div className="bg-muted rounded-full h-3 overflow-hidden">
@@ -304,13 +398,19 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                       />
                     </div>
                     {(() => {
-                      const nextRank = getNextRank(userProfile.character_class, userProfile.level);
-                      const isMaxRankEvolution = nextRank && nextRank.levelRequired === 10;
+                      const nextRank = getNextRank(
+                        userProfile.character_class,
+                        userProfile.level,
+                      );
+                      const isMaxRankEvolution =
+                        nextRank && nextRank.levelRequired === 10;
                       return (
                         <div className="pt-2 space-y-1">
                           {nextRank && (
                             <div className="flex justify-between">
-                              <p className="text-xs text-muted-foreground">Evolução:</p>
+                              <p className="text-xs text-muted-foreground">
+                                Evolução:
+                              </p>
                               <p
                                 className={`font-bold text-xs ${isMaxRankEvolution ? "text-red-500 animate-pulse" : ""}`}
                               >
@@ -320,19 +420,27 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                           )}
                           {userProfile.created_at && (
                             <div className="flex justify-between">
-                              <p className="text-xs text-muted-foreground">Nascimento:</p>
+                              <p className="text-xs text-muted-foreground">
+                                Nascimento:
+                              </p>
                               <p className="font-bold text-xs">
-                                {new Date(userProfile.created_at).toLocaleDateString("pt-BR")}
+                                {new Date(
+                                  userProfile.created_at,
+                                ).toLocaleDateString("pt-BR")}
                               </p>
                             </div>
                           )}
                           {userProfile.guild_name && (
                             <div className="flex justify-between">
-                              <p className="text-xs text-muted-foreground">Guilda:</p>
+                              <p className="text-xs text-muted-foreground">
+                                Guilda:
+                              </p>
                               <p className="font-bold text-xs">
                                 {userProfile.guild_name}{" "}
                                 {userProfile.guild_tag && (
-                                  <span className="text-muted-foreground">[{userProfile.guild_tag}]</span>
+                                  <span className="text-muted-foreground">
+                                    [{userProfile.guild_tag}]
+                                  </span>
                                 )}
                               </p>
                             </div>
@@ -343,43 +451,54 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                   </div>
                   <div className="flex flex-row items-center gap-1.5 mb-2">
                     <GiBoltShield />
-                    <span className="text-xs font-bold text-muted-foreground uppercase">/STATS</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase">
+                      /STATS
+                    </span>
                   </div>
                   <div className="space-y-0.5 text-xs">
                     <div className="flex justify-between">
                       <span className=" text-muted-foreground">Ranking</span>
-                      <span className="font-bold">#{userProfile.rank || "-"}</span>
+                      <span className="font-bold">
+                        #{userProfile.rank || "-"}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Total XP</span>
-                      <span className="font-bold">{userProfile.total_xp.toLocaleString()}</span>
+                      <span className="font-bold">
+                        {userProfile.total_xp.toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Commits</span>
-                      <span className="font-bold">{userProfile.total_commits}</span>
+                      <span className="font-bold">
+                        {userProfile.total_commits}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Pull Requests</span>
+                      <span className="text-muted-foreground">
+                        Pull Requests
+                      </span>
                       <span className="font-bold">{userProfile.total_prs}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Issues</span>
-                      <span className="font-bold">{userProfile.total_issues}</span>
+                      <span className="font-bold">
+                        {userProfile.total_issues}
+                      </span>
                     </div>
                   </div>
-                  {Array.isArray(userProfile.achievement_codes) && userProfile.achievement_codes.length > 0 ? (
+                  {Array.isArray(userProfile.achievement_codes) &&
+                  userProfile.achievement_codes.length > 0 ? (
                     <>
                       <div className="flex flex-row items-center gap-1.5 mb-2 mt-3">
                         <GiBullseye />
-                        <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
+                        <span className="text-xs font-bold text-muted-foreground uppercase">
+                          /ACHIEVEMENTS
+                        </span>
                       </div>
                       <div className="flex flex-wrap gap-2 justify-start">
                         {userProfile.achievement_codes.map((code) => (
-                          <AchievementBadge
-                            key={code}
-                            code={code}
-                            size="sm"
-                          />
+                          <AchievementBadge key={code} code={code} size="sm" />
                         ))}
                       </div>
                     </>
@@ -387,32 +506,43 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
                     <>
                       <div className="flex flex-row items-center gap-1.5 mb-2 mt-3 justify-center">
                         <GiBullseye />
-                        <span className="text-xs font-bold text-muted-foreground uppercase">/ACHIEVEMENTS</span>
+                        <span className="text-xs font-bold text-muted-foreground uppercase">
+                          /ACHIEVEMENTS
+                        </span>
                       </div>
-                      <p className="text-xs text-muted-foreground text-center">Sem conquistas ainda</p>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Sem conquistas ainda
+                      </p>
                     </>
                   )}
                   <div className="flex flex-row justify-center text-muted-foreground">
-                    <small className="text-[8px] text-center">Sincronização automática a cada 10 minutos</small>
+                    <small className="text-[8px] text-center">
+                      Sincronização automática a cada 10 minutos
+                    </small>
                   </div>
-                  <ClassBonusIndicator characterClass={userProfile.character_class as "orc" | "warrior" | "mage"} />
+                  <ClassBonusIndicator
+                    characterClass={
+                      userProfile.character_class as "orc" | "warrior" | "mage"
+                    }
+                  />
                 </>
               )}
             </>
           ) : (
             <div className="text-center py-10">
-              <p className="text-sm text-muted-foreground">Nenhum personagem criado</p>
+              <p className="text-sm text-muted-foreground">
+                Nenhum personagem criado
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
-      <Dialog
-        open={isEditOpen}
-        onOpenChange={setIsEditOpen}
-      >
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar nome do {userProfile?.character_class}</DialogTitle>
+            <DialogTitle>
+              Editar nome do {userProfile?.character_class}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="mt-2">
@@ -422,7 +552,9 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
               placeholder="Nome do personagem"
             />
           </div>
-          {errorMessage && <p className="text-sm text-red-500 mt-2">{errorMessage}</p>}
+          {errorMessage && (
+            <p className="text-sm text-red-500 mt-2">{errorMessage}</p>
+          )}
 
           <DialogFooter>
             <Button
@@ -445,76 +577,85 @@ export default function LeaderboardProfileCard({ onCreateCharacter, orientation 
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={isEvolutionOpen}
-        onOpenChange={setIsEvolutionOpen}
-      >
+      <Dialog open={isEvolutionOpen} onOpenChange={setIsEvolutionOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Evoluções de {userProfile?.character_class}</DialogTitle>
+            <DialogTitle>
+              Evoluções de {userProfile?.character_class}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
             {userProfile &&
-              CLASS_RANKINGS[userProfile.character_class.toLowerCase()]?.map((rank, index) => {
-                const isCurrentRank = userProfile.level >= rank.minLevel && userProfile.level <= rank.maxLevel;
-                const isCompleted = userProfile.level > rank.maxLevel;
-                const isLocked = userProfile.level < rank.minLevel;
+              CLASS_RANKINGS[userProfile.character_class.toLowerCase()]?.map(
+                (rank, index) => {
+                  const isCurrentRank =
+                    userProfile.level >= rank.minLevel &&
+                    userProfile.level <= rank.maxLevel;
+                  const isCompleted = userProfile.level > rank.maxLevel;
+                  const isLocked = userProfile.level < rank.minLevel;
 
-                return (
-                  <div
-                    key={index}
-                    className={`flex items-center gap-4 p-4 rounded-lg border ${
-                      isCurrentRank
-                        ? "bg-foreground/5 border-foreground"
-                        : isCompleted
-                          ? "bg-muted/50 border-muted"
-                          : "bg-background border-muted opacity-50"
-                    }`}
-                  >
-                    <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden shrink-0">
-                      <Image
-                        src={getCharacterAvatar(userProfile.character_class, rank.minLevel)}
-                        alt={rank.name}
-                        fill
-                        className="object-contain"
-                      />
-                      {isLocked && (
-                        <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                          <span className="text-2xl">🔒</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-bold text-lg">{rank.name}</h4>
-                        {isCurrentRank && (
-                          <span className="text-xs bg-foreground text-background px-2 py-1 rounded-full font-bold">
-                            ATUAL
-                          </span>
-                        )}
-                        {isCompleted && (
-                          <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full font-bold">
-                            COMPLETO
-                          </span>
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-4 p-4 rounded-lg border ${
+                        isCurrentRank
+                          ? "bg-foreground/5 border-foreground"
+                          : isCompleted
+                            ? "bg-muted/50 border-muted"
+                            : "bg-background border-muted opacity-50"
+                      }`}
+                    >
+                      <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden shrink-0">
+                        <Image
+                          src={getCharacterAvatar(
+                            userProfile.character_class,
+                            rank.minLevel,
+                          )}
+                          alt={rank.name}
+                          fill
+                          className="object-contain"
+                        />
+                        {isLocked && (
+                          <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                            <span className="text-2xl">🔒</span>
+                          </div>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Nível {rank.minLevel} - {rank.maxLevel === 999 ? "∞" : rank.maxLevel}
-                      </p>
-                      {isCurrentRank && (
-                        <p className="text-sm font-bold mt-1">Você está no nível {userProfile.level}</p>
-                      )}
-                      {isLocked && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Faltam {rank.minLevel - userProfile.level} níveis
+
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-bold text-lg">{rank.name}</h4>
+                          {isCurrentRank && (
+                            <span className="text-xs bg-foreground text-background px-2 py-1 rounded-full font-bold">
+                              ATUAL
+                            </span>
+                          )}
+                          {isCompleted && (
+                            <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full font-bold">
+                              COMPLETO
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Nível {rank.minLevel} -{" "}
+                          {rank.maxLevel === 999 ? "∞" : rank.maxLevel}
                         </p>
-                      )}
+                        {isCurrentRank && (
+                          <p className="text-sm font-bold mt-1">
+                            Você está no nível {userProfile.level}
+                          </p>
+                        )}
+                        {isLocked && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Faltam {rank.minLevel - userProfile.level} níveis
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                },
+              )}
           </div>
         </DialogContent>
       </Dialog>

@@ -62,7 +62,7 @@ export function Navbar() {
       await client.auth.signInWithOAuth({
         provider: "github",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?next=/leaderboard`,
         },
       });
     } catch (e) {
@@ -126,11 +126,16 @@ export function Navbar() {
                   className="flex flex-row items-center gap-1.5 hover:cursor-pointer px-3 py-0.5"
                   variant={"secondary"}
                 >
-                  <p className="text-[10px]">{user.user_metadata?.user_name || user.email}</p>
+                  <p className="text-[10px]">
+                    {user.user_metadata?.user_name || user.email}
+                  </p>
                   <span className="relative inline-flex">
                     <Avatar className="w-5 h-5">
                       <img
-                        src={user.user_metadata?.avatar_url || "/default-avatar.png"}
+                        src={
+                          user.user_metadata?.avatar_url ||
+                          "/default-avatar.png"
+                        }
                         alt="User Avatar"
                       />
                     </Avatar>
@@ -165,7 +170,13 @@ export function Navbar() {
                   leaderboard
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/guild")}>
-                  <FaUsers className={hasGuildInvite && menuOpen ? "text-red-500 animate-pulse" : ""} />
+                  <FaUsers
+                    className={
+                      hasGuildInvite && menuOpen
+                        ? "text-red-500 animate-pulse"
+                        : ""
+                    }
+                  />
                   guild
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/reports")}>
@@ -185,10 +196,7 @@ export function Navbar() {
                   {theme === "dark" ? <FaSun /> : <FaMoon />}
                   theme
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  variant="destructive"
-                >
+                <DropdownMenuItem onClick={handleLogout} variant="destructive">
                   <FaPowerOff />
                   logout
                 </DropdownMenuItem>
@@ -211,7 +219,11 @@ export function Navbar() {
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="md:hidden p-2 hover:bg-secondary/20 rounded-md flex-1 flex justify-end"
         >
-          {mobileMenuOpen ? <FaXmark className="w-5 h-5" /> : <FaBars className="w-5 h-5" />}
+          {mobileMenuOpen ? (
+            <FaXmark className="w-5 h-5" />
+          ) : (
+            <FaBars className="w-5 h-5" />
+          )}
         </button>
       </nav>
 
@@ -268,11 +280,15 @@ export function Navbar() {
                 <div className="flex items-center gap-2 py-2 border-t border-border">
                   <Avatar className="w-8 h-8">
                     <img
-                      src={user.user_metadata?.avatar_url || "/default-avatar.png"}
+                      src={
+                        user.user_metadata?.avatar_url || "/default-avatar.png"
+                      }
                       alt="User Avatar"
                     />
                   </Avatar>
-                  <span className="text-sm">{user.user_metadata?.user_name || user.email}</span>
+                  <span className="text-sm">
+                    {user.user_metadata?.user_name || user.email}
+                  </span>
                 </div>
                 <Button
                   onClick={() => {

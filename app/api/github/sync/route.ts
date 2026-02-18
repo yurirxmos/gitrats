@@ -30,7 +30,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!userData || !userData.github_username) {
-      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Usuário não encontrado" },
+        { status: 404 },
+      );
     }
 
     // Sempre verificar se há token mais recente na sessão
@@ -42,33 +45,37 @@ export async function POST(request: NextRequest) {
 
     // Se token da sessão é diferente do banco, atualizar
     if (sessionToken && sessionToken !== userData.github_access_token) {
-      console.log(`[Sync] ${userData.github_username} - Atualizando token do banco com token da sessão`);
-      await supabase.from("users").update({ github_access_token: sessionToken }).eq("id", user.id);
+      console.log(
+        `[Sync] ${userData.github_username} - Atualizando token do banco com token da sessão`,
+      );
+      await supabase
+        .from("users")
+        .update({ github_access_token: sessionToken })
+        .eq("id", user.id);
       userData.github_access_token = sessionToken;
     }
 
     // Se não há token no banco nem na sessão
     if (!userData.github_access_token) {
-      console.error(`[Sync] ${userData.github_username} - Nenhum token disponível`);
-
-      try {
-        await supabase.auth.signOut();
-      } catch (logoutError) {
-        console.error(`[Sync] ${userData.github_username} - Erro ao fazer logout:`, logoutError);
-      }
+      console.error(
+        `[Sync] ${userData.github_username} - Nenhum token disponível`,
+      );
 
       return NextResponse.json(
         {
-          error: "Token GitHub expirado. Você foi desconectado para renovar o acesso.",
+          error:
+            "Token GitHub expirado. Reconecte sua conta GitHub para continuar ganhando XP.",
           username: userData.github_username,
-          action: "logout_required",
-          redirect_to: "/auth/login",
+          action: "reconnect_required",
+          reconnect_to: "/",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    const userCreatedAt = userData.created_at ? new Date(userData.created_at) : new Date();
+    const userCreatedAt = userData.created_at
+      ? new Date(userData.created_at)
+      : new Date();
 
     const { data: character } = await supabase
       .from("characters")
@@ -77,19 +84,30 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!character) {
-      return NextResponse.json({ error: "Personagem não encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Personagem não encontrado" },
+        { status: 404 },
+      );
     }
 
-    const githubService = new GitHubService(userData.github_access_token || undefined);
+    const githubService = new GitHubService(
+      userData.github_access_token || undefined,
+    );
 
     let githubStats;
     try {
       githubStats = await githubService.getUserStats(userData.github_username);
     } catch (error: any) {
-      console.error(`[Sync] ${userData.github_username} - Erro ao buscar stats:`, error.message);
+      console.error(
+        `[Sync] ${userData.github_username} - Erro ao buscar stats:`,
+        error.message,
+      );
 
-      // Se token inválido, forçar logout para renovar OAuth
-      if (error.message.includes("inválido") || error.message.includes("expirado")) {
+      // Se token inválido, solicitar reconexão OAuth
+      if (
+        error.message.includes("inválido") ||
+        error.message.includes("expirado")
+      ) {
         // Tentar pegar token da sessão atual primeiro
         const {
           data: { session },
@@ -99,36 +117,47 @@ export async function POST(request: NextRequest) {
 
         // Se tem token na sessão e é diferente do banco, tentar usar
         if (currentToken && currentToken !== userData.github_access_token) {
-          console.log(`[Sync] ${userData.github_username} - Tentando token da sessão atual`);
+          console.log(
+            `[Sync] ${userData.github_username} - Tentando token da sessão atual`,
+          );
 
-          await supabase.from("users").update({ github_access_token: currentToken }).eq("id", user.id);
+          await supabase
+            .from("users")
+            .update({ github_access_token: currentToken })
+            .eq("id", user.id);
 
           const newGithubService = new GitHubService(currentToken);
           try {
-            githubStats = await newGithubService.getUserStats(userData.github_username);
-            console.log(`[Sync] ${userData.github_username} - Token da sessão funcionou!`);
+            githubStats = await newGithubService.getUserStats(
+              userData.github_username,
+            );
+            console.log(
+              `[Sync] ${userData.github_username} - Token da sessão funcionou!`,
+            );
           } catch (retryError: any) {
-            console.error(`[Sync] ${userData.github_username} - Token da sessão também falhou:`, retryError.message);
-            // Forçar logout para renovar OAuth
-            await supabase.auth.signOut();
+            console.error(
+              `[Sync] ${userData.github_username} - Token da sessão também falhou:`,
+              retryError.message,
+            );
             return NextResponse.json(
               {
-                error: "Token GitHub expirado. Redirecionando para login...",
-                action: "logout_required",
+                error: "Token GitHub expirado. Reconecte sua conta GitHub.",
+                action: "reconnect_required",
               },
-              { status: 401 }
+              { status: 401 },
             );
           }
         } else {
-          // Sem token válido, forçar logout
-          console.log(`[Sync] ${userData.github_username} - Nenhum token válido encontrado, forçando logout`);
-          await supabase.auth.signOut();
+          // Sem token válido, solicitar reconexão sem derrubar sessão
+          console.log(
+            `[Sync] ${userData.github_username} - Nenhum token válido encontrado, reconexão necessária`,
+          );
           return NextResponse.json(
             {
-              error: "Token GitHub expirado. Faça login novamente.",
-              action: "logout_required",
+              error: "Token GitHub expirado. Reconecte sua conta GitHub.",
+              action: "reconnect_required",
             },
-            { status: 401 }
+            { status: 401 },
           );
         }
       } else {
@@ -140,43 +169,51 @@ export async function POST(request: NextRequest) {
     let { data: currentStats } = await supabase
       .from("github_stats")
       .select(
-        "total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, baseline_issues, baseline_reviews, last_sync_at"
+        "total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, baseline_issues, baseline_reviews, last_sync_at",
       )
       .eq("user_id", userData.id)
       .maybeSingle();
 
     // Se não existir registro, criar e buscar novamente
     if (!currentStats) {
-      const { error: insertError } = await supabase.from("github_stats").insert({
-        user_id: userData.id,
-        total_commits: 0,
-        total_prs: 0,
-        total_issues: 0,
-        total_reviews: 0,
-        baseline_commits: 0,
-        baseline_prs: 0,
-        baseline_issues: 0,
-        baseline_reviews: 0,
-        last_sync_at: null,
-      });
+      const { error: insertError } = await supabase
+        .from("github_stats")
+        .insert({
+          user_id: userData.id,
+          total_commits: 0,
+          total_prs: 0,
+          total_issues: 0,
+          total_reviews: 0,
+          baseline_commits: 0,
+          baseline_prs: 0,
+          baseline_issues: 0,
+          baseline_reviews: 0,
+          last_sync_at: null,
+        });
 
       if (insertError) {
         console.error("[Sync] Erro ao criar github_stats:", insertError);
-        return NextResponse.json({ error: "Erro ao criar estatísticas" }, { status: 500 });
+        return NextResponse.json(
+          { error: "Erro ao criar estatísticas" },
+          { status: 500 },
+        );
       }
 
       // Buscar o registro recém-criado
       const { data: newStats, error: fetchError } = await supabase
         .from("github_stats")
         .select(
-          "total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, baseline_issues, baseline_reviews, last_sync_at"
+          "total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, baseline_issues, baseline_reviews, last_sync_at",
         )
         .eq("user_id", userData.id)
         .single();
 
       if (fetchError || !newStats) {
         console.error("[Sync] Erro ao buscar stats recém-criados:", fetchError);
-        return NextResponse.json({ error: "Erro ao buscar estatísticas" }, { status: 500 });
+        return NextResponse.json(
+          { error: "Erro ao buscar estatísticas" },
+          { status: 500 },
+        );
       }
 
       currentStats = newStats;
@@ -199,23 +236,48 @@ export async function POST(request: NextRequest) {
       try {
         weeklyStats = await githubService.getWeeklyXp(userData.github_username);
       } catch (error) {
-        console.error("[Sync - Fix] Erro ao buscar XP semanal, usando 0:", error);
+        console.error(
+          "[Sync - Fix] Erro ao buscar XP semanal, usando 0:",
+          error,
+        );
       }
 
       // Calcular novo baseline (total - últimos 7 dias)
-      const newBaselineCommits = Math.max(0, githubStats.totalCommits - weeklyStats.commits);
-      const newBaselinePRs = Math.max(0, githubStats.totalPRs - weeklyStats.prs);
-      const newBaselineIssues = Math.max(0, githubStats.totalIssues - weeklyStats.issues);
+      const newBaselineCommits = Math.max(
+        0,
+        githubStats.totalCommits - weeklyStats.commits,
+      );
+      const newBaselinePRs = Math.max(
+        0,
+        githubStats.totalPRs - weeklyStats.prs,
+      );
+      const newBaselineIssues = Math.max(
+        0,
+        githubStats.totalIssues - weeklyStats.issues,
+      );
 
       // Aplicar multiplicadores de classe
-      const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
-      const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
-      const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
+      const commitMultiplier = getClassXpMultiplier(
+        character.class as any,
+        "commits",
+      );
+      const prMultiplier = getClassXpMultiplier(
+        character.class as any,
+        "pullRequests",
+      );
+      const issueMultiplier = getClassXpMultiplier(
+        character.class as any,
+        "issuesResolved",
+      );
 
       // Calcular XP retroativo
-      const xpFromCommits = Math.floor(weeklyStats.commits * 10 * commitMultiplier);
+      const xpFromCommits = Math.floor(
+        weeklyStats.commits * 10 * commitMultiplier,
+      );
       const xpFromPRs = Math.floor(weeklyStats.prs * 50 * prMultiplier);
-      const xpFromIssues = Math.floor(weeklyStats.issues * 25 * issueMultiplier);
+      const xpFromIssues = Math.floor(
+        weeklyStats.issues * 25 * issueMultiplier,
+      );
       const retroactiveXp = xpFromCommits + xpFromPRs + xpFromIssues;
 
       // Atualizar baseline
@@ -297,17 +359,32 @@ export async function POST(request: NextRequest) {
 
       try {
         // Buscar atividades desde a data de criação do usuário
-        activitiesSinceJoin = await githubService.getActivitiesSince(userData.github_username, userCreatedAt);
+        activitiesSinceJoin = await githubService.getActivitiesSince(
+          userData.github_username,
+          userCreatedAt,
+        );
       } catch (error) {
-        console.error("[Sync - First] Erro ao buscar atividades desde o registro:", error);
+        console.error(
+          "[Sync - First] Erro ao buscar atividades desde o registro:",
+          error,
+        );
         // Continua com 0, não falha a primeira sync
       }
 
       // Calcular baseline: total atual MENOS as atividades desde o registro
       // Assim apenas atividades após o registro vão gerar XP
-      const baselineCommits = Math.max(0, githubStats.totalCommits - activitiesSinceJoin.commits);
-      const baselinePRs = Math.max(0, githubStats.totalPRs - activitiesSinceJoin.prs);
-      const baselineIssues = Math.max(0, githubStats.totalIssues - activitiesSinceJoin.issues);
+      const baselineCommits = Math.max(
+        0,
+        githubStats.totalCommits - activitiesSinceJoin.commits,
+      );
+      const baselinePRs = Math.max(
+        0,
+        githubStats.totalPRs - activitiesSinceJoin.prs,
+      );
+      const baselineIssues = Math.max(
+        0,
+        githubStats.totalIssues - activitiesSinceJoin.issues,
+      );
 
       // Para o XP inicial, usar apenas os últimos 7 dias (não todas as atividades desde o registro)
       let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
@@ -318,14 +395,27 @@ export async function POST(request: NextRequest) {
       }
 
       // Aplicar multiplicadores de classe
-      const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
-      const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
-      const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
+      const commitMultiplier = getClassXpMultiplier(
+        character.class as any,
+        "commits",
+      );
+      const prMultiplier = getClassXpMultiplier(
+        character.class as any,
+        "pullRequests",
+      );
+      const issueMultiplier = getClassXpMultiplier(
+        character.class as any,
+        "issuesResolved",
+      );
 
       // Calcular XP inicial (apenas últimos 7 dias)
-      const xpFromCommits = Math.floor(weeklyStats.commits * 10 * commitMultiplier);
+      const xpFromCommits = Math.floor(
+        weeklyStats.commits * 10 * commitMultiplier,
+      );
       const xpFromPRs = Math.floor(weeklyStats.prs * 50 * prMultiplier);
-      const xpFromIssues = Math.floor(weeklyStats.issues * 25 * issueMultiplier);
+      const xpFromIssues = Math.floor(
+        weeklyStats.issues * 25 * issueMultiplier,
+      );
       const initialXp = xpFromCommits + xpFromPRs + xpFromIssues;
 
       // Atualizar stats com baseline ajustado
@@ -345,7 +435,10 @@ export async function POST(request: NextRequest) {
 
       if (upsertError) {
         console.error(`[Sync] Erro ao atualizar github_stats:`, upsertError);
-        return NextResponse.json({ error: `Erro ao salvar stats: ${upsertError.message}` }, { status: 500 });
+        return NextResponse.json(
+          { error: `Erro ao salvar stats: ${upsertError.message}` },
+          { status: 500 },
+        );
       }
 
       // Atualizar personagem com XP inicial
@@ -377,14 +470,18 @@ export async function POST(request: NextRequest) {
             xp_gained: initialXp,
             new_total_xp: newTotalXp,
             new_level: newLevel,
-            activities_synced: weeklyStats.commits + weeklyStats.prs + weeklyStats.issues,
+            activities_synced:
+              weeklyStats.commits + weeklyStats.prs + weeklyStats.issues,
             stats: {
               commits: weeklyStats.commits,
               prs: weeklyStats.prs,
               issues: weeklyStats.issues,
               total_commits: githubStats.totalCommits,
               total_prs: githubStats.totalPRs,
-              total_since_join: activitiesSinceJoin.commits + activitiesSinceJoin.prs + activitiesSinceJoin.issues,
+              total_since_join:
+                activitiesSinceJoin.commits +
+                activitiesSinceJoin.prs +
+                activitiesSinceJoin.issues,
             },
           },
         });
@@ -401,19 +498,31 @@ export async function POST(request: NextRequest) {
             prs: 0,
             total_commits: githubStats.totalCommits,
             total_prs: githubStats.totalPRs,
-            total_since_join: activitiesSinceJoin.commits + activitiesSinceJoin.prs,
+            total_since_join:
+              activitiesSinceJoin.commits + activitiesSinceJoin.prs,
           },
         },
       });
     }
 
-    const newCommits = githubStats.totalCommits - (currentStats.total_commits || 0);
+    const newCommits =
+      githubStats.totalCommits - (currentStats.total_commits || 0);
     const newPRs = githubStats.totalPRs - (currentStats.total_prs || 0);
-    const newIssues = githubStats.totalIssues - (currentStats.total_issues || 0);
+    const newIssues =
+      githubStats.totalIssues - (currentStats.total_issues || 0);
 
-    const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
-    const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
-    const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
+    const commitMultiplier = getClassXpMultiplier(
+      character.class as any,
+      "commits",
+    );
+    const prMultiplier = getClassXpMultiplier(
+      character.class as any,
+      "pullRequests",
+    );
+    const issueMultiplier = getClassXpMultiplier(
+      character.class as any,
+      "issuesResolved",
+    );
 
     const xpFromCommits = Math.floor(newCommits * 10 * commitMultiplier);
     const xpFromPRs = Math.floor(newPRs * 50 * prMultiplier);
@@ -492,7 +601,7 @@ export async function POST(request: NextRequest) {
     console.error("[Sync] Erro:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Erro ao sincronizar" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

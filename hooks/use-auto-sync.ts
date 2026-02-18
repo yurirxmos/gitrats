@@ -39,8 +39,7 @@ export function useAutoSync(hasCharacter: boolean) {
         if (response.ok) {
           lastSyncRef.current = now;
         } else if (response.status === 401) {
-          // Token expirado - usuário foi desconectado
-          window.location.href = "/";
+          return;
         }
       } catch (error) {
         // Silencioso em produção
@@ -57,7 +56,7 @@ export function useAutoSync(hasCharacter: boolean) {
       () => {
         performSync();
       },
-      10 * 60 * 1000
+      10 * 60 * 1000,
     );
 
     // Cleanup
