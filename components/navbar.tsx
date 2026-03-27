@@ -92,6 +92,7 @@ export function Navbar() {
                 size={"icon"}
                 className=""
                 onClick={() => router.push("/docs")}
+                aria-label="Abrir ajuda"
               >
                 <HelpCircleIcon />{" "}
               </Button>
@@ -105,7 +106,7 @@ export function Navbar() {
 
         {/* Logo */}
         <Link
-          href="/leaderboard"
+          href={user ? "/leaderboard" : "/"}
           className="flex items-center gap-1 absolute left-1/2 -translate-x-1/2"
         >
           <Image
@@ -218,6 +219,7 @@ export function Navbar() {
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="md:hidden p-2 hover:bg-secondary/20 rounded-md flex-1 flex justify-end"
+          aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
         >
           {mobileMenuOpen ? (
             <FaXmark className="w-5 h-5" />

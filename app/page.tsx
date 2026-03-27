@@ -1,19 +1,37 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import logo from "@/assets/github.png";
-import { FaGithub, FaUser, FaTrophy, FaArrowRight } from "react-icons/fa6";
+import {
+  FaArrowRight,
+  FaGithub,
+  FaGear,
+  FaTrophy,
+  FaUser,
+} from "react-icons/fa6";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useEffect, useRef } from "react";
-import { Navbar } from "@/components/navbar";
 import { useUserContext } from "@/contexts/user-context";
 import { useAutoSync } from "@/hooks/use-auto-sync";
-import { useRouter } from "next/navigation";
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { user, hasCharacter, loading } = useUserContext();
+  const [isContinueJourneyOpen, setIsContinueJourneyOpen] = useState(false);
+  const [dismissedContinueJourneyUserId, setDismissedContinueJourneyUserId] =
+    useState<string | null>(null);
+  const { user, userProfile, hasCharacter, loading } = useUserContext();
   const router = useRouter();
+  const canShowContinueJourney = !!user && hasCharacter && !!userProfile;
+  const continueJourneyUserId = canShowContinueJourney ? user.id : null;
 
   useAutoSync(hasCharacter);
 
@@ -77,7 +95,10 @@ export default function Home() {
         }
 
         // Se por qualquer motivo ficar praticamente parado no fundo, reimpulsiona
-        if (this.y + PIXEL_SIZE >= canvasHeight - 0.5 && Math.abs(this.velocityY) < 0.05) {
+        if (
+          this.y + PIXEL_SIZE >= canvasHeight - 0.5 &&
+          Math.abs(this.velocityY) < 0.05
+        ) {
           this.velocityY = -(3 + Math.random() * 2);
         }
       }
@@ -88,7 +109,10 @@ export default function Home() {
       }
     }
 
-    const pixels = Array.from({ length: NUM_PIXELS }, () => new Pixel(canvas.width, canvas.height));
+    const pixels = Array.from(
+      { length: NUM_PIXELS },
+      () => new Pixel(canvas.width, canvas.height),
+    );
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -115,6 +139,33 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      setDismissedContinueJourneyUserId(null);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!continueJourneyUserId) {
+      setIsContinueJourneyOpen(false);
+      return;
+    }
+
+    if (dismissedContinueJourneyUserId === continueJourneyUserId) {
+      return;
+    }
+
+    setIsContinueJourneyOpen(true);
+  }, [continueJourneyUserId, dismissedContinueJourneyUserId]);
+
+  const handleContinueJourneyOpenChange = (open: boolean) => {
+    setIsContinueJourneyOpen(open);
+
+    if (!open && continueJourneyUserId) {
+      setDismissedContinueJourneyUserId(continueJourneyUserId);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background relative bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] animate-[grid-move_2s_linear_infinite] pt-[52px]">
       <canvas
@@ -130,11 +181,14 @@ export default function Home() {
               alt="Gitrats Logo"
               className="w-15 h-15 dark:invert"
             />
-            <h1 className="text-5xl md:text-7xl font-black text-foreground">GITRATS</h1>
+            <h1 className="text-5xl md:text-7xl font-black text-foreground">
+              GITRATS
+            </h1>
           </div>
 
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-            Transforme seus commits e pull requests em experiência. Crie seu personagem e domine o leaderboard.
+            Transforme seus commits e pull requests em experiência. Crie seu
+            personagem e domine o leaderboard.
           </p>
 
           <div className="flex flex-row items-stretch justify-center gap-8 mt-12 flex-wrap">
@@ -144,7 +198,9 @@ export default function Home() {
                 <FaGithub className="text-3xl text-foreground" />
               </div>
               <h3 className="text-lg font-bold">Conecte seu GitHub</h3>
-              <p className="text-sm text-muted-foreground">Faça login com sua conta GitHub e comece sua jornada</p>
+              <p className="text-sm text-muted-foreground">
+                Faça login com sua conta GitHub e comece sua jornada
+              </p>
             </div>
 
             <FaArrowRight className="hidden md:block self-center text-4xl text-muted-foreground shrink-0" />
@@ -155,7 +211,9 @@ export default function Home() {
                 <FaUser className="text-3xl text-foreground" />
               </div>
               <h3 className="text-lg font-bold">Crie seu Personagem</h3>
-              <p className="text-sm text-muted-foreground">Customize seu personagem e prepare-se para evoluir</p>
+              <p className="text-sm text-muted-foreground">
+                Customize seu personagem e prepare-se para evoluir
+              </p>
             </div>
 
             <FaArrowRight className="hidden md:block self-center text-4xl text-muted-foreground shrink-0" />
@@ -166,9 +224,53 @@ export default function Home() {
                 <FaTrophy className="text-3xl text-foreground" />
               </div>
               <h3 className="text-lg font-bold">Domine o Leaderboard</h3>
-              <p className="text-sm text-muted-foreground">Ganhe XP com seus commits e conquiste o topo</p>
+              <p className="text-sm text-muted-foreground">
+                Ganhe XP com seus commits e conquiste o topo
+              </p>
             </div>
           </div>
+
+          {canShowContinueJourney && userProfile && (
+            <Dialog
+              open={isContinueJourneyOpen}
+              onOpenChange={handleContinueJourneyOpenChange}
+            >
+              <DialogContent className="border-border/70 bg-card/95 p-6 shadow-2xl backdrop-blur sm:max-w-xl">
+                <DialogHeader className="space-y-3 text-left">
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">
+                    Continuar jornada
+                  </p>
+                  <DialogTitle className="break-words text-2xl font-black leading-tight">
+                    {userProfile.character_name}, seu progresso continua no
+                    leaderboard
+                  </DialogTitle>
+                  <DialogDescription className="break-words text-sm leading-6 text-muted-foreground">
+                    Você está no nível {userProfile.level} como{" "}
+                    {userProfile.character_class}. Volte para acompanhar seu XP,
+                    ranking e próximos passos.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-3 pt-2 sm:grid-cols-2">
+                  <DialogClose asChild>
+                    <Button onClick={() => router.push("/leaderboard")}>
+                      Voltar ao leaderboard
+                    </Button>
+                  </DialogClose>
+
+                  <DialogClose asChild>
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push("/configs")}
+                    >
+                      <FaGear className="text-sm" />
+                      Ajustar perfil
+                    </Button>
+                  </DialogClose>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
 
           {!loading && !hasCharacter && (
             <div className="flex flex-col gap-4 items-center">

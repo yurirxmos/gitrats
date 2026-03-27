@@ -17,6 +17,67 @@ export interface GitHubUserStats {
   totalIssues: number;
 }
 
+interface ContributionCollection {
+  totalCommitContributions?: number | null;
+  totalPullRequestContributions?: number | null;
+  totalIssueContributions?: number | null;
+  totalPullRequestReviewContributions?: number | null;
+}
+
+type ContributionSubject = Record<
+  string,
+  ContributionCollection | null | undefined
+> & {
+  contributionsCollection?: ContributionCollection | null;
+};
+
+interface ContributionQueryResponse {
+  subject?: ContributionSubject | null;
+}
+
+interface ContributionSnapshot {
+  commits: number;
+  prs: number;
+  issues: number;
+  reviews: number;
+}
+
+export interface GitHubCommitSearchResult {
+  sha: string;
+  message: string;
+  repoName: string;
+  timestamp: Date;
+  url: string;
+}
+
+export interface GitHubIssueSearchResult {
+  id: string;
+  title: string;
+  repoName: string;
+  number: number;
+  closedAt: Date;
+  url: string;
+}
+
+export interface GitHubPullRequestSearchResult {
+  id: string;
+  title: string;
+  repoName: string;
+  number: number;
+  createdAt: Date;
+  url: string;
+}
+
+interface GitHubIssueSearchApiItem {
+  node_id: string;
+  title: string;
+  repository_url: string;
+  number: number;
+  closed_at: string | null;
+  html_url: string;
+  pull_request?: Record<string, unknown>;
+}
+
 export class GitHubService {
   private octokit: Octokit;
   private graphqlWithAuth: typeof graphql;
@@ -24,7 +85,9 @@ export class GitHubService {
 
   constructor(accessToken?: string) {
     if (!accessToken) {
-      console.warn("[GitHubService] Criado sem token de acesso - algumas APIs podem falhar");
+      console.warn(
+        "[GitHubService] Criado sem token de acesso - algumas APIs podem falhar",
+      );
     }
 
     this.octokit = new Octokit({
@@ -50,6 +113,136 @@ export class GitHubService {
     return this.authenticatedLogin;
   }
 
+  private async getContributionTarget(username: string): Promise<{
+    root: string;
+    variableDefinitions: string[];
+    variables: Record<string, string>;
+  }> {
+    const login = await this.ensureAuthenticatedLogin();
+
+    if (login && login.toLowerCase() === username.toLowerCase()) {
+      return {
+        root: "viewer",
+        variableDefinitions: [],
+        variables: {},
+      };
+    }
+
+    return {
+      root: "user(login: $username)",
+      variableDefinitions: ["$username: String!"],
+      variables: { username },
+    };
+  }
+
+  private buildQuery(variableDefinitions: string[], body: string): string {
+    const signature = variableDefinitions.length
+      ? `(${variableDefinitions.join(", ")})`
+      : "";
+
+    return `query${signature} { ${body} }`;
+  }
+
+  private toContributionSnapshot(
+    collection: ContributionCollection | null | undefined,
+  ): ContributionSnapshot {
+    return {
+      commits: Number(collection?.totalCommitContributions) || 0,
+      prs: Number(collection?.totalPullRequestContributions) || 0,
+      issues: Number(collection?.totalIssueContributions) || 0,
+      reviews: Number(collection?.totalPullRequestReviewContributions) || 0,
+    };
+  }
+
+  private async getContributionCollectionByRange(
+    username: string,
+    from: string,
+    to: string,
+  ): Promise<ContributionSnapshot> {
+    const target = await this.getContributionTarget(username);
+    const query = this.buildQuery(
+      [...target.variableDefinitions, "$from: DateTime!", "$to: DateTime!"],
+      `
+        subject: ${target.root} {
+          contributionsCollection(from: $from, to: $to) {
+            totalCommitContributions
+            totalIssueContributions
+            totalPullRequestContributions
+            totalPullRequestReviewContributions
+          }
+        }
+      `,
+    );
+
+    const response = (await this.graphqlWithAuth(query, {
+      ...target.variables,
+      from,
+      to,
+    })) as ContributionQueryResponse;
+
+    if (!response.subject?.contributionsCollection) {
+      throw new Error("Dados de contribuição não encontrados");
+    }
+
+    return this.toContributionSnapshot(
+      response.subject.contributionsCollection,
+    );
+  }
+
+  private async collectSearchResults<T>(
+    requestPage: (page: number) => Promise<T[]>,
+  ): Promise<T[]> {
+    const allItems: T[] = [];
+
+    for (let page = 1; page <= 10; page += 1) {
+      const items = await requestPage(page);
+      allItems.push(...items);
+
+      if (items.length < 100) {
+        break;
+      }
+    }
+
+    return allItems;
+  }
+
+  private getRepoOwnerAndName(repositoryUrl: string): {
+    owner: string;
+    repo: string;
+  } | null {
+    const repoPath = repositoryUrl.split("/repos/")[1];
+
+    if (!repoPath) return null;
+
+    const [owner, repo] = repoPath.split("/");
+
+    if (!owner || !repo) return null;
+
+    return { owner, repo };
+  }
+
+  private async wasIssueClosedByUser(
+    repositoryUrl: string,
+    issueNumber: number,
+    username: string,
+  ): Promise<boolean> {
+    const repoInfo = this.getRepoOwnerAndName(repositoryUrl);
+
+    if (!repoInfo) return false;
+
+    const { data: issue } = await this.octokit.rest.issues.get({
+      owner: repoInfo.owner,
+      repo: repoInfo.repo,
+      issue_number: issueNumber,
+    });
+
+    if (issue.pull_request) {
+      return false;
+    }
+
+    return issue.closed_by?.login?.toLowerCase() === username.toLowerCase();
+  }
+
   /**
    * Busca estatísticas completas do usuário do GitHub
    */
@@ -71,8 +264,14 @@ export class GitHubService {
       });
 
       const totalRepos = user.public_repos;
-      const totalStars = repos.reduce((sum: number, repo: any) => sum + (repo.stargazers_count || 0), 0);
-      const totalForks = repos.reduce((sum: number, repo: any) => sum + (repo.forks_count || 0), 0);
+      const totalStars = repos.reduce(
+        (sum: number, repo: any) => sum + (repo.stargazers_count || 0),
+        0,
+      );
+      const totalForks = repos.reduce(
+        (sum: number, repo: any) => sum + (repo.forks_count || 0),
+        0,
+      );
 
       return {
         username,
@@ -94,15 +293,21 @@ export class GitHubService {
 
       // Token inválido/expirado
       if (error.status === 401) {
-        throw new Error("GitHub token inválido ou expirado. Faça login novamente.");
+        throw new Error(
+          "GitHub token inválido ou expirado. Faça login novamente.",
+        );
       }
 
       // Rate limit
       if (error.status === 403) {
-        throw new Error("Rate limit do GitHub excedido. Tente novamente mais tarde.");
+        throw new Error(
+          "Rate limit do GitHub excedido. Tente novamente mais tarde.",
+        );
       }
 
-      throw new Error(`Erro ao buscar estatísticas do GitHub: ${error.message || "Unknown error"}`);
+      throw new Error(
+        `Erro ao buscar estatísticas do GitHub: ${error.message || "Unknown error"}`,
+      );
     }
   }
 
@@ -118,64 +323,42 @@ export class GitHubService {
   }> {
     try {
       const currentYear = new Date().getFullYear();
-      const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
+      const years = [
+        currentYear,
+        currentYear - 1,
+        currentYear - 2,
+        currentYear - 3,
+      ];
 
-      const login = await this.ensureAuthenticatedLogin();
-      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
-
-      const query = `
-        query($username: String!) {
-          user(login: $username) {
-            contributionsCollection {
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
-              totalPullRequestReviewContributions
-            }
+      const target = await this.getContributionTarget(username);
+      const query = this.buildQuery(
+        target.variableDefinitions,
+        `
+          subject: ${target.root} {
             ${years
               .map(
                 (year) => `
-            contributionsCollection${year}: contributionsCollection(
-              from: "${year}-01-01T00:00:00Z", 
-              to: "${year}-12-31T23:59:59Z"
-            ) {
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
-              totalPullRequestReviewContributions
-            }
-            `
+              contributionsCollection${year}: contributionsCollection(
+                from: "${year}-01-01T00:00:00Z",
+                to: "${year}-12-31T23:59:59Z"
+              ) {
+                totalCommitContributions
+                totalIssueContributions
+                totalPullRequestContributions
+                totalPullRequestReviewContributions
+              }
+            `,
               )
               .join("")}
           }
-          viewer {
-            contributionsCollection {
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
-              totalPullRequestReviewContributions
-            }
-            ${years
-              .map(
-                (year) => `
-            contributionsCollection${year}: contributionsCollection(
-              from: "${year}-01-01T00:00:00Z", 
-              to: "${year}-12-31T23:59:59Z"
-            ) {
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
-              totalPullRequestReviewContributions
-            }
-            `
-              )
-              .join("")}
-          }
-        }
-      `;
+        `,
+      );
 
-      const response: Record<string, any> = await this.graphqlWithAuth(query, { username });
-      const node = useViewer ? response.viewer : response.user;
+      const response = (await this.graphqlWithAuth(
+        query,
+        target.variables,
+      )) as ContributionQueryResponse;
+      const node = response.subject;
 
       if (!node) {
         throw new Error(`Usuário ${username} não encontrado`);
@@ -192,12 +375,11 @@ export class GitHubService {
 
       collections.forEach((key) => {
         const collection = node[key];
-        if (collection && typeof collection === "object") {
-          totalCommits += collection.totalCommitContributions || 0;
-          totalPRs += collection.totalPullRequestContributions || 0;
-          totalIssues += collection.totalIssueContributions || 0;
-          totalReviews += collection.totalPullRequestReviewContributions || 0;
-        }
+        const snapshot = this.toContributionSnapshot(collection);
+        totalCommits += snapshot.commits;
+        totalPRs += snapshot.prs;
+        totalIssues += snapshot.issues;
+        totalReviews += snapshot.reviews;
       });
 
       return {
@@ -207,7 +389,10 @@ export class GitHubService {
         totalReviews,
       };
     } catch (error) {
-      console.error("[GitHub Service] Erro ao buscar contribuições via GraphQL:", error);
+      console.error(
+        "[GitHub Service] Erro ao buscar contribuições via GraphQL:",
+        error,
+      );
       throw error;
     }
   }
@@ -218,54 +403,25 @@ export class GitHubService {
   async getActivityByDateRange(
     username: string,
     startDate: string,
-    endDate: string
-  ): Promise<{ commits: number; prs: number; issues: number; reviews: number }> {
-    const login = await this.ensureAuthenticatedLogin();
-    const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
-    const query = `
-      query($username: String!, $from: DateTime!, $to: DateTime!) {
-        user(login: $username) {
-          contributionsCollection(from: $from, to: $to) {
-            totalCommitContributions
-            totalPullRequestContributions
-            totalIssueContributions
-            totalPullRequestReviewContributions
-          }
-        }
-        viewer {
-          contributionsCollection(from: $from, to: $to) {
-            totalCommitContributions
-            totalPullRequestContributions
-            totalIssueContributions
-            totalPullRequestReviewContributions
-          }
-        }
-      }
-    `;
-    const response: Record<string, any> = await this.graphqlWithAuth(query, {
-      username,
-      from: startDate,
-      to: endDate,
-    });
-
-    const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
-
-    if (!collection) {
-      throw new Error("Dados de contribuição não encontrados");
-    }
-
-    return {
-      commits: Number(collection.totalCommitContributions) || 0,
-      prs: Number(collection.totalPullRequestContributions) || 0,
-      issues: Number(collection.totalIssueContributions) || 0,
-      reviews: Number(collection.totalPullRequestReviewContributions) || 0,
-    };
+    endDate: string,
+  ): Promise<{
+    commits: number;
+    prs: number;
+    issues: number;
+    reviews: number;
+  }> {
+    return this.getContributionCollectionByRange(username, startDate, endDate);
   }
 
   /**
    * Busca XP semanal (últimos 7 dias) via GraphQL
    */
-  async getWeeklyXp(username: string): Promise<{ commits: number; prs: number; issues: number; reviews: number }> {
+  async getWeeklyXp(username: string): Promise<{
+    commits: number;
+    prs: number;
+    issues: number;
+    reviews: number;
+  }> {
     try {
       const now = new Date();
       const startDate = new Date(now);
@@ -273,50 +429,12 @@ export class GitHubService {
 
       const fromDate = startDate.toISOString();
       const toDate = now.toISOString();
-
-      const login = await this.ensureAuthenticatedLogin();
-      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
-      const query = `
-        query($username: String!, $from: DateTime!, $to: DateTime!) {
-          user(login: $username) {
-            contributionsCollection(from: $from, to: $to) {
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
-              totalPullRequestReviewContributions
-            }
-          }
-          viewer {
-            contributionsCollection(from: $from, to: $to) {
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
-              totalPullRequestReviewContributions
-            }
-          }
-        }
-      `;
-
-      const response: Record<string, any> = await this.graphqlWithAuth(query, {
-        username,
-        from: fromDate,
-        to: toDate,
-      });
-
-      const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
-
-      if (!collection) {
-        throw new Error("Dados de contribuição não encontrados");
-      }
-
-      const commits = Number(collection.totalCommitContributions) || 0;
-      const prs = Number(collection.totalPullRequestContributions) || 0;
-      const issues = Number(collection.totalIssueContributions) || 0;
-      const reviews = Number(collection.totalPullRequestReviewContributions) || 0;
-
-      return { commits, prs, issues, reviews };
+      return this.getContributionCollectionByRange(username, fromDate, toDate);
     } catch (error) {
-      console.error("[GitHub Service] Erro ao buscar XP semanal via GraphQL:", error);
+      console.error(
+        "[GitHub Service] Erro ao buscar XP semanal via GraphQL:",
+        error,
+      );
       throw error;
     }
   }
@@ -327,55 +445,22 @@ export class GitHubService {
    */
   async getActivitiesSince(
     username: string,
-    startDate: Date
-  ): Promise<{ commits: number; prs: number; issues: number; reviews: number }> {
+    startDate: Date,
+  ): Promise<{
+    commits: number;
+    prs: number;
+    issues: number;
+    reviews: number;
+  }> {
     try {
       const fromDate = startDate.toISOString();
       const toDate = new Date().toISOString();
-
-      const login = await this.ensureAuthenticatedLogin();
-      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
-      const query = `
-        query($username: String!, $from: DateTime!, $to: DateTime!) {
-          user(login: $username) {
-            contributionsCollection(from: $from, to: $to) {
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
-              totalPullRequestReviewContributions
-            }
-          }
-          viewer {
-            contributionsCollection(from: $from, to: $to) {
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
-              totalPullRequestReviewContributions
-            }
-          }
-        }
-      `;
-
-      const response: Record<string, any> = await this.graphqlWithAuth(query, {
-        username,
-        from: fromDate,
-        to: toDate,
-      });
-
-      const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
-
-      if (!collection) {
-        throw new Error("Dados de contribuição não encontrados");
-      }
-
-      const commits = Number(collection.totalCommitContributions) || 0;
-      const prs = Number(collection.totalPullRequestContributions) || 0;
-      const issues = Number(collection.totalIssueContributions) || 0;
-      const reviews = Number(collection.totalPullRequestReviewContributions) || 0;
-
-      return { commits, prs, issues, reviews };
+      return this.getContributionCollectionByRange(username, fromDate, toDate);
     } catch (error) {
-      console.error(`[GitHub Service] Erro ao buscar atividades desde ${startDate}:`, error);
+      console.error(
+        `[GitHub Service] Erro ao buscar atividades desde ${startDate}:`,
+        error,
+      );
       return { commits: 0, prs: 0, issues: 0, reviews: 0 };
     }
   }
@@ -387,55 +472,22 @@ export class GitHubService {
   async getActivitiesBetween(
     username: string,
     startDate: Date,
-    endDate: Date
-  ): Promise<{ commits: number; prs: number; issues: number; reviews: number }> {
+    endDate: Date,
+  ): Promise<{
+    commits: number;
+    prs: number;
+    issues: number;
+    reviews: number;
+  }> {
     try {
       const fromDate = startDate.toISOString();
       const toDate = endDate.toISOString();
-
-      const login = await this.ensureAuthenticatedLogin();
-      const useViewer = !!login && login.toLowerCase() === username.toLowerCase();
-      const query = `
-        query($username: String!, $from: DateTime!, $to: DateTime!) {
-          user(login: $username) {
-            contributionsCollection(from: $from, to: $to) {
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
-              totalPullRequestReviewContributions
-            }
-          }
-          viewer {
-            contributionsCollection(from: $from, to: $to) {
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
-              totalPullRequestReviewContributions
-            }
-          }
-        }
-      `;
-
-      const response: Record<string, any> = await this.graphqlWithAuth(query, {
-        username,
-        from: fromDate,
-        to: toDate,
-      });
-
-      const collection = (useViewer ? response.viewer : response.user)?.contributionsCollection;
-
-      if (!collection) {
-        throw new Error("Dados de contribuição não encontrados");
-      }
-
-      const commits = Number(collection.totalCommitContributions) || 0;
-      const prs = Number(collection.totalPullRequestContributions) || 0;
-      const issues = Number(collection.totalIssueContributions) || 0;
-      const reviews = Number(collection.totalPullRequestReviewContributions) || 0;
-
-      return { commits, prs, issues, reviews };
+      return this.getContributionCollectionByRange(username, fromDate, toDate);
     } catch (error) {
-      console.error(`[GitHub Service] Erro ao buscar atividades entre ${startDate} e ${endDate}:`, error);
+      console.error(
+        `[GitHub Service] Erro ao buscar atividades entre ${startDate} e ${endDate}:`,
+        error,
+      );
       return { commits: 0, prs: 0, issues: 0, reviews: 0 };
     }
   }
@@ -458,16 +510,8 @@ export class GitHubService {
   async getCommitsViaSearch(
     username: string,
     startDate: Date | number = 7,
-    endDate?: Date
-  ): Promise<
-    Array<{
-      sha: string;
-      message: string;
-      repoName: string;
-      timestamp: Date;
-      url: string;
-    }>
-  > {
+    endDate?: Date,
+  ): Promise<GitHubCommitSearchResult[]> {
     try {
       // Se startDate é número, converter para data (dias atrás)
       let fromDate: Date;
@@ -481,28 +525,143 @@ export class GitHubService {
       const fromDateStr = fromDate.toISOString().split("T")[0]; // YYYY-MM-DD
       const toDateStr = toDate.toISOString().split("T")[0]; // YYYY-MM-DD
 
-      console.log(`[GitHub Search] Buscando commits de ${username} entre ${fromDateStr} e ${toDateStr}`);
+      console.log(
+        `[GitHub Search] Buscando commits de ${username} entre ${fromDateStr} e ${toDateStr}`,
+      );
 
-      // Busca commits usando Search API com filtro de data
-      const { data } = await this.octokit.rest.search.commits({
-        q: `author:${username} committer-date:${fromDateStr}..${toDateStr}`,
-        sort: "committer-date",
-        order: "desc",
-        per_page: 100,
+      const items = await this.collectSearchResults(async (page) => {
+        const { data } = await this.octokit.rest.search.commits({
+          q: `author:${username} committer-date:${fromDateStr}..${toDateStr}`,
+          sort: "committer-date",
+          order: "desc",
+          per_page: 100,
+          page,
+        });
+
+        return data.items;
       });
 
-      console.log(`[GitHub Search] Encontrados ${data.items.length} commits para ${username}`);
+      console.log(
+        `[GitHub Search] Encontrados ${items.length} commits para ${username}`,
+      );
 
-      return data.items.map((commit: any) => ({
+      return items.map((commit) => ({
         sha: commit.sha,
         message: commit.commit.message.split("\n")[0], // Apenas primeira linha
         repoName: commit.repository?.full_name || "unknown",
-        timestamp: new Date(commit.commit.committer?.date || commit.commit.author.date),
+        timestamp: new Date(
+          commit.commit.committer?.date || commit.commit.author.date,
+        ),
         url: commit.html_url,
       }));
     } catch (error) {
-      console.error(`[GitHub Search] Erro ao buscar commits para ${username}:`, error);
+      console.error(
+        `[GitHub Search] Erro ao buscar commits para ${username}:`,
+        error,
+      );
       // Retorna array vazio em caso de falha ao invés de quebrar
+      return [];
+    }
+  }
+
+  async getPullRequestsViaSearch(
+    username: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<GitHubPullRequestSearchResult[]> {
+    try {
+      const fromDateStr = startDate.toISOString().split("T")[0];
+      const toDateStr = endDate.toISOString().split("T")[0];
+
+      const items = await this.collectSearchResults(async (page) => {
+        const { data } = await this.octokit.rest.search.issuesAndPullRequests({
+          q: `author:${username} is:pr created:${fromDateStr}..${toDateStr}`,
+          sort: "created",
+          order: "desc",
+          per_page: 100,
+          page,
+        });
+
+        return data.items;
+      });
+
+      return items.map((item) => ({
+        id: item.node_id,
+        title: item.title,
+        repoName: item.repository_url.split("/repos/")[1] || "unknown",
+        number: item.number,
+        createdAt: new Date(item.created_at),
+        url: item.html_url,
+      }));
+    } catch (error) {
+      console.error(
+        `[GitHub Search] Erro ao buscar PRs para ${username}:`,
+        error,
+      );
+      return [];
+    }
+  }
+
+  async getIssuesViaSearch(
+    username: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<GitHubIssueSearchResult[]> {
+    try {
+      const fromDateStr = startDate.toISOString().split("T")[0];
+      const toDateStr = endDate.toISOString().split("T")[0];
+
+      const items = await this.collectSearchResults<GitHubIssueSearchApiItem>(
+        async (page) => {
+          const { data } = await this.octokit.rest.search.issuesAndPullRequests(
+            {
+              q: `involves:${username} is:issue is:closed closed:${fromDateStr}..${toDateStr}`,
+              sort: "updated",
+              order: "desc",
+              per_page: 100,
+              page,
+            },
+          );
+
+          return data.items as GitHubIssueSearchApiItem[];
+        },
+      );
+
+      const resolvedIssues = await Promise.all(
+        items
+          .filter((item) => !item.pull_request && item.closed_at)
+          .map(async (item) => {
+            const wasClosedByUser = await this.wasIssueClosedByUser(
+              item.repository_url,
+              item.number,
+              username,
+            );
+
+            if (!wasClosedByUser) return null;
+
+            const closedAt = item.closed_at;
+
+            if (!closedAt) return null;
+
+            return {
+              id: item.node_id,
+              title: item.title,
+              repoName: item.repository_url.split("/repos/")[1] || "unknown",
+              number: item.number,
+              closedAt: new Date(closedAt),
+              url: item.html_url,
+            };
+          }),
+      );
+
+      return resolvedIssues.filter(
+        (issue): issue is GitHubIssueSearchResult => issue !== null,
+      );
+    } catch (error) {
+      console.error(
+        `[GitHub Search] Erro ao buscar issues para ${username}:`,
+        error,
+      );
       return [];
     }
   }

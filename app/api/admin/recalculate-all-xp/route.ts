@@ -1,241 +1,148 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import GitHubService from "@/lib/github-service";
-import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
-import { getClassXpMultiplier } from "@/lib/classes";
+import { getCurrentXp, getLevelFromXp } from "@/lib/xp-system";
 import { getAdminUser } from "@/lib/auth-utils";
-import { EmailService } from "@/lib/email-service";
+import { recalculateGuildTotalsForUser } from "@/lib/guild";
+import {
+  fetchGitHubActivityEvents,
+  getAchievementXpTotal,
+  rebuildGithubActivityLedger,
+  replaceGitHubActivityEventsForUser,
+} from "@/lib/github-activity-ledger";
+import type { CharacterClass } from "@/lib/classes";
 
-/**
- * ADMIN - Recalcula XP de TODOS os usuários do zero
- * Usa multiplicadores atualizados das classes
- * CUIDADO: Isso vai resetar e recalcular XP de todo mundo
- */
-export async function POST(request: NextRequest) {
+function getRecalculationStartDate(createdAt: string | null): Date {
+  const base = createdAt ? new Date(createdAt) : new Date();
+  const safeBase = Number.isNaN(base.getTime()) ? new Date() : base;
+  const startDate = new Date(safeBase);
+  startDate.setDate(startDate.getDate() - 7);
+  return startDate;
+}
+
+export async function POST(_request: NextRequest) {
   try {
     const adminUser = await getAdminUser();
 
     if (!adminUser) {
-      return NextResponse.json({ error: "Acesso negado: apenas admin" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Acesso negado: apenas admin" },
+        { status: 403 },
+      );
     }
 
     const supabase = createAdminClient();
+    const { data: allUsers, error: userError } = await supabase
+      .from("users")
+      .select(
+        "id, github_username, github_access_token, created_at, characters(id, class, level, total_xp, current_xp)",
+      );
 
-    // Buscar TODOS os usuários com seus stats
-    const { data: allUsers, error: userQueryError } = await supabase.from("users").select(
-      `
-        id,
-        github_username,
-        github_access_token,
-        created_at,
-        characters(
-          id,
-          class,
-          name,
-          created_at,
-          level,
-          total_xp,
-          current_xp
-        ),
-        github_stats(
-          total_commits,
-          total_prs,
-          total_issues,
-          baseline_commits,
-          baseline_prs,
-          baseline_issues
-        )
-      `
-    );
-
-    if (userQueryError) {
-      console.error("[Recalc XP] Erro ao buscar usuários:", userQueryError);
-      return NextResponse.json({ error: userQueryError.message }, { status: 500 });
+    if (userError) {
+      return NextResponse.json({ error: userError.message }, { status: 500 });
     }
 
-    if (!allUsers || allUsers.length === 0) {
-      return NextResponse.json({ success: true, message: "Nenhum usuário encontrado" });
+    if (!allUsers?.length) {
+      return NextResponse.json({
+        success: true,
+        message: "Nenhum usuário encontrado",
+        data: { users_processed: 0 },
+      });
     }
 
-    const results = [];
+    const results: Array<Record<string, unknown>> = [];
 
-    // Processar cada usuário
-    for (const userData of allUsers) {
-      const charArray = Array.isArray(userData.characters) ? userData.characters : [userData.characters];
-      const character = charArray?.[0];
+    for (const userRow of allUsers) {
+      const character = Array.isArray(userRow.characters)
+        ? userRow.characters[0]
+        : userRow.characters;
 
-      const statsArray = Array.isArray(userData.github_stats) ? userData.github_stats : [userData.github_stats];
-      const currentStats = statsArray?.[0];
-
-      if (!character) {
-        console.log(`[Recalc XP] ${userData.github_username} - Sem personagem, pulando`);
+      if (!character || !userRow.github_username) {
         continue;
       }
 
       try {
-        console.log(`[Recalc XP] Processando ${userData.github_username}...`);
+        const githubService = new GitHubService(
+          userRow.github_access_token || undefined,
+        );
+        const startDate = getRecalculationStartDate(userRow.created_at);
+        const endDate = new Date();
 
-        const githubService = new GitHubService(userData.github_access_token || undefined);
-
-        // Buscar stats atuais do GitHub
-        const githubStats = await githubService.getUserStats(userData.github_username);
-
-        // Data de referência: preferir criação do usuário (alinha com regra dos 7 dias anteriores)
-        const userCreatedAt = userData.created_at ? new Date(userData.created_at) : new Date(character.created_at);
-        const userCreatedAtStr = userCreatedAt.toISOString();
-        const startWindow = new Date(userCreatedAt);
-        startWindow.setDate(startWindow.getDate() - 7);
-
-        console.log(
-          `[Recalc XP] ${userData.github_username} - Criado em ${userCreatedAtStr.split("T")[0]}, recalculando DESDE ${startWindow.toISOString().split("T")[0]}`
+        const events = await fetchGitHubActivityEvents(
+          githubService,
+          userRow.id,
+          userRow.github_username,
+          startDate,
+          endDate,
         );
 
-        // Buscar atividades DESDE 7 dias antes da criação até agora
-        const activitiesSinceJoin = await githubService.getActivitiesSince(userData.github_username, startWindow);
+        await replaceGitHubActivityEventsForUser(supabase, userRow.id, events);
 
-        // Baseline correto = total atual - atividades desde a criação
-        const baselineCommits = Math.max(0, githubStats.totalCommits - activitiesSinceJoin.commits);
-        const baselinePRs = Math.max(0, githubStats.totalPRs - activitiesSinceJoin.prs);
-        const baselineIssues = Math.max(0, githubStats.totalIssues - activitiesSinceJoin.issues);
-
-        console.log(
-          `[Recalc XP] ${userData.github_username} - Baseline: ${baselineCommits} commits, ${baselinePRs} PRs, ${baselineIssues} issues`
-        );
-        console.log(
-          `[Recalc XP] ${userData.github_username} - Atividades desde join: ${activitiesSinceJoin.commits} commits, ${activitiesSinceJoin.prs} PRs, ${activitiesSinceJoin.issues} issues`
+        const activitySummary = await rebuildGithubActivityLedger(
+          supabase,
+          userRow.id,
+          character.class as CharacterClass,
         );
 
-        // Aplicar multiplicadores de classe ATUALIZADOS às atividades desde a criação
-        const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
-        const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
-        const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
-
-        // Cálculo simplificado para baseline: valores médios (commit=10, PR=25, issue=35) + multiplicadores de classe
-        // Nota: O sistema real considera linhas de código, tipo de repositório, etc. Este é apenas um baseline aproximado.
-        const xpFromCommits = Math.floor(activitiesSinceJoin.commits * 10 * commitMultiplier);
-        const xpFromPRs = Math.floor(activitiesSinceJoin.prs * 25 * prMultiplier);
-        const xpFromIssues = Math.floor(activitiesSinceJoin.issues * 35 * issueMultiplier);
-        const activityXp = xpFromCommits + xpFromPRs + xpFromIssues;
-
-        // Somar achievements existentes do usuário
-        const { data: achievementsData } = await supabase
-          .from("user_achievements")
-          .select("achievement:achievements(code, xp_reward)")
-          .eq("user_id", userData.id);
-
-        let achievementsXp = 0;
-        if (achievementsData && achievementsData.length > 0) {
-          for (const item of achievementsData as any[]) {
-            achievementsXp += item.achievement?.xp_reward || 0;
-          }
-        }
-
-        const totalXp = activityXp + achievementsXp;
-
-        const previousLevel = character.level || 0;
+        const achievementsXp = await getAchievementXpTotal(
+          supabase,
+          userRow.id,
+        );
+        const totalXp = activitySummary.activityXp + achievementsXp;
         const newLevel = getLevelFromXp(totalXp);
         const newCurrentXp = getCurrentXp(totalXp, newLevel);
+        const syncedAt = new Date().toISOString();
 
-        console.log(
-          `[Recalc XP] ${userData.github_username} - XP: ${totalXp} (atividades ${activityXp} + achievements ${achievementsXp}) -> Level ${newLevel}`
+        await supabase.from("github_stats").upsert(
+          {
+            user_id: userRow.id,
+            total_commits: activitySummary.commits,
+            total_prs: activitySummary.prs,
+            total_issues: activitySummary.issues,
+            total_reviews: 0,
+            baseline_commits: 0,
+            baseline_prs: 0,
+            baseline_issues: 0,
+            baseline_reviews: 0,
+            last_sync_at: syncedAt,
+          },
+          { onConflict: "user_id" },
         );
 
-        // Atualizar github_stats mantendo o baseline correto
-        const { error: updateStatsError } = await supabase
-          .from("github_stats")
-          .upsert(
-            {
-              user_id: userData.id,
-              total_commits: githubStats.totalCommits,
-              total_prs: githubStats.totalPRs,
-              total_issues: githubStats.totalIssues,
-              baseline_commits: baselineCommits,
-              baseline_prs: baselinePRs,
-              baseline_issues: baselineIssues,
-              last_sync_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id" }
-          )
-          .select();
-
-        if (updateStatsError) {
-          console.error(`[Recalc XP] ${userData.github_username} - Erro ao atualizar stats:`, updateStatsError);
-          results.push({
-            username: userData.github_username,
-            success: false,
-            error: updateStatsError.message,
-          });
-          continue;
-        }
-
-        // Atualizar personagem com XP recalculado
-        const { error: updateCharError } = await supabase
+        await supabase
           .from("characters")
           .update({
             total_xp: totalXp,
             level: newLevel,
             current_xp: newCurrentXp,
           })
-          .eq("id", character.id)
-          .select();
+          .eq("id", character.id);
 
-        if (updateCharError) {
-          console.error(`[Recalc XP] ${userData.github_username} - Erro ao atualizar personagem:`, updateCharError);
-          results.push({
-            username: userData.github_username,
-            success: false,
-            error: updateCharError.message,
-          });
-          continue;
-        }
-
-        // Removido: e-mail de nível 10
+        await recalculateGuildTotalsForUser(supabase, userRow.id);
 
         results.push({
-          username: userData.github_username,
-          class: character.class,
+          username: userRow.github_username,
           success: true,
-          new_total_xp: totalXp,
-          new_level: newLevel,
-          baseline: {
-            commits: baselineCommits,
-            prs: baselinePRs,
-            issues: baselineIssues,
-          },
-          activities_since_join: {
-            commits: activitiesSinceJoin.commits,
-            prs: activitiesSinceJoin.prs,
-            issues: activitiesSinceJoin.issues,
-          },
-          xp_breakdown: {
-            commits: xpFromCommits,
-            prs: xpFromPRs,
-            issues: xpFromIssues,
-            achievements: achievementsXp,
-            activity_total: activityXp,
-            total: totalXp,
-          },
-          multipliers: {
-            commits: commitMultiplier,
-            prs: prMultiplier,
-            issues: issueMultiplier,
-          },
+          events_rebuilt: activitySummary.events,
+          total_xp: totalXp,
+          level: newLevel,
         });
-
-        // Delay para não sobrecarregar API do GitHub
-        await new Promise((resolve) => setTimeout(resolve, 1500));
       } catch (error) {
-        console.error(`[Recalc XP] ${userData.github_username} - Erro:`, error);
         results.push({
-          username: userData.github_username,
+          username: userRow.github_username,
           success: false,
           error: error instanceof Error ? error.message : String(error),
         });
       }
     }
 
-    const successCount = results.filter((r) => r.success).length;
-    const totalXpRecalculated = results.reduce((sum, r) => sum + (r.new_total_xp || 0), 0);
+    const successCount = results.filter(
+      (result) => result.success === true,
+    ).length;
+    const totalXpRecalculated = results.reduce((sum, result) => {
+      const totalXp = typeof result.total_xp === "number" ? result.total_xp : 0;
+      return sum + totalXp;
+    }, 0);
 
     return NextResponse.json({
       success: true,
@@ -248,10 +155,11 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[Recalc XP] Erro geral:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erro ao recalcular XP" },
-      { status: 500 }
+      {
+        error: error instanceof Error ? error.message : "Erro ao recalcular XP",
+      },
+      { status: 500 },
     );
   }
 }

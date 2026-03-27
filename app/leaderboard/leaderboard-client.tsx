@@ -2,10 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { FaCrown, FaGithub, FaMedal, FaTrophy } from "react-icons/fa6";
 import { AchievementBadge } from "@/components/achievement-badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,7 +25,13 @@ import { useAutoSync } from "@/hooks/use-auto-sync";
 import { useEvolutionDetector } from "@/hooks/use-evolution-detector";
 import { getCharacterAvatar } from "@/lib/character-assets";
 import { getCurrentRank } from "@/lib/class-evolution";
-import type { GuildLeaderboardEntry, GuildMember, LeaderboardEntry } from "@/lib/types";
+import { GITHUB_SYNC_EVENT_NAME } from "@/lib/github-sync";
+import { getXpForLevel } from "@/lib/xp-system";
+import type {
+  GuildLeaderboardEntry,
+  GuildMember,
+  LeaderboardEntry,
+} from "@/lib/types";
 
 type LeaderboardClientProps = {
   initialLeaderboard: LeaderboardEntry[];
@@ -31,26 +44,49 @@ export default function LeaderboardClient({
   initialGuildLeaderboard,
   initialLastUpdate,
 }: LeaderboardClientProps) {
-  const { user, userProfile, loading: userLoading, hasCharacter, refreshUserProfile } = useUserContext();
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(initialLeaderboard);
-  const [guildLeaderboard, setGuildLeaderboard] = useState<GuildLeaderboardEntry[]>(initialGuildLeaderboard);
+  const router = useRouter();
+  const {
+    user,
+    userProfile,
+    loading: userLoading,
+    hasCharacter,
+    refreshUserProfile,
+  } = useUserContext();
+  const [leaderboard, setLeaderboard] =
+    useState<LeaderboardEntry[]>(initialLeaderboard);
+  const [guildLeaderboard, setGuildLeaderboard] = useState<
+    GuildLeaderboardEntry[]
+  >(initialGuildLeaderboard);
   const [viewMode, setViewMode] = useState<"players" | "guilds">("players");
-  const [isLoading, setIsLoading] = useState(!initialLeaderboard.length && !initialGuildLeaderboard.length);
-  const [lastUpdate, setLastUpdate] = useState<string | null>(initialLastUpdate);
-  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(
+    !initialLeaderboard.length && !initialGuildLeaderboard.length,
+  );
+  const [lastUpdate, setLastUpdate] = useState<string | null>(
+    initialLastUpdate,
+  );
+  const [showJourneyHighlight, setShowJourneyHighlight] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [showEvolutionModal, setShowEvolutionModal] = useState(false);
-  const [xpDialogPlayer, setXpDialogPlayer] = useState<LeaderboardEntry | null>(null);
-  const [selectedGuild, setSelectedGuild] = useState<GuildLeaderboardEntry | null>(null);
+  const [xpDialogPlayer, setXpDialogPlayer] = useState<LeaderboardEntry | null>(
+    null,
+  );
+  const [selectedGuild, setSelectedGuild] =
+    useState<GuildLeaderboardEntry | null>(null);
   const [guildMembers, setGuildMembers] = useState<GuildMember[]>([]);
   const [isGuildMembersLoading, setIsGuildMembersLoading] = useState(false);
-  const hasLoadedRef = useRef<boolean>(Boolean(initialLeaderboard.length || initialGuildLeaderboard.length));
+  const hasLoadedRef = useRef<boolean>(
+    Boolean(initialLeaderboard.length || initialGuildLeaderboard.length),
+  );
 
   useAutoSync(hasCharacter === true);
   const { evolutionEvent, clearEvolutionEvent } = useEvolutionDetector(
     userProfile
-      ? { level: userProfile.level, class: userProfile.character_class, name: userProfile.character_name }
-      : null
+      ? {
+          level: userProfile.level,
+          class: userProfile.character_class,
+          name: userProfile.character_name,
+        }
+      : null,
   );
 
   useEffect(() => {
@@ -71,10 +107,12 @@ export default function LeaderboardClient({
     if (!user || userLoading || !hasCharacter || !userProfile) return;
     if (typeof window === "undefined") return;
 
-    const hasSeenWelcome = localStorage.getItem("has_seen_welcome");
-    if (!hasSeenWelcome) {
-      setShowWelcomeDialog(true);
-      localStorage.setItem("has_seen_welcome", "true");
+    const hasSeenJourneyHighlight = localStorage.getItem(
+      "has_seen_leaderboard_journey_highlight",
+    );
+    if (!hasSeenJourneyHighlight) {
+      setShowJourneyHighlight(true);
+      localStorage.setItem("has_seen_leaderboard_journey_highlight", "true");
     }
   }, [user, userLoading, hasCharacter, userProfile]);
 
@@ -84,7 +122,9 @@ export default function LeaderboardClient({
 
   const loadLeaderboard = async () => {
     try {
-      const response = await fetch("/api/leaderboard?limit=50", { cache: "no-store" });
+      const response = await fetch("/api/leaderboard?limit=50", {
+        cache: "no-store",
+      });
       if (!response.ok) throw new Error("Erro ao carregar leaderboard");
       const { data, lastUpdate: updateTime } = await response.json();
       setLeaderboard(data || []);
@@ -96,14 +136,31 @@ export default function LeaderboardClient({
 
   const loadGuildLeaderboard = async () => {
     try {
-      const response = await fetch("/api/leaderboard/guilds", { cache: "no-store" });
-      if (!response.ok) throw new Error("Erro ao carregar leaderboard de guildas");
+      const response = await fetch("/api/leaderboard/guilds", {
+        cache: "no-store",
+      });
+      if (!response.ok)
+        throw new Error("Erro ao carregar leaderboard de guildas");
       const { data } = await response.json();
       setGuildLeaderboard(data || []);
     } catch {
       setGuildLeaderboard([]);
     }
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !user) return;
+
+    const handleGithubSync = () => {
+      void refreshUserProfile();
+      void loadLeaderboard();
+      void loadGuildLeaderboard();
+    };
+
+    window.addEventListener(GITHUB_SYNC_EVENT_NAME, handleGithubSync);
+    return () =>
+      window.removeEventListener(GITHUB_SYNC_EVENT_NAME, handleGithubSync);
+  }, [user, refreshUserProfile]);
 
   const handleGuildClick = async (guild: GuildLeaderboardEntry) => {
     setSelectedGuild(guild);
@@ -124,8 +181,11 @@ export default function LeaderboardClient({
     if (rank === 1) return <FaTrophy className="text-yellow-500 text-2xl" />;
     if (rank === 2) return <FaMedal className="text-gray-400 text-2xl" />;
     if (rank === 3) return <FaMedal className="text-amber-700 text-2xl" />;
-    if (rank <= 10) return <span className="text-blue-400 font-bold text-lg">#{rank}</span>;
-    return <span className="text-muted-foreground font-bold text-lg">#{rank}</span>;
+    if (rank <= 10)
+      return <span className="text-blue-400 font-bold text-lg">#{rank}</span>;
+    return (
+      <span className="text-muted-foreground font-bold text-lg">#{rank}</span>
+    );
   };
 
   const getRankColorClass = (level: number): string => {
@@ -133,6 +193,14 @@ export default function LeaderboardClient({
     if (level >= 5) return "text-amber-500";
     return "text-muted-foreground";
   };
+
+  const currentUserEntry = user
+    ? (leaderboard.find((entry) => entry.user_id === user.id) ?? null)
+    : null;
+  const nextLevelXp = userProfile ? getXpForLevel(userProfile.level + 1) : 0;
+  const xpRemaining = userProfile
+    ? Math.max(nextLevelXp - userProfile.current_xp, 0)
+    : 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] animate-[grid-move_2s_linear_infinite]">
@@ -171,10 +239,7 @@ export default function LeaderboardClient({
               </div>
               <div className="space-y-2">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <Card
-                    key={i}
-                    className="border-none shadow-none"
-                  >
+                  <Card key={i} className="border-none shadow-none">
                     <CardContent className="px-0 md:px-4">
                       <div className="flex items-center gap-4">
                         <Skeleton className="w-12 h-6" />
@@ -199,9 +264,112 @@ export default function LeaderboardClient({
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row lg:items-start items-center justify-center gap-10 p-8">
-          {user && <LeaderboardProfileCard onCreateCharacter={() => setIsOnboardingOpen(true)} />}
+          {user && (
+            <LeaderboardProfileCard
+              onCreateCharacter={() => setIsOnboardingOpen(true)}
+            />
+          )}
           <main className={user ? "flex-1 max-w-4xl" : "flex-1 max-w-6xl"}>
             <div className="space-y-4">
+              {user && hasCharacter && userProfile && (
+                <Card className="overflow-hidden border-border/70 bg-card/90 shadow-none">
+                  <CardContent className="space-y-5 p-5 md:p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div className="min-w-0 space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">
+                          {showJourneyHighlight
+                            ? "Primeiro acesso"
+                            : "Continuar jornada"}
+                        </p>
+                        <div className="space-y-1 min-w-0">
+                          <h2 className="break-words text-xl font-black md:text-3xl">
+                            {userProfile.character_name}, seu progresso começa
+                            aqui
+                          </h2>
+                          <p className="break-words text-sm text-muted-foreground md:text-base">
+                            Você está como{" "}
+                            {getCurrentRank(
+                              userProfile.character_class,
+                              userProfile.level,
+                            )}{" "}
+                            no nível {userProfile.level}. Use esta tela para
+                            acompanhar seu avanço antes de competir.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2 md:min-w-52">
+                        <Button onClick={() => router.push("/docs")}>
+                          Entender como ganhar XP
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => router.push("/configs")}
+                        >
+                          Ajustar meu perfil
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <div className="rounded-xl border border-border/70 bg-background/50 p-4">
+                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                          Seu ranking
+                        </p>
+                        <p className="mt-2 text-2xl font-black">
+                          #{currentUserEntry?.rank ?? userProfile.rank ?? "-"}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Sua posição atual entre os jogadores ativos.
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl border border-border/70 bg-background/50 p-4">
+                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                          Próximo nível
+                        </p>
+                        <p className="mt-2 text-2xl font-black">
+                          {xpRemaining.toLocaleString()} XP
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Faltam para você alcançar o próximo level.
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl border border-border/70 bg-background/50 p-4">
+                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                          Sincronização
+                        </p>
+                        <p className="mt-2 text-lg font-black">
+                          {lastUpdate
+                            ? new Date(lastUpdate).toLocaleString()
+                            : "Aguardando atualização"}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          O GitHub é sincronizado em segundo plano.
+                        </p>
+                      </div>
+                    </div>
+
+                    {showJourneyHighlight && (
+                      <div className="flex flex-col gap-3 rounded-xl border border-foreground/20 bg-foreground/5 p-4 md:flex-row md:items-center md:justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          Seu foco agora é simples: acompanhe seu ranking, veja
+                          quanto falta para subir de nível e volte aqui depois
+                          de novos commits e PRs.
+                        </p>
+                        <Button
+                          variant="ghost"
+                          onClick={() => setShowJourneyHighlight(false)}
+                        >
+                          Entendi
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center text-md md:text-2xl gap-2 text-foreground font-black">
                   <FaTrophy />
@@ -211,7 +379,9 @@ export default function LeaderboardClient({
                 <div className="flex items-center gap-2">
                   <Select
                     value={viewMode}
-                    onValueChange={(v) => setViewMode(v as "players" | "guilds")}
+                    onValueChange={(v) =>
+                      setViewMode(v as "players" | "guilds")
+                    }
                   >
                     <SelectTrigger
                       className="w-32 text-xs font-bold hover:cursor-pointer"
@@ -236,7 +406,9 @@ export default function LeaderboardClient({
               {viewMode === "players" ? (
                 leaderboard.length === 0 ? (
                   <div className="text-center py-20">
-                    <p className="text-muted-foreground">Nenhum jogador encontrado</p>
+                    <p className="text-muted-foreground">
+                      Nenhum jogador encontrado
+                    </p>
                   </div>
                 ) : (
                   <>
@@ -249,7 +421,7 @@ export default function LeaderboardClient({
                               <Image
                                 src={getCharacterAvatar(
                                   leaderboard[1]?.character_class || "orc",
-                                  leaderboard[1]?.level || 1
+                                  leaderboard[1]?.level || 1,
                                 )}
                                 alt={leaderboard[1]?.character_name || ""}
                                 fill
@@ -263,50 +435,81 @@ export default function LeaderboardClient({
                                     [{leaderboard[1].guild_tag}]
                                   </span>
                                 )}
-                                <h3 className="font-bold text-base">{leaderboard[1]?.character_name}</h3>
+                                <h3 className="font-bold text-base">
+                                  {leaderboard[1]?.character_name}
+                                </h3>
                                 <div className="flex items-center gap-1">
-                                  {(leaderboard[1]?.achievement_codes || []).slice(0, 3).map((code) => (
-                                    <AchievementBadge
-                                      key={code}
-                                      code={code}
-                                      size="sm"
-                                    />
-                                  ))}
+                                  {(leaderboard[1]?.achievement_codes || [])
+                                    .slice(0, 3)
+                                    .map((code) => (
+                                      <AchievementBadge
+                                        key={code}
+                                        code={code}
+                                        size="sm"
+                                      />
+                                    ))}
                                 </div>
                               </div>
-                              <p className={`text-xs ${getRankColorClass(leaderboard[1]?.level || 1)}`}>
-                                {getCurrentRank(leaderboard[1]?.character_class || "orc", leaderboard[1]?.level || 1)}
+                              <p
+                                className={`text-xs ${getRankColorClass(leaderboard[1]?.level || 1)}`}
+                              >
+                                {getCurrentRank(
+                                  leaderboard[1]?.character_class || "orc",
+                                  leaderboard[1]?.level || 1,
+                                )}
                               </p>
                               <p
                                 onClick={() =>
-                                  window.open(`https://github.com/${leaderboard[1]?.github_username}`, "_blank")
+                                  window.open(
+                                    `https://github.com/${leaderboard[1]?.github_username}`,
+                                    "_blank",
+                                  )
                                 }
                                 className="flex flex-row opacity-50 items-center text-[10px] gap-1 mt-1 hover:cursor-pointer"
                               >
-                                <FaGithub className="w-3! shrink-0" />@{leaderboard[1]?.github_username}
+                                <FaGithub className="w-3! shrink-0" />@
+                                {leaderboard[1]?.github_username}
                               </p>
                             </div>
                             <div className="bg-gray-400/20 w-full rounded-t-lg p-4 text-center border-2 border-gray-400/50">
-                              <p className="font-black text-xl">#{leaderboard[1]?.rank}</p>
-                              <p className="text-sm font-bold">Level {leaderboard[1]?.level}</p>
+                              <p className="font-black text-xl">
+                                #{leaderboard[1]?.rank}
+                              </p>
+                              <p className="text-sm font-bold">
+                                Level {leaderboard[1]?.level}
+                              </p>
                               <p
-                                onClick={() => setXpDialogPlayer(leaderboard[1])}
+                                onClick={() =>
+                                  setXpDialogPlayer(leaderboard[1])
+                                }
                                 className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                               >
-                                {leaderboard[1]?.total_xp?.toLocaleString() || 0} XP
+                                {leaderboard[1]?.total_xp?.toLocaleString() ||
+                                  0}{" "}
+                                XP
                               </p>
                               <div className="flex justify-around mt-2 text-xs">
                                 <div>
-                                  <p className="font-bold">{leaderboard[1]?.total_commits || 0}</p>
-                                  <p className="text-muted-foreground">Commits</p>
+                                  <p className="font-bold">
+                                    {leaderboard[1]?.total_commits || 0}
+                                  </p>
+                                  <p className="text-muted-foreground">
+                                    Commits
+                                  </p>
                                 </div>
                                 <div>
-                                  <p className="font-bold">{leaderboard[1]?.total_prs || 0}</p>
+                                  <p className="font-bold">
+                                    {leaderboard[1]?.total_prs || 0}
+                                  </p>
                                   <p className="text-muted-foreground">PRs</p>
                                 </div>
                                 <div>
-                                  <p className="font-bold">{leaderboard[1]?.total_issues || 0}</p>
-                                  <p className="text-muted-foreground">Issues</p>
+                                  <p className="font-bold">
+                                    {leaderboard[1]?.total_issues || 0}
+                                  </p>
+                                  <p className="text-muted-foreground">
+                                    Issues resolvidas
+                                  </p>
                                 </div>
                               </div>
                             </div>
@@ -319,7 +522,7 @@ export default function LeaderboardClient({
                               <Image
                                 src={getCharacterAvatar(
                                   leaderboard[0]?.character_class || "orc",
-                                  leaderboard[0]?.level || 1
+                                  leaderboard[0]?.level || 1,
                                 )}
                                 alt={leaderboard[0]?.character_name || ""}
                                 fill
@@ -333,50 +536,81 @@ export default function LeaderboardClient({
                                     [{leaderboard[0].guild_tag}]
                                   </span>
                                 )}
-                                <h3 className="font-bold text-lg">{leaderboard[0]?.character_name}</h3>
+                                <h3 className="font-bold text-lg">
+                                  {leaderboard[0]?.character_name}
+                                </h3>
                                 <div className="flex items-center gap-1">
-                                  {(leaderboard[0]?.achievement_codes || []).slice(0, 3).map((code) => (
-                                    <AchievementBadge
-                                      key={code}
-                                      code={code}
-                                      size="sm"
-                                    />
-                                  ))}
+                                  {(leaderboard[0]?.achievement_codes || [])
+                                    .slice(0, 3)
+                                    .map((code) => (
+                                      <AchievementBadge
+                                        key={code}
+                                        code={code}
+                                        size="sm"
+                                      />
+                                    ))}
                                 </div>
                               </div>
-                              <p className={`text-sm ${getRankColorClass(leaderboard[0]?.level || 1)}`}>
-                                {getCurrentRank(leaderboard[0]?.character_class || "orc", leaderboard[0]?.level || 1)}
+                              <p
+                                className={`text-sm ${getRankColorClass(leaderboard[0]?.level || 1)}`}
+                              >
+                                {getCurrentRank(
+                                  leaderboard[0]?.character_class || "orc",
+                                  leaderboard[0]?.level || 1,
+                                )}
                               </p>
                               <p
                                 onClick={() =>
-                                  window.open(`https://github.com/${leaderboard[0]?.github_username}`, "_blank")
+                                  window.open(
+                                    `https://github.com/${leaderboard[0]?.github_username}`,
+                                    "_blank",
+                                  )
                                 }
                                 className="flex flex-row opacity-50 items-center text-[10px] gap-1 mt-1 hover:cursor-pointer"
                               >
-                                <FaGithub className="w-3! shrink-0" />@{leaderboard[0]?.github_username}
+                                <FaGithub className="w-3! shrink-0" />@
+                                {leaderboard[0]?.github_username}
                               </p>
                             </div>
                             <div className="bg-yellow-500/20 w-full rounded-t-lg p-6 text-center border-2 border-yellow-500/50">
-                              <p className="font-black text-2xl">#{leaderboard[0]?.rank}</p>
-                              <p className="text-base font-bold">Level {leaderboard[0]?.level}</p>
+                              <p className="font-black text-2xl">
+                                #{leaderboard[0]?.rank}
+                              </p>
+                              <p className="text-base font-bold">
+                                Level {leaderboard[0]?.level}
+                              </p>
                               <span
-                                onClick={() => setXpDialogPlayer(leaderboard[0])}
+                                onClick={() =>
+                                  setXpDialogPlayer(leaderboard[0])
+                                }
                                 className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                               >
-                                {leaderboard[0]?.total_xp?.toLocaleString() || 0} XP
+                                {leaderboard[0]?.total_xp?.toLocaleString() ||
+                                  0}{" "}
+                                XP
                               </span>
                               <div className="flex justify-around mt-3 text-sm">
                                 <div>
-                                  <p className="font-bold">{leaderboard[0]?.total_commits || 0}</p>
-                                  <p className="text-muted-foreground">Commits</p>
+                                  <p className="font-bold">
+                                    {leaderboard[0]?.total_commits || 0}
+                                  </p>
+                                  <p className="text-muted-foreground">
+                                    Commits
+                                  </p>
                                 </div>
                                 <div>
-                                  <p className="font-bold">{leaderboard[0]?.total_prs || 0}</p>
+                                  <p className="font-bold">
+                                    {leaderboard[0]?.total_prs || 0}
+                                  </p>
                                   <p className="text-muted-foreground">PRs</p>
                                 </div>
                                 <div>
-                                  <p className="font-bold">{leaderboard[0]?.total_issues || 0}</p>
-                                  <p className="text-muted-foreground">Issues</p>
+                                  <p className="font-bold">
+                                    {leaderboard[0]?.total_issues || 0}
+                                  </p>
+                                  <p className="text-muted-foreground">
+                                    Issues resolvidas
+                                  </p>
                                 </div>
                               </div>
                             </div>
@@ -389,7 +623,7 @@ export default function LeaderboardClient({
                               <Image
                                 src={getCharacterAvatar(
                                   leaderboard[2]?.character_class || "orc",
-                                  leaderboard[2]?.level || 1
+                                  leaderboard[2]?.level || 1,
                                 )}
                                 alt={leaderboard[2]?.character_name || ""}
                                 fill
@@ -403,50 +637,81 @@ export default function LeaderboardClient({
                                     [{leaderboard[2].guild_tag}]
                                   </span>
                                 )}
-                                <h3 className="font-bold text-base">{leaderboard[2]?.character_name}</h3>
+                                <h3 className="font-bold text-base">
+                                  {leaderboard[2]?.character_name}
+                                </h3>
                                 <div className="flex items-center gap-1">
-                                  {(leaderboard[2]?.achievement_codes || []).slice(0, 3).map((code) => (
-                                    <AchievementBadge
-                                      key={code}
-                                      code={code}
-                                      size="sm"
-                                    />
-                                  ))}
+                                  {(leaderboard[2]?.achievement_codes || [])
+                                    .slice(0, 3)
+                                    .map((code) => (
+                                      <AchievementBadge
+                                        key={code}
+                                        code={code}
+                                        size="sm"
+                                      />
+                                    ))}
                                 </div>
                               </div>
-                              <p className={`text-xs ${getRankColorClass(leaderboard[2]?.level || 1)}`}>
-                                {getCurrentRank(leaderboard[2]?.character_class || "orc", leaderboard[2]?.level || 1)}
+                              <p
+                                className={`text-xs ${getRankColorClass(leaderboard[2]?.level || 1)}`}
+                              >
+                                {getCurrentRank(
+                                  leaderboard[2]?.character_class || "orc",
+                                  leaderboard[2]?.level || 1,
+                                )}
                               </p>
                               <p
                                 onClick={() =>
-                                  window.open(`https://github.com/${leaderboard[2]?.github_username}`, "_blank")
+                                  window.open(
+                                    `https://github.com/${leaderboard[2]?.github_username}`,
+                                    "_blank",
+                                  )
                                 }
                                 className="flex flex-row opacity-50 items-center text-[10px] gap-1 mt-1 hover:cursor-pointer"
                               >
-                                <FaGithub className="w-3! shrink-0" />@{leaderboard[2]?.github_username}
+                                <FaGithub className="w-3! shrink-0" />@
+                                {leaderboard[2]?.github_username}
                               </p>
                             </div>
                             <div className="bg-amber-700/20 w-full rounded-t-lg p-2 text-center border-2 border-amber-700/50">
-                              <p className="font-black text-xl">#{leaderboard[2]?.rank}</p>
-                              <p className="text-sm font-bold">Level {leaderboard[2]?.level}</p>
+                              <p className="font-black text-xl">
+                                #{leaderboard[2]?.rank}
+                              </p>
+                              <p className="text-sm font-bold">
+                                Level {leaderboard[2]?.level}
+                              </p>
                               <span
-                                onClick={() => setXpDialogPlayer(leaderboard[2])}
+                                onClick={() =>
+                                  setXpDialogPlayer(leaderboard[2])
+                                }
                                 className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                               >
-                                {leaderboard[2]?.total_xp?.toLocaleString() || 0} XP
+                                {leaderboard[2]?.total_xp?.toLocaleString() ||
+                                  0}{" "}
+                                XP
                               </span>
                               <div className="flex justify-around mt-2 text-xs">
                                 <div>
-                                  <p className="font-bold">{leaderboard[2]?.total_commits || 0}</p>
-                                  <p className="text-muted-foreground">Commits</p>
+                                  <p className="font-bold">
+                                    {leaderboard[2]?.total_commits || 0}
+                                  </p>
+                                  <p className="text-muted-foreground">
+                                    Commits
+                                  </p>
                                 </div>
                                 <div>
-                                  <p className="font-bold">{leaderboard[2]?.total_prs || 0}</p>
+                                  <p className="font-bold">
+                                    {leaderboard[2]?.total_prs || 0}
+                                  </p>
                                   <p className="text-muted-foreground">PRs</p>
                                 </div>
                                 <div>
-                                  <p className="font-bold">{leaderboard[2]?.total_issues || 0}</p>
-                                  <p className="text-muted-foreground">Issues</p>
+                                  <p className="font-bold">
+                                    {leaderboard[2]?.total_issues || 0}
+                                  </p>
+                                  <p className="text-muted-foreground">
+                                    Issues resolvidas
+                                  </p>
                                 </div>
                               </div>
                             </div>
@@ -469,7 +734,10 @@ export default function LeaderboardClient({
                                 </div>
                                 <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
                                   <Image
-                                    src={getCharacterAvatar(player.character_class, player.level)}
+                                    src={getCharacterAvatar(
+                                      player.character_class,
+                                      player.level,
+                                    )}
                                     alt={player.character_name}
                                     fill
                                     className="object-contain"
@@ -487,26 +755,38 @@ export default function LeaderboardClient({
                                         {player.character_name}
                                       </h3>
                                       <div className="flex items-center gap-1 shrink-0">
-                                        {(player.achievement_codes || []).slice(0, 3).map((code) => (
-                                          <AchievementBadge
-                                            key={code}
-                                            code={code}
-                                            size="sm"
-                                          />
-                                        ))}
+                                        {(player.achievement_codes || [])
+                                          .slice(0, 3)
+                                          .map((code) => (
+                                            <AchievementBadge
+                                              key={code}
+                                              code={code}
+                                              size="sm"
+                                            />
+                                          ))}
                                       </div>
                                     </div>
                                   </div>
 
                                   <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-                                    <span className={getRankColorClass(player.level)}>
-                                      {getCurrentRank(player.character_class, player.level)}
+                                    <span
+                                      className={getRankColorClass(
+                                        player.level,
+                                      )}
+                                    >
+                                      {getCurrentRank(
+                                        player.character_class,
+                                        player.level,
+                                      )}
                                     </span>
                                     <span className="hidden md:block">•</span>
                                     <span
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        window.open(`https://github.com/${player.github_username}`, "_blank");
+                                        window.open(
+                                          `https://github.com/${player.github_username}`,
+                                          "_blank",
+                                        );
                                       }}
                                       className="flex items-center gap-1 hover:text-foreground hover:cursor-pointer transition-colors"
                                     >
@@ -517,7 +797,9 @@ export default function LeaderboardClient({
                                 </div>
                                 <div className="flex gap-6 shrink-0">
                                   <div className="text-center">
-                                    <p className="font-bold text-base">Level {player.level}</p>
+                                    <p className="font-bold text-base">
+                                      Level {player.level}
+                                    </p>
                                     <span
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -529,16 +811,28 @@ export default function LeaderboardClient({
                                     </span>
                                   </div>
                                   <div className="text-center">
-                                    <p className="font-bold text-base">{player.total_commits}</p>
-                                    <p className="text-xs text-muted-foreground">Commits</p>
+                                    <p className="font-bold text-base">
+                                      {player.total_commits}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Commits
+                                    </p>
                                   </div>
                                   <div className="text-center">
-                                    <p className="font-bold text-base">{player.total_prs}</p>
-                                    <p className="text-xs text-muted-foreground">PRs</p>
+                                    <p className="font-bold text-base">
+                                      {player.total_prs}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      PRs
+                                    </p>
                                   </div>
                                   <div className="text-center">
-                                    <p className="font-bold text-base">{player.total_issues}</p>
-                                    <p className="text-xs text-muted-foreground">Issues</p>
+                                    <p className="font-bold text-base">
+                                      {player.total_issues}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Issues resolvidas
+                                    </p>
                                   </div>
                                 </div>
                               </div>
@@ -562,7 +856,10 @@ export default function LeaderboardClient({
                                 </div>
                                 <div className="relative w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
                                   <Image
-                                    src={getCharacterAvatar(player.character_class, player.level)}
+                                    src={getCharacterAvatar(
+                                      player.character_class,
+                                      player.level,
+                                    )}
                                     alt={player.character_name}
                                     fill
                                     className="object-contain"
@@ -579,24 +876,34 @@ export default function LeaderboardClient({
                                       {player.character_name}
                                     </h3>
                                     <div className="flex items-center gap-1 shrink-0">
-                                      {(player.achievement_codes || []).slice(0, 3).map((code) => (
-                                        <AchievementBadge
-                                          key={code}
-                                          code={code}
-                                          size="sm"
-                                        />
-                                      ))}
+                                      {(player.achievement_codes || [])
+                                        .slice(0, 3)
+                                        .map((code) => (
+                                          <AchievementBadge
+                                            key={code}
+                                            code={code}
+                                            size="sm"
+                                          />
+                                        ))}
                                     </div>
                                   </div>
                                   <div className="flex items-center flex-col md:flex-row gap-2 text-sm text-muted-foreground">
-                                    <span className={`text-sm ${getRankColorClass(player.level)}`}>
-                                      {getCurrentRank(player.character_class, player.level)}
+                                    <span
+                                      className={`text-sm ${getRankColorClass(player.level)}`}
+                                    >
+                                      {getCurrentRank(
+                                        player.character_class,
+                                        player.level,
+                                      )}
                                     </span>
                                     <span className="hidden md:block">•</span>
                                     <span
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        window.open(`https://github.com/${player.github_username}`, "_blank");
+                                        window.open(
+                                          `https://github.com/${player.github_username}`,
+                                          "_blank",
+                                        );
                                       }}
                                       className="flex items-center gap-1 hover:text-foreground hover:cursor-pointer transition-colors"
                                     >
@@ -607,7 +914,9 @@ export default function LeaderboardClient({
                                 </div>
                                 <div className="flex gap-6 shrink-0">
                                   <div className="text-center">
-                                    <p className="font-bold text-base">Level {player.level}</p>
+                                    <p className="font-bold text-base">
+                                      Level {player.level}
+                                    </p>
                                     <span
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -619,16 +928,28 @@ export default function LeaderboardClient({
                                     </span>
                                   </div>
                                   <div className="text-center">
-                                    <p className="font-bold text-base">{player.total_commits}</p>
-                                    <p className="text-xs text-muted-foreground">Commits</p>
+                                    <p className="font-bold text-base">
+                                      {player.total_commits}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Commits
+                                    </p>
                                   </div>
                                   <div className="text-center">
-                                    <p className="font-bold text-base">{player.total_prs}</p>
-                                    <p className="text-xs text-muted-foreground">PRs</p>
+                                    <p className="font-bold text-base">
+                                      {player.total_prs}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      PRs
+                                    </p>
                                   </div>
                                   <div className="text-center">
-                                    <p className="font-bold text-base">{player.total_issues}</p>
-                                    <p className="text-xs text-muted-foreground">Issues</p>
+                                    <p className="font-bold text-base">
+                                      {player.total_issues}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Issues resolvidas
+                                    </p>
                                   </div>
                                 </div>
                               </div>
@@ -643,7 +964,9 @@ export default function LeaderboardClient({
                 <div className="space-y-4">
                   {guildLeaderboard.length === 0 ? (
                     <div className="text-center py-20">
-                      <p className="text-muted-foreground">Nenhuma guilda encontrada</p>
+                      <p className="text-muted-foreground">
+                        Nenhuma guilda encontrada
+                      </p>
                     </div>
                   ) : (
                     guildLeaderboard.map((guild) => (
@@ -655,30 +978,52 @@ export default function LeaderboardClient({
                         <CardContent className="px-4">
                           <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
                             <div className="w-12 flex items-center justify-center shrink-0">
-                              {guild.rank === 1 && <FaTrophy className="text-yellow-500 text-2xl" />}
-                              {guild.rank === 2 && <FaMedal className="text-gray-400 text-2xl" />}
-                              {guild.rank === 3 && <FaMedal className="text-amber-700 text-2xl" />}
+                              {guild.rank === 1 && (
+                                <FaTrophy className="text-yellow-500 text-2xl" />
+                              )}
+                              {guild.rank === 2 && (
+                                <FaMedal className="text-gray-400 text-2xl" />
+                              )}
+                              {guild.rank === 3 && (
+                                <FaMedal className="text-amber-700 text-2xl" />
+                              )}
                               {guild.rank > 3 && (
-                                <span className="text-muted-foreground font-bold text-lg">#{guild.rank}</span>
+                                <span className="text-muted-foreground font-bold text-lg">
+                                  #{guild.rank}
+                                </span>
                               )}
                             </div>
                             <div className="flex flex-col justify-center md:justify-start md:items-start items-center flex-1 min-w-0">
                               <div className="flex flex-row items-center gap-2">
-                                <h3 className="font-bold text-lg">{guild.name} </h3>
+                                <h3 className="font-bold text-lg">
+                                  {guild.name}{" "}
+                                </h3>
                                 {guild.tag && (
-                                  <span className="text-xs font-bold text-muted-foreground">[{guild.tag}]</span>
+                                  <span className="text-xs font-bold text-muted-foreground">
+                                    [{guild.tag}]
+                                  </span>
                                 )}
                               </div>
-                              <span className="text-xs text-muted-foreground">@{guild.owner_username}</span>
+                              <span className="text-xs text-muted-foreground">
+                                @{guild.owner_username}
+                              </span>
                             </div>
                             <div className="flex gap-6 shrink-0">
                               <div className="text-center">
-                                <p className="font-bold text-base">{guild.total_members}</p>
-                                <p className="text-xs text-muted-foreground">Membros</p>
+                                <p className="font-bold text-base">
+                                  {guild.total_members}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Membros
+                                </p>
                               </div>
                               <div className="text-center">
-                                <p className="font-bold text-base">{guild.total_xp.toLocaleString()}</p>
-                                <p className="text-xs text-muted-foreground">XP Total</p>
+                                <p className="font-bold text-base">
+                                  {guild.total_xp.toLocaleString()}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  XP Total
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -721,44 +1066,6 @@ export default function LeaderboardClient({
           character={evolutionEvent.character}
         />
       )}
-      <Dialog
-        open={showWelcomeDialog}
-        onOpenChange={setShowWelcomeDialog}
-      >
-        <DialogContent className="max-w-md">
-          <DialogTitle asChild>
-            <h2 className="text-2xl font-bold mb-2 text-center">Bem-vindo ao Gitrats!</h2>
-          </DialogTitle>
-          <div className="space-y-4 py-4">
-            <div className="space-y-3 text-sm">
-              <p className="text-muted-foreground text-center">
-                Ganhe <strong>XP</strong> automaticamente com suas atividades no GitHub:
-              </p>
-              <ul className="space-y-2 pl-4">
-                <li>
-                  - <strong>10 XP</strong> por commit
-                </li>
-                <li>
-                  - <strong>25 XP</strong> por pull request
-                </li>
-                <li>
-                  - <strong>35 XP</strong> por issue resolvida
-                </li>
-              </ul>
-              <p className="text-muted-foreground text-xs">
-                Sua classe {userProfile?.character_class} tem <strong>bônus especiais</strong> em certas atividades.
-                Suba de nível, evolua e domine o leaderboard!
-              </p>
-              <p className="text-xs text-muted-foreground text-center pt-2">
-                Quer saber mais? Acesse <strong>/docs</strong> para detalhes completos.
-              </p>
-            </div>
-            <div className="flex justify-center pt-2">
-              <Button onClick={() => setShowWelcomeDialog(false)}>Entendi, vamos lá!</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
       {selectedGuild && (
         <Dialog
           open={!!selectedGuild}
@@ -772,14 +1079,13 @@ export default function LeaderboardClient({
               {isGuildMembersLoading ? (
                 <div className="space-y-2">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton
-                      key={i}
-                      className="h-10 w-full"
-                    />
+                    <Skeleton key={i} className="h-10 w-full" />
                   ))}
                 </div>
               ) : guildMembers.length === 0 ? (
-                <p className="text-muted-foreground">Nenhum membro encontrado.</p>
+                <p className="text-muted-foreground">
+                  Nenhum membro encontrado.
+                </p>
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {guildMembers.map((member) => (
@@ -788,22 +1094,33 @@ export default function LeaderboardClient({
                       className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
                     >
                       <Image
-                        src={getCharacterAvatar(member.character_class || "orc", member.level || 1)}
+                        src={getCharacterAvatar(
+                          member.character_class || "orc",
+                          member.level || 1,
+                        )}
                         alt={member.character_name || ""}
                         width={40}
                         height={40}
                         className="rounded-lg"
                       />
                       <div className="flex-1">
-                        <p className="font-bold">{member.character_name || "Desconhecido"}</p>
+                        <p className="font-bold">
+                          {member.character_name || "Desconhecido"}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           @{member.github_username} • Level {member.level || 1}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold">{member.total_xp?.toLocaleString() || 0} XP</p>
+                        <p className="font-bold">
+                          {member.total_xp?.toLocaleString() || 0} XP
+                        </p>
                         <p className="flex flex-row items-center justify-end gap-1 text-xs text-muted-foreground">
-                          {member.role === "owner" ? <FaCrown className="text-amber-400 opacity-80" /> : ""}
+                          {member.role === "owner" ? (
+                            <FaCrown className="text-amber-400 opacity-80" />
+                          ) : (
+                            ""
+                          )}
                           {member.role === "owner" ? "Líder" : "Membro"}
                         </p>
                       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useUserContext } from "@/contexts/user-context";
+import { GITHUB_SYNC_EVENT_NAME } from "@/lib/github-sync";
 import type { Guild, GuildMember, GuildInvite } from "@/lib/types";
 
 export function useGuild() {
@@ -37,7 +38,11 @@ export function useGuild() {
     }
   };
 
-  const createGuild = async (name: string, description: string, tag: string) => {
+  const createGuild = async (
+    name: string,
+    description: string,
+    tag: string,
+  ) => {
     const response = await fetch("/api/guild/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -146,6 +151,19 @@ export function useGuild() {
 
   useEffect(() => {
     fetchSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !user) return;
+
+    const handleGithubSync = () => {
+      void fetchSummary();
+    };
+
+    window.addEventListener(GITHUB_SYNC_EVENT_NAME, handleGithubSync);
+    return () =>
+      window.removeEventListener(GITHUB_SYNC_EVENT_NAME, handleGithubSync);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 

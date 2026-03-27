@@ -1,9 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FaChartLine, FaCodeBranch, FaCodeCommit, FaCircleInfo } from "react-icons/fa6";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  FaChartLine,
+  FaCodeBranch,
+  FaCodeCommit,
+  FaCircleInfo,
+} from "react-icons/fa6";
 import { getClassXpMultiplier } from "@/lib/classes";
+import { BASE_ACTIVITY_XP } from "@/lib/github-xp";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface XpBreakdownDialogProps {
@@ -81,15 +93,21 @@ export function XpBreakdownDialog({
     loadAnalysis();
   }
 
-  const commitMultiplier = getClassXpMultiplier(characterClass as any, "commits");
-  const prMultiplier = getClassXpMultiplier(characterClass as any, "pullRequests");
-  const issueMultiplier = getClassXpMultiplier(characterClass as any, "issuesResolved");
+  const commitMultiplier = getClassXpMultiplier(
+    characterClass as any,
+    "commits",
+  );
+  const prMultiplier = getClassXpMultiplier(
+    characterClass as any,
+    "pullRequests",
+  );
+  const issueMultiplier = getClassXpMultiplier(
+    characterClass as any,
+    "issuesResolved",
+  );
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={onClose}
-    >
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -97,7 +115,9 @@ export function XpBreakdownDialog({
             Análise de XP
           </DialogTitle>
           <DialogDescription>
-            <span className="text-xs text-muted-foreground">GitHub @{username}</span>
+            <span className="text-xs text-muted-foreground">
+              GitHub @{username}
+            </span>
           </DialogDescription>
         </DialogHeader>
 
@@ -132,18 +152,32 @@ export function XpBreakdownDialog({
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-muted rounded-lg p-3 text-center">
                   <p className="text-xs text-muted-foreground">Commits</p>
-                  <p className="text-2xl font-bold">{analysis.commits_after_join}</p>
-                  <p className="text-xs text-muted-foreground">de {analysis.total_commits} totais</p>
+                  <p className="text-2xl font-bold">
+                    {analysis.commits_after_join}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    de {analysis.total_commits} totais
+                  </p>
                 </div>
                 <div className="bg-muted rounded-lg p-3 text-center">
                   <p className="text-xs text-muted-foreground">Pull Requests</p>
-                  <p className="text-2xl font-bold">{analysis.prs_after_join}</p>
-                  <p className="text-xs text-muted-foreground">de {analysis.total_prs} totais</p>
+                  <p className="text-2xl font-bold">
+                    {analysis.prs_after_join}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    de {analysis.total_prs} totais
+                  </p>
                 </div>
                 <div className="bg-muted rounded-lg p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Issues</p>
-                  <p className="text-2xl font-bold">{analysis.issues_after_join}</p>
-                  <p className="text-xs text-muted-foreground">de {analysis.total_issues} totais</p>
+                  <p className="text-xs text-muted-foreground">
+                    Issues resolvidas
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {analysis.issues_after_join}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    de {analysis.total_issues} totais
+                  </p>
                 </div>
               </div>
             </div>
@@ -152,20 +186,28 @@ export function XpBreakdownDialog({
             <div>
               <h3 className="font-bold mb-3 flex items-center gap-2">
                 <FaCodeBranch />
-                Multiplicadores da Classe {characterClass.charAt(0).toUpperCase() + characterClass.slice(1)}
+                Multiplicadores da Classe{" "}
+                {characterClass.charAt(0).toUpperCase() +
+                  characterClass.slice(1)}
               </h3>
               <div className="space-y-2">
                 <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                   <span className="text-sm">Commits</span>
-                  <span className="font-bold text-green-500">×{commitMultiplier.toFixed(2)}</span>
+                  <span className="font-bold text-green-500">
+                    ×{commitMultiplier.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                   <span className="text-sm">Pull Requests</span>
-                  <span className="font-bold text-blue-500">×{prMultiplier.toFixed(2)}</span>
+                  <span className="font-bold text-blue-500">
+                    ×{prMultiplier.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between bg-muted rounded-lg p-3">
-                  <span className="text-sm">Issues</span>
-                  <span className="font-bold text-purple-500">×{issueMultiplier.toFixed(2)}</span>
+                  <span className="text-sm">Issues resolvidas</span>
+                  <span className="font-bold text-purple-500">
+                    ×{issueMultiplier.toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -179,21 +221,30 @@ export function XpBreakdownDialog({
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                   <span>
-                    {analysis.commits_after_join} commits × 10 XP × {commitMultiplier.toFixed(2)}
+                    {analysis.commits_after_join} commits ×{" "}
+                    {BASE_ACTIVITY_XP.commit} XP × {commitMultiplier.toFixed(2)}
                   </span>
-                  <span className="font-bold text-green-500">{analysis.xp_from_commits.toLocaleString()} XP</span>
+                  <span className="font-bold text-green-500">
+                    {analysis.xp_from_commits.toLocaleString()} XP
+                  </span>
                 </div>
                 <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                   <span>
-                    {analysis.prs_after_join} PRs × 25 XP × {prMultiplier.toFixed(2)}
+                    {analysis.prs_after_join} PRs × {BASE_ACTIVITY_XP.pr} XP ×{" "}
+                    {prMultiplier.toFixed(2)}
                   </span>
-                  <span className="font-bold text-blue-500">{analysis.xp_from_prs.toLocaleString()} XP</span>
+                  <span className="font-bold text-blue-500">
+                    {analysis.xp_from_prs.toLocaleString()} XP
+                  </span>
                 </div>
                 <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                   <span>
-                    {analysis.issues_after_join} issues × 35 XP × {issueMultiplier.toFixed(2)}
+                    {analysis.issues_after_join} issues resolvidas x{" "}
+                    {BASE_ACTIVITY_XP.issue} XP × {issueMultiplier.toFixed(2)}
                   </span>
-                  <span className="font-bold text-purple-500">{analysis.xp_from_issues.toLocaleString()} XP</span>
+                  <span className="font-bold text-purple-500">
+                    {analysis.xp_from_issues.toLocaleString()} XP
+                  </span>
                 </div>
                 {analysis.achievements && analysis.achievements.length > 0 && (
                   <div className="flex items-center justify-between bg-muted rounded-lg p-3">
@@ -205,7 +256,9 @@ export function XpBreakdownDialog({
                 )}
                 <div className="flex items-center justify-between bg-primary/20 rounded-lg p-4 font-bold">
                   <span>Total</span>
-                  <span className="text-lg">{analysis.total_xp_calculated.toLocaleString()} XP</span>
+                  <span className="text-lg">
+                    {analysis.total_xp_calculated.toLocaleString()} XP
+                  </span>
                 </div>
               </div>
             </div>
@@ -214,9 +267,11 @@ export function XpBreakdownDialog({
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-xs">
               <p className="font-bold mb-1">Sobre o Baseline:</p>
               <p className="text-muted-foreground">
-                O baseline ({analysis.baseline_commits} commits, {analysis.baseline_prs} PRs, {analysis.baseline_issues}{" "}
-                issues) representa suas atividades anteriores ao registro na plataforma. Apenas atividades após o
-                registro (incluindo 7 dias retroativos) geram XP.
+                O baseline ({analysis.baseline_commits} commits,{" "}
+                {analysis.baseline_prs} PRs, {analysis.baseline_issues} issues
+                resolvidas) representa suas atividades anteriores ao registro na
+                plataforma. Apenas atividades após o registro (incluindo 7 dias
+                retroativos) geram XP.
               </p>
             </div>
           </div>

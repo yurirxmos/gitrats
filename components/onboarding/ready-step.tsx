@@ -13,7 +13,8 @@ export function ReadyStep({ onFinish }: ReadyStepProps) {
       </div>
       <h2 className="text-3xl font-black">Tudo Pronto!</h2>
       <p className="text-muted-foreground">
-        Agora é só começar a codar! A cada commit você ganha XP e sobe no leaderboard.
+        Agora é só começar a codar. Você vai cair no leaderboard com seu
+        progresso em destaque para acompanhar XP, ranking e próximos passos.
       </p>
 
       <div className="bg-muted/50 border border-border rounded-lg p-6 space-y-3 text-left">
@@ -35,7 +36,9 @@ export function ReadyStep({ onFinish }: ReadyStepProps) {
           </div>
           <div>
             <p className="font-bold">Abra Pull Requests</p>
-            <p className="text-sm text-muted-foreground">PRs aprovados te dão ainda mais XP!</p>
+            <p className="text-sm text-muted-foreground">
+              PRs aprovados te dão ainda mais XP!
+            </p>
           </div>
         </div>
 
@@ -44,8 +47,10 @@ export function ReadyStep({ onFinish }: ReadyStepProps) {
             <span className="text-foreground font-bold">3</span>
           </div>
           <div>
-            <p className="font-bold">Suba no Ranking</p>
-            <p className="text-sm text-muted-foreground">Compete com outros devs e chegue ao topo!</p>
+            <p className="font-bold">Acompanhe sua evolução</p>
+            <p className="text-sm text-muted-foreground">
+              Veja seu ranking, entenda seu XP e descubra o próximo alvo.
+            </p>
           </div>
         </div>
       </div>

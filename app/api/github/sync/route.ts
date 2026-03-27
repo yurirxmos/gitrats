@@ -1,18 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import GitHubService from "@/lib/github-service";
-import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
-import { getClassXpMultiplier } from "@/lib/classes";
+import { getCurrentXp, getLevelFromXp } from "@/lib/xp-system";
 import { recalculateGuildTotalsForUser } from "@/lib/guild";
+import {
+  fetchGitHubActivityEvents,
+  getAchievementXpTotal,
+  rebuildGithubActivityLedger,
+  upsertGitHubActivityEvents,
+} from "@/lib/github-activity-ledger";
+import type { CharacterClass } from "@/lib/classes";
 
-/**
- * Sincronização de atividades do GitHub usando GraphQL API
- * Similar ao GitMon - busca stats totais via GitHub GraphQL
- * Atualiza apenas a tabela github_stats (sem activity_log)
- */
-export async function POST(request: NextRequest) {
+const MIN_SYNC_INTERVAL_MS = 90 * 1000;
+const SYNC_OVERLAP_MS = 60 * 60 * 1000;
+
+function getSyncStartDate(
+  createdAt: string | null,
+  lastSyncAt: string | null,
+): Date {
+  const now = new Date();
+  const createdDate = createdAt ? new Date(createdAt) : now;
+  const safeCreatedAt = Number.isNaN(createdDate.getTime()) ? now : createdDate;
+  const firstEligibleActivity = new Date(safeCreatedAt);
+  firstEligibleActivity.setDate(firstEligibleActivity.getDate() - 7);
+
+  if (!lastSyncAt) {
+    return firstEligibleActivity;
+  }
+
+  const lastSyncDate = new Date(lastSyncAt);
+  if (Number.isNaN(lastSyncDate.getTime())) {
+    return firstEligibleActivity;
+  }
+
+  const overlapStart = new Date(lastSyncDate.getTime() - SYNC_OVERLAP_MS);
+  return overlapStart > firstEligibleActivity
+    ? overlapStart
+    : firstEligibleActivity;
+}
+
+function buildMessage(xpDelta: number, eventCount: number): string {
+  if (xpDelta > 0) {
+    return `+${xpDelta} XP | ${eventCount} atividades sincronizadas`;
+  }
+
+  if (xpDelta < 0) {
+    return `XP recalculado em ${Math.abs(xpDelta)} ponto(s)`;
+  }
+
+  return eventCount > 0
+    ? "Atividades sincronizadas sem alteração de XP"
+    : "Nenhuma atividade nova";
+}
+
+export async function POST(_request: NextRequest) {
   try {
     const supabase = await createClient();
+    const admin = createAdminClient();
 
     const {
       data: { user },
@@ -23,49 +67,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const { data: userData } = await supabase
+    const { data: userData, error: userError } = await admin
       .from("users")
       .select("id, github_username, github_access_token, created_at")
       .eq("id", user.id)
       .single();
 
-    if (!userData || !userData.github_username) {
+    if (userError || !userData?.github_username) {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
         { status: 404 },
       );
     }
 
-    // Sempre verificar se há token mais recente na sessão
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
     const sessionToken = session?.provider_token;
+    const githubToken = sessionToken || userData.github_access_token;
 
-    // Se token da sessão é diferente do banco, atualizar
     if (sessionToken && sessionToken !== userData.github_access_token) {
-      console.log(
-        `[Sync] ${userData.github_username} - Atualizando token do banco com token da sessão`,
-      );
-      await supabase
+      await admin
         .from("users")
         .update({ github_access_token: sessionToken })
         .eq("id", user.id);
-      userData.github_access_token = sessionToken;
     }
 
-    // Se não há token no banco nem na sessão
-    if (!userData.github_access_token) {
-      console.error(
-        `[Sync] ${userData.github_username} - Nenhum token disponível`,
-      );
-
+    if (!githubToken) {
       return NextResponse.json(
         {
           error:
             "Token GitHub expirado. Reconecte sua conta GitHub para continuar ganhando XP.",
-          username: userData.github_username,
           action: "reconnect_required",
           reconnect_to: "/",
         },
@@ -73,527 +106,136 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userCreatedAt = userData.created_at
-      ? new Date(userData.created_at)
-      : new Date();
-
-    const { data: character } = await supabase
+    const { data: character, error: characterError } = await admin
       .from("characters")
-      .select("id, name, class, level, current_xp, total_xp")
-      .eq("user_id", userData.id)
+      .select("id, class, level, total_xp, current_xp")
+      .eq("user_id", user.id)
       .single();
 
-    if (!character) {
+    if (characterError || !character) {
       return NextResponse.json(
         { error: "Personagem não encontrado" },
         { status: 404 },
       );
     }
 
-    const githubService = new GitHubService(
-      userData.github_access_token || undefined,
-    );
-
-    let githubStats;
-    try {
-      githubStats = await githubService.getUserStats(userData.github_username);
-    } catch (error: any) {
-      console.error(
-        `[Sync] ${userData.github_username} - Erro ao buscar stats:`,
-        error.message,
-      );
-
-      // Se token inválido, solicitar reconexão OAuth
-      if (
-        error.message.includes("inválido") ||
-        error.message.includes("expirado")
-      ) {
-        // Tentar pegar token da sessão atual primeiro
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        const currentToken = session?.provider_token;
-
-        // Se tem token na sessão e é diferente do banco, tentar usar
-        if (currentToken && currentToken !== userData.github_access_token) {
-          console.log(
-            `[Sync] ${userData.github_username} - Tentando token da sessão atual`,
-          );
-
-          await supabase
-            .from("users")
-            .update({ github_access_token: currentToken })
-            .eq("id", user.id);
-
-          const newGithubService = new GitHubService(currentToken);
-          try {
-            githubStats = await newGithubService.getUserStats(
-              userData.github_username,
-            );
-            console.log(
-              `[Sync] ${userData.github_username} - Token da sessão funcionou!`,
-            );
-          } catch (retryError: any) {
-            console.error(
-              `[Sync] ${userData.github_username} - Token da sessão também falhou:`,
-              retryError.message,
-            );
-            return NextResponse.json(
-              {
-                error: "Token GitHub expirado. Reconecte sua conta GitHub.",
-                action: "reconnect_required",
-              },
-              { status: 401 },
-            );
-          }
-        } else {
-          // Sem token válido, solicitar reconexão sem derrubar sessão
-          console.log(
-            `[Sync] ${userData.github_username} - Nenhum token válido encontrado, reconexão necessária`,
-          );
-          return NextResponse.json(
-            {
-              error: "Token GitHub expirado. Reconecte sua conta GitHub.",
-              action: "reconnect_required",
-            },
-            { status: 401 },
-          );
-        }
-      } else {
-        throw error;
-      }
-    }
-
-    // Buscar ou criar registro de stats
-    let { data: currentStats } = await supabase
+    const { data: currentStats } = await admin
       .from("github_stats")
-      .select(
-        "total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, baseline_issues, baseline_reviews, last_sync_at",
-      )
-      .eq("user_id", userData.id)
+      .select("last_sync_at")
+      .eq("user_id", user.id)
       .maybeSingle();
 
-    // Se não existir registro, criar e buscar novamente
-    if (!currentStats) {
-      const { error: insertError } = await supabase
-        .from("github_stats")
-        .insert({
-          user_id: userData.id,
-          total_commits: 0,
-          total_prs: 0,
-          total_issues: 0,
-          total_reviews: 0,
-          baseline_commits: 0,
-          baseline_prs: 0,
-          baseline_issues: 0,
-          baseline_reviews: 0,
-          last_sync_at: null,
-        });
-
-      if (insertError) {
-        console.error("[Sync] Erro ao criar github_stats:", insertError);
-        return NextResponse.json(
-          { error: "Erro ao criar estatísticas" },
-          { status: 500 },
-        );
-      }
-
-      // Buscar o registro recém-criado
-      const { data: newStats, error: fetchError } = await supabase
-        .from("github_stats")
-        .select(
-          "total_commits, total_prs, total_issues, total_reviews, baseline_commits, baseline_prs, baseline_issues, baseline_reviews, last_sync_at",
-        )
-        .eq("user_id", userData.id)
-        .single();
-
-      if (fetchError || !newStats) {
-        console.error("[Sync] Erro ao buscar stats recém-criados:", fetchError);
-        return NextResponse.json(
-          { error: "Erro ao buscar estatísticas" },
-          { status: 500 },
-        );
-      }
-
-      currentStats = newStats;
-    }
-
-    const isFirstSync = !currentStats.last_sync_at;
-
-    // VERIFICAR SE PRECISA CORRIGIR XP INICIAL (usuários antigos)
-    // Se baseline = total, significa que não recebeu XP inicial dos últimos 7 dias
-    const needsInitialXpFix =
-      !isFirstSync &&
-      currentStats.baseline_commits === currentStats.total_commits &&
-      currentStats.baseline_prs === currentStats.total_prs &&
-      currentStats.total_commits > 0; // Só corrige se tiver commits
-
-    if (needsInitialXpFix) {
-      // Buscar atividades dos últimos 7 dias
-      let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
-
-      try {
-        weeklyStats = await githubService.getWeeklyXp(userData.github_username);
-      } catch (error) {
-        console.error(
-          "[Sync - Fix] Erro ao buscar XP semanal, usando 0:",
-          error,
-        );
-      }
-
-      // Calcular novo baseline (total - últimos 7 dias)
-      const newBaselineCommits = Math.max(
-        0,
-        githubStats.totalCommits - weeklyStats.commits,
-      );
-      const newBaselinePRs = Math.max(
-        0,
-        githubStats.totalPRs - weeklyStats.prs,
-      );
-      const newBaselineIssues = Math.max(
-        0,
-        githubStats.totalIssues - weeklyStats.issues,
-      );
-
-      // Aplicar multiplicadores de classe
-      const commitMultiplier = getClassXpMultiplier(
-        character.class as any,
-        "commits",
-      );
-      const prMultiplier = getClassXpMultiplier(
-        character.class as any,
-        "pullRequests",
-      );
-      const issueMultiplier = getClassXpMultiplier(
-        character.class as any,
-        "issuesResolved",
-      );
-
-      // Calcular XP retroativo
-      const xpFromCommits = Math.floor(
-        weeklyStats.commits * 10 * commitMultiplier,
-      );
-      const xpFromPRs = Math.floor(weeklyStats.prs * 50 * prMultiplier);
-      const xpFromIssues = Math.floor(
-        weeklyStats.issues * 25 * issueMultiplier,
-      );
-      const retroactiveXp = xpFromCommits + xpFromPRs + xpFromIssues;
-
-      // Atualizar baseline
-      await supabase
-        .from("github_stats")
-        .update({
-          total_commits: githubStats.totalCommits,
-          total_prs: githubStats.totalPRs,
-          total_issues: githubStats.totalIssues,
-          baseline_commits: newBaselineCommits,
-          baseline_prs: newBaselinePRs,
-          baseline_issues: newBaselineIssues,
-          last_sync_at: new Date().toISOString(),
-        })
-        .eq("user_id", userData.id);
-
-      // Adicionar XP retroativo se houver
-      if (retroactiveXp > 0) {
-        const newTotalXp = character.total_xp + retroactiveXp;
-        const newLevel = getLevelFromXp(newTotalXp);
-        const newCurrentXp = getCurrentXp(newTotalXp, newLevel);
-
-        await supabase
-          .from("characters")
-          .update({
-            total_xp: newTotalXp,
-            level: newLevel,
-            current_xp: newCurrentXp,
-          })
-          .eq("id", character.id);
-
-        // Atualizar guildas do usuário após mudança de XP
-        try {
-          await recalculateGuildTotalsForUser(supabase, userData.id);
-        } catch (e) {
-          console.error("[Sync] Falha ao atualizar XP da(s) guilda(s):", e);
-        }
-
+    if (currentStats?.last_sync_at) {
+      const elapsedMs =
+        Date.now() - new Date(currentStats.last_sync_at).getTime();
+      if (elapsedMs < MIN_SYNC_INTERVAL_MS) {
         return NextResponse.json({
           success: true,
-          message: `Correção aplicada! Você ganhou ${retroactiveXp} XP pelas suas atividades da última semana`,
-          data: {
-            xp_gained: retroactiveXp,
-            new_total_xp: newTotalXp,
-            new_level: newLevel,
-            leveled_up: newLevel > character.level,
-            corrected: true,
-            stats: {
-              commits: weeklyStats.commits,
-              prs: weeklyStats.prs,
-              issues: weeklyStats.issues,
-              total_commits: githubStats.totalCommits,
-              total_prs: githubStats.totalPRs,
-            },
-          },
-        });
-      } else {
-        return NextResponse.json({
-          success: true,
-          message: "Baseline corrigido, sem atividades nos últimos 7 dias",
-          data: {
-            xp_gained: 0,
-            corrected: true,
-            stats: {
-              commits: 0,
-              prs: 0,
-              total_commits: githubStats.totalCommits,
-              total_prs: githubStats.totalPRs,
-            },
-          },
+          skipped: true,
+          reason: "cooldown",
+          retry_after_seconds: Math.ceil(
+            (MIN_SYNC_INTERVAL_MS - elapsedMs) / 1000,
+          ),
+          message:
+            "Sincronização recente. Aguarde antes de sincronizar novamente.",
         });
       }
     }
 
-    if (isFirstSync) {
-      // PRIMEIRA SYNC: Pegar atividades desde a data de criação do usuário
-      // Isso garante que apenas atividades após o registro sejam contabilizadas
-      let activitiesSinceJoin = { commits: 0, prs: 0, issues: 0, reviews: 0 };
-
-      try {
-        // Buscar atividades desde a data de criação do usuário
-        activitiesSinceJoin = await githubService.getActivitiesSince(
-          userData.github_username,
-          userCreatedAt,
-        );
-      } catch (error) {
-        console.error(
-          "[Sync - First] Erro ao buscar atividades desde o registro:",
-          error,
-        );
-        // Continua com 0, não falha a primeira sync
-      }
-
-      // Calcular baseline: total atual MENOS as atividades desde o registro
-      // Assim apenas atividades após o registro vão gerar XP
-      const baselineCommits = Math.max(
-        0,
-        githubStats.totalCommits - activitiesSinceJoin.commits,
-      );
-      const baselinePRs = Math.max(
-        0,
-        githubStats.totalPRs - activitiesSinceJoin.prs,
-      );
-      const baselineIssues = Math.max(
-        0,
-        githubStats.totalIssues - activitiesSinceJoin.issues,
-      );
-
-      // Para o XP inicial, usar apenas os últimos 7 dias (não todas as atividades desde o registro)
-      let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
-      try {
-        weeklyStats = await githubService.getWeeklyXp(userData.github_username);
-      } catch (error) {
-        console.error("[Sync - First] Erro ao buscar XP semanal:", error);
-      }
-
-      // Aplicar multiplicadores de classe
-      const commitMultiplier = getClassXpMultiplier(
-        character.class as any,
-        "commits",
-      );
-      const prMultiplier = getClassXpMultiplier(
-        character.class as any,
-        "pullRequests",
-      );
-      const issueMultiplier = getClassXpMultiplier(
-        character.class as any,
-        "issuesResolved",
-      );
-
-      // Calcular XP inicial (apenas últimos 7 dias)
-      const xpFromCommits = Math.floor(
-        weeklyStats.commits * 10 * commitMultiplier,
-      );
-      const xpFromPRs = Math.floor(weeklyStats.prs * 50 * prMultiplier);
-      const xpFromIssues = Math.floor(
-        weeklyStats.issues * 25 * issueMultiplier,
-      );
-      const initialXp = xpFromCommits + xpFromPRs + xpFromIssues;
-
-      // Atualizar stats com baseline ajustado
-      const { error: upsertError } = await supabase
-        .from("github_stats")
-        .update({
-          total_commits: githubStats.totalCommits,
-          total_prs: githubStats.totalPRs,
-          total_issues: githubStats.totalIssues,
-          baseline_commits: baselineCommits,
-          baseline_prs: baselinePRs,
-          baseline_issues: baselineIssues,
-          baseline_reviews: 0,
-          last_sync_at: new Date().toISOString(),
-        })
-        .eq("user_id", userData.id);
-
-      if (upsertError) {
-        console.error(`[Sync] Erro ao atualizar github_stats:`, upsertError);
-        return NextResponse.json(
-          { error: `Erro ao salvar stats: ${upsertError.message}` },
-          { status: 500 },
-        );
-      }
-
-      // Atualizar personagem com XP inicial
-      if (initialXp > 0) {
-        const newTotalXp = character.total_xp + initialXp;
-        const newLevel = getLevelFromXp(newTotalXp);
-        const newCurrentXp = getCurrentXp(newTotalXp, newLevel);
-
-        await supabase
-          .from("characters")
-          .update({
-            total_xp: newTotalXp,
-            level: newLevel,
-            current_xp: newCurrentXp,
-          })
-          .eq("id", character.id);
-
-        // Atualizar guildas do usuário após mudança de XP
-        try {
-          await recalculateGuildTotalsForUser(supabase, userData.id);
-        } catch (e) {
-          console.error("[Sync] Falha ao atualizar XP da(s) guilda(s):", e);
-        }
-
-        return NextResponse.json({
-          success: true,
-          message: `Bem-vindo! Você ganhou ${initialXp} XP pelas suas atividades da última semana`,
-          data: {
-            xp_gained: initialXp,
-            new_total_xp: newTotalXp,
-            new_level: newLevel,
-            activities_synced:
-              weeklyStats.commits + weeklyStats.prs + weeklyStats.issues,
-            stats: {
-              commits: weeklyStats.commits,
-              prs: weeklyStats.prs,
-              issues: weeklyStats.issues,
-              total_commits: githubStats.totalCommits,
-              total_prs: githubStats.totalPRs,
-              total_since_join:
-                activitiesSinceJoin.commits +
-                activitiesSinceJoin.prs +
-                activitiesSinceJoin.issues,
-            },
-          },
-        });
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: "Conta sincronizada! Seu histórico anterior foi ignorado.",
-        data: {
-          xp_gained: 0,
-          activities_synced: 0,
-          stats: {
-            commits: 0,
-            prs: 0,
-            total_commits: githubStats.totalCommits,
-            total_prs: githubStats.totalPRs,
-            total_since_join:
-              activitiesSinceJoin.commits + activitiesSinceJoin.prs,
-          },
-        },
-      });
-    }
-
-    const newCommits =
-      githubStats.totalCommits - (currentStats.total_commits || 0);
-    const newPRs = githubStats.totalPRs - (currentStats.total_prs || 0);
-    const newIssues =
-      githubStats.totalIssues - (currentStats.total_issues || 0);
-
-    const commitMultiplier = getClassXpMultiplier(
-      character.class as any,
-      "commits",
+    const githubService = new GitHubService(githubToken);
+    const syncStartDate = getSyncStartDate(
+      userData.created_at,
+      currentStats?.last_sync_at || null,
     );
-    const prMultiplier = getClassXpMultiplier(
-      character.class as any,
-      "pullRequests",
-    );
-    const issueMultiplier = getClassXpMultiplier(
-      character.class as any,
-      "issuesResolved",
+    const syncEndDate = new Date();
+
+    const events = await fetchGitHubActivityEvents(
+      githubService,
+      user.id,
+      userData.github_username,
+      syncStartDate,
+      syncEndDate,
     );
 
-    const xpFromCommits = Math.floor(newCommits * 10 * commitMultiplier);
-    const xpFromPRs = Math.floor(newPRs * 50 * prMultiplier);
-    const xpFromIssues = Math.floor(newIssues * 25 * issueMultiplier);
-    const totalXpGained = xpFromCommits + xpFromPRs + xpFromIssues;
+    await upsertGitHubActivityEvents(admin, events);
 
-    const { error: updateStatsError } = await supabase
-      .from("github_stats")
+    const activitySummary = await rebuildGithubActivityLedger(
+      admin,
+      user.id,
+      character.class as CharacterClass,
+    );
+
+    const achievementsXp = await getAchievementXpTotal(admin, user.id);
+    const totalXp = activitySummary.activityXp + achievementsXp;
+    const newLevel = getLevelFromXp(totalXp);
+    const newCurrentXp = getCurrentXp(totalXp, newLevel);
+    const syncedAt = new Date().toISOString();
+
+    const { error: updateCharacterError } = await admin
+      .from("characters")
       .update({
-        total_commits: githubStats.totalCommits,
-        total_prs: githubStats.totalPRs,
-        total_issues: githubStats.totalIssues,
-        last_sync_at: new Date().toISOString(),
+        total_xp: totalXp,
+        level: newLevel,
+        current_xp: newCurrentXp,
       })
-      .eq("user_id", userData.id);
+      .eq("id", character.id);
+
+    if (updateCharacterError) {
+      return NextResponse.json(
+        { error: updateCharacterError.message },
+        { status: 500 },
+      );
+    }
+
+    const { error: updateStatsError } = await admin.from("github_stats").upsert(
+      {
+        user_id: user.id,
+        total_commits: activitySummary.commits,
+        total_prs: activitySummary.prs,
+        total_issues: activitySummary.issues,
+        total_reviews: 0,
+        baseline_commits: 0,
+        baseline_prs: 0,
+        baseline_issues: 0,
+        baseline_reviews: 0,
+        last_sync_at: syncedAt,
+      },
+      { onConflict: "user_id" },
+    );
 
     if (updateStatsError) {
-      console.error(`[Sync] Erro ao atualizar github_stats:`, updateStatsError);
+      return NextResponse.json(
+        { error: updateStatsError.message },
+        { status: 500 },
+      );
     }
-    if (totalXpGained > 0) {
-      const newTotalXp = character.total_xp + totalXpGained;
-      const newLevel = getLevelFromXp(newTotalXp);
-      const newCurrentXp = getCurrentXp(newTotalXp, newLevel);
 
-      await supabase
-        .from("characters")
-        .update({
-          total_xp: newTotalXp,
-          level: newLevel,
-          current_xp: newCurrentXp,
-        })
-        .eq("id", character.id);
-
-      // Atualizar guildas do usuário após mudança de XP
-      try {
-        await recalculateGuildTotalsForUser(supabase, userData.id);
-      } catch (e) {
-        console.error("[Sync] Falha ao atualizar XP da(s) guilda(s):", e);
-      }
-
-      const leveledUp = newLevel > character.level;
-
-      return NextResponse.json({
-        success: true,
-        message: `+${totalXpGained} XP | ${newCommits + newPRs + newIssues} atividades sincronizadas`,
-        data: {
-          xp_gained: totalXpGained,
-          new_total_xp: newTotalXp,
-          new_level: newLevel,
-          leveled_up: leveledUp,
-          stats: {
-            commits: newCommits,
-            prs: newPRs,
-            total_commits: githubStats.totalCommits,
-            total_prs: githubStats.totalPRs,
-          },
-        },
-      });
+    try {
+      await recalculateGuildTotalsForUser(admin, user.id);
+    } catch (error) {
+      console.error("[Sync] Falha ao atualizar XP da guilda:", error);
     }
+
+    const xpDelta = totalXp - (character.total_xp || 0);
+    const eventCount = events.length;
 
     return NextResponse.json({
       success: true,
-      message: "Nenhuma atividade nova",
+      message: buildMessage(xpDelta, eventCount),
       data: {
-        xp_gained: 0,
-        activities_synced: 0,
+        xp_gained: xpDelta,
+        new_total_xp: totalXp,
+        new_level: newLevel,
+        leveled_up: newLevel > (character.level || 0),
+        activities_synced: eventCount,
+        synced_window: {
+          from: syncStartDate.toISOString(),
+          to: syncEndDate.toISOString(),
+        },
         stats: {
-          commits: 0,
-          prs: 0,
-          total_commits: githubStats.totalCommits,
-          total_prs: githubStats.totalPRs,
+          commits: activitySummary.commits,
+          prs: activitySummary.prs,
+          issues: activitySummary.issues,
         },
       },
     });

@@ -292,7 +292,9 @@ export default function LeaderboardProfileCard({
                       </div>
                       <div className="col-span-2">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Issues</span>
+                          <span className="text-muted-foreground">
+                            Issues resolvidas
+                          </span>
                           <span className="font-bold">
                             {userProfile.total_issues}
                           </span>
@@ -481,7 +483,9 @@ export default function LeaderboardProfileCard({
                       <span className="font-bold">{userProfile.total_prs}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Issues</span>
+                      <span className="text-muted-foreground">
+                        Issues resolvidas
+                      </span>
                       <span className="font-bold">
                         {userProfile.total_issues}
                       </span>

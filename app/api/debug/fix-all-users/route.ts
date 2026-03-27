@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import GitHubService from "@/lib/github-service";
 import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import { getClassXpMultiplier } from "@/lib/classes";
+import { calculateXpFromActivities } from "@/lib/github-xp";
 
 /**
  * Rota de DEBUG - Corrige XP inicial para TODOS os usuários
@@ -14,18 +15,25 @@ export async function POST(request: NextRequest) {
     // Verificar se está em localhost
     const hostname = request.headers.get("host") || "";
     const isLocalhost =
-      hostname.includes("localhost") || hostname.includes("127.0.0.1") || hostname.startsWith("192.168.");
+      hostname.includes("localhost") ||
+      hostname.includes("127.0.0.1") ||
+      hostname.startsWith("192.168.");
 
     if (!isLocalhost) {
-      return NextResponse.json({ error: "Esta rota só funciona em desenvolvimento local" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Esta rota só funciona em desenvolvimento local" },
+        { status: 403 },
+      );
     }
 
     const supabase = createAdminClient();
 
     // Buscar TODOS os usuários que precisam de correção
     // (baseline_commits = total_commits = não receberam XP inicial)
-    const { data: allStats, error: queryError } = await supabase.from("github_stats").select(
-      `
+    const { data: allStats, error: queryError } = await supabase
+      .from("github_stats")
+      .select(
+        `
         user_id,
         total_commits,
         total_prs,
@@ -33,8 +41,8 @@ export async function POST(request: NextRequest) {
         baseline_commits,
         baseline_prs,
         baseline_issues
-      `
-    );
+      `,
+      );
 
     if (queryError) {
       console.error("[Fix All] Erro ao buscar stats:", queryError);
@@ -47,7 +55,7 @@ export async function POST(request: NextRequest) {
         (stats) =>
           stats.baseline_commits === stats.total_commits &&
           stats.baseline_prs === stats.total_prs &&
-          stats.total_commits > 0
+          stats.total_commits > 0,
       )
       .map((stats) => stats.user_id);
 
@@ -86,13 +94,16 @@ export async function POST(request: NextRequest) {
           current_xp,
           total_xp
         )
-      `
+      `,
       )
       .in("id", usersNeedingFixIds);
 
     if (userQueryError) {
       console.error("[Fix All] Erro ao buscar usuários:", userQueryError);
-      return NextResponse.json({ error: userQueryError.message }, { status: 500 });
+      return NextResponse.json(
+        { error: userQueryError.message },
+        { status: 500 },
+      );
     }
 
     if (!usersNeedingFix || usersNeedingFix.length === 0) {
@@ -115,22 +126,32 @@ export async function POST(request: NextRequest) {
         github_username: userData.github_username,
         github_access_token: userData.github_access_token,
       };
-      const statsArray = Array.isArray(userData.github_stats) ? userData.github_stats : [userData.github_stats];
-      const charArray = Array.isArray(userData.characters) ? userData.characters : [userData.characters];
+      const statsArray = Array.isArray(userData.github_stats)
+        ? userData.github_stats
+        : [userData.github_stats];
+      const charArray = Array.isArray(userData.characters)
+        ? userData.characters
+        : [userData.characters];
 
       const userStats = statsArray[0];
       const character = charArray[0];
 
       if (!userStats || !character) {
-        console.error(`[Fix All] Dados inválidos para user: ${user.github_username}`);
+        console.error(
+          `[Fix All] Dados inválidos para user: ${user.github_username}`,
+        );
         continue;
       }
 
       try {
-        const githubService = new GitHubService(user.github_access_token || undefined);
+        const githubService = new GitHubService(
+          user.github_access_token || undefined,
+        );
 
         // Buscar stats do GitHub
-        const githubStats = await githubService.getUserStats(user.github_username);
+        const githubStats = await githubService.getAccurateContributionData(
+          user.github_username,
+        );
 
         // Buscar atividades dos últimos 7 dias
         let weeklyStats = { commits: 0, prs: 0, issues: 0, reviews: 0 };
@@ -138,24 +159,53 @@ export async function POST(request: NextRequest) {
         try {
           weeklyStats = await githubService.getWeeklyXp(user.github_username);
         } catch (error) {
-          console.error(`[Fix All] ${user.github_username} - Erro ao buscar XP semanal:`, error);
+          console.error(
+            `[Fix All] ${user.github_username} - Erro ao buscar XP semanal:`,
+            error,
+          );
         }
 
         // Calcular novo baseline (total - últimos 7 dias)
-        const newBaselineCommits = Math.max(0, githubStats.totalCommits - weeklyStats.commits);
-        const newBaselinePRs = Math.max(0, githubStats.totalPRs - weeklyStats.prs);
-        const newBaselineIssues = Math.max(0, githubStats.totalIssues - weeklyStats.issues);
+        const newBaselineCommits = Math.max(
+          0,
+          githubStats.totalCommits - weeklyStats.commits,
+        );
+        const newBaselinePRs = Math.max(
+          0,
+          githubStats.totalPRs - weeklyStats.prs,
+        );
+        const newBaselineIssues = Math.max(
+          0,
+          githubStats.totalIssues - weeklyStats.issues,
+        );
 
         // Aplicar multiplicadores de classe
-        const commitMultiplier = getClassXpMultiplier(character.class as any, "commits");
-        const prMultiplier = getClassXpMultiplier(character.class as any, "pullRequests");
-        const issueMultiplier = getClassXpMultiplier(character.class as any, "issuesResolved");
+        const commitMultiplier = getClassXpMultiplier(
+          character.class as any,
+          "commits",
+        );
+        const prMultiplier = getClassXpMultiplier(
+          character.class as any,
+          "pullRequests",
+        );
+        const issueMultiplier = getClassXpMultiplier(
+          character.class as any,
+          "issuesResolved",
+        );
 
         // Calcular XP retroativo
-        const xpFromCommits = Math.floor(weeklyStats.commits * 10 * commitMultiplier);
-        const xpFromPRs = Math.floor(weeklyStats.prs * 50 * prMultiplier);
-        const xpFromIssues = Math.floor(weeklyStats.issues * 25 * issueMultiplier);
-        const retroactiveXp = xpFromCommits + xpFromPRs + xpFromIssues;
+        const { totalXp: retroactiveXp } = calculateXpFromActivities(
+          {
+            commits: weeklyStats.commits,
+            prs: weeklyStats.prs,
+            issues: weeklyStats.issues,
+          },
+          {
+            commitMultiplier,
+            prMultiplier,
+            issueMultiplier,
+          },
+        );
 
         // Atualizar baseline no github_stats
 
@@ -173,7 +223,10 @@ export async function POST(request: NextRequest) {
           .select();
 
         if (updateStatsError) {
-          console.error(`[Fix All] ${user.github_username} - Erro ao atualizar stats:`, updateStatsError);
+          console.error(
+            `[Fix All] ${user.github_username} - Erro ao atualizar stats:`,
+            updateStatsError,
+          );
           results.push({
             username: user.github_username,
             success: false,
@@ -199,7 +252,10 @@ export async function POST(request: NextRequest) {
             .select();
 
           if (updateCharError) {
-            console.error(`[Fix All] ${user.github_username} - Erro ao atualizar personagem:`, updateCharError);
+            console.error(
+              `[Fix All] ${user.github_username} - Erro ao atualizar personagem:`,
+              updateCharError,
+            );
             results.push({
               username: user.github_username,
               success: false,
@@ -238,7 +294,10 @@ export async function POST(request: NextRequest) {
     }
 
     const successCount = results.filter((r) => r.success).length;
-    const totalXpGiven = results.reduce((sum, r) => sum + (r.xp_gained || 0), 0);
+    const totalXpGiven = results.reduce(
+      (sum, r) => sum + (r.xp_gained || 0),
+      0,
+    );
 
     return NextResponse.json({
       success: true,
@@ -253,8 +312,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("[Fix All] Erro geral:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erro ao corrigir usuários" },
-      { status: 500 }
+      {
+        error:
+          error instanceof Error ? error.message : "Erro ao corrigir usuários",
+      },
+      { status: 500 },
     );
   }
 }

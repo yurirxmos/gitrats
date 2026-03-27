@@ -26,21 +26,34 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (!userData) {
-      return NextResponse.json({ error: "Usuário não encontrado no banco" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Usuário não encontrado no banco" },
+        { status: 404 },
+      );
     }
 
     // Buscar personagem
-    const { data: character } = await supabase.from("characters").select("*").eq("user_id", userData.id).single();
+    const { data: character } = await supabase
+      .from("characters")
+      .select("*")
+      .eq("user_id", userData.id)
+      .single();
 
     // Buscar stats do GitHub no banco
-    const { data: githubStats } = await supabase.from("github_stats").select("*").eq("user_id", userData.id).single();
+    const { data: githubStats } = await supabase
+      .from("github_stats")
+      .select("*")
+      .eq("user_id", userData.id)
+      .single();
 
     // Buscar stats reais do GitHub via API
     let realGithubStats = null;
     try {
       if (userData.github_access_token && userData.github_username) {
         const githubService = new GitHubService(userData.github_access_token);
-        realGithubStats = await githubService.getUserStats(userData.github_username);
+        realGithubStats = await githubService.getAccurateContributionData(
+          userData.github_username,
+        );
       }
     } catch (error) {
       console.error("Erro ao buscar stats do GitHub:", error);
@@ -58,14 +71,15 @@ export async function GET(request: NextRequest) {
         ? {
             totalCommits: realGithubStats.totalCommits,
             totalPRs: realGithubStats.totalPRs,
-            totalStars: realGithubStats.totalStars,
-            totalRepos: realGithubStats.totalRepos,
+            totalIssues: realGithubStats.totalIssues,
+            totalReviews: realGithubStats.totalReviews,
           }
         : "Não foi possível buscar stats do GitHub",
       diff:
         githubStats && realGithubStats
           ? {
-              commits_diff: realGithubStats.totalCommits - (githubStats.total_commits || 0),
+              commits_diff:
+                realGithubStats.totalCommits - (githubStats.total_commits || 0),
               prs_diff: realGithubStats.totalPRs - (githubStats.total_prs || 0),
             }
           : null,
@@ -74,10 +88,11 @@ export async function GET(request: NextRequest) {
     console.error("Erro no debug:", error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Erro ao verificar status",
+        error:
+          error instanceof Error ? error.message : "Erro ao verificar status",
         stack: error instanceof Error ? error.stack : null,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
