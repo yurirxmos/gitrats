@@ -1,11 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ userId: string }> },
+) {
   try {
     const { userId } = await params;
 
-    const supabase = await createClient();
+    const authClient = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    if (userId !== user.id) {
+      const { data: currentUserData, error: roleError } = await authClient
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (roleError || currentUserData?.role !== "admin") {
+        return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+      }
+    }
+
+    const supabase = createAdminClient();
 
     // Buscar o personagem do usuário
     const { data: character, error: characterError } = await supabase
@@ -15,7 +40,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .single();
 
     if (characterError || !character) {
-      return NextResponse.json({ error: "Personagem não encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Personagem não encontrado" },
+        { status: 404 },
+      );
     }
 
     // Contar quantos personagens têm XP maior (para calcular o rank)
@@ -36,6 +64,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
   } catch (error) {
     console.error("Erro no endpoint de rank:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

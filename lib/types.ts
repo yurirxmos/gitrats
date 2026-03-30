@@ -1,6 +1,5 @@
 export type LeaderboardEntry = {
   rank: number;
-  user_id: string;
   character_name: string;
   character_class: "warrior" | "mage" | "orc";
   level: number;
@@ -45,7 +44,7 @@ export type Guild = {
 
 export type GuildMember = {
   guild_id: string;
-  user_id: string;
+  user_id?: string;
   joined_at: string;
   role: "owner" | "admin" | "member";
   character_name?: string;

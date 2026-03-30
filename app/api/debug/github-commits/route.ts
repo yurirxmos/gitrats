@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { blockDebugRouteInProduction } from "@/lib/debug-route";
 
 /**
  * Endpoint de debug para testar busca de commits do GitHub
  */
 export async function GET(request: NextRequest) {
   try {
+    const blockedResponse = blockDebugRouteInProduction();
+
+    if (blockedResponse) {
+      return blockedResponse;
+    }
+
     const supabase = await createClient();
 
     const {
@@ -25,7 +32,10 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (!userData?.github_access_token) {
-      return NextResponse.json({ error: "Token do GitHub não encontrado" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Token do GitHub não encontrado" },
+        { status: 400 },
+      );
     }
 
     const since = new Date();
@@ -86,6 +96,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erro no debug:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

@@ -134,7 +134,7 @@ export function ClassMultipliersGrid({ characterClass }: { characterClass: Chara
     { label: "Commits Grandes", value: multipliers.largeCommits },
     { label: "Pull Requests", value: multipliers.pullRequests },
     { label: "Code Reviews", value: multipliers.codeReviews },
-    { label: "Issues Resolvidas", value: multipliers.issuesResolved },
+    { label: "issues", value: multipliers.issuesResolved },
     { label: "Achievements", value: multipliers.achievements },
     { label: "Stars/Forks", value: multipliers.starsAndForks },
     { label: "Releases", value: multipliers.releases },

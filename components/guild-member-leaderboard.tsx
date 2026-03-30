@@ -17,7 +17,9 @@ interface GuildMemberLeaderboardProps {
 
 // Componente responsável por mostrar ranking interno da guilda (ordenado por XP)
 // Comentário: lógica de ordenação feita aqui para evitar novo endpoint e reduzir latência.
-export function GuildMemberLeaderboard({ members }: GuildMemberLeaderboardProps) {
+export function GuildMemberLeaderboard({
+  members,
+}: GuildMemberLeaderboardProps) {
   const ranked: RankedMember[] = [...members]
     .filter((m) => typeof m.total_xp === "number" && (m.total_xp || 0) >= 0)
     .sort((a, b) => (b.total_xp || 0) - (a.total_xp || 0))
@@ -27,7 +29,9 @@ export function GuildMemberLeaderboard({ members }: GuildMemberLeaderboardProps)
     return (
       <Card className="border-none shadow-none">
         <CardContent className="p-6 text-center">
-          <p className="text-sm text-muted-foreground">Sem membros ranqueados ainda</p>
+          <p className="text-sm text-muted-foreground">
+            Sem membros ranqueados ainda
+          </p>
         </CardContent>
       </Card>
     );
@@ -38,7 +42,9 @@ export function GuildMemberLeaderboard({ members }: GuildMemberLeaderboardProps)
     if (rank === 1) return <FaTrophy className="text-yellow-500 text-lg" />;
     if (rank === 2) return <FaMedal className="text-gray-400 text-lg" />;
     if (rank === 3) return <FaMedal className="text-amber-700 text-lg" />;
-    return <span className="text-muted-foreground font-bold text-xs">#{rank}</span>;
+    return (
+      <span className="text-muted-foreground font-bold text-xs">#{rank}</span>
+    );
   };
 
   const getRankColorClass = (level: number | undefined): string => {
@@ -58,10 +64,12 @@ export function GuildMemberLeaderboard({ members }: GuildMemberLeaderboardProps)
         <div className="space-y-2">
           {ranked.map((m) => (
             <div
-              key={m.user_id}
+              key={`${m.github_username || "member"}-${m.joined_at}`}
               className="flex items-center gap-4 p-3 bg-muted rounded-lg"
             >
-              <div className="w-10 flex items-center justify-center shrink-0">{getRankIcon(m.rank)}</div>
+              <div className="w-10 flex items-center justify-center shrink-0">
+                {getRankIcon(m.rank)}
+              </div>
               <div className="relative w-14 h-14 bg-background rounded-lg overflow-hidden shrink-0">
                 {m.character_class && m.level && (
                   <Image
@@ -74,16 +82,24 @@ export function GuildMemberLeaderboard({ members }: GuildMemberLeaderboardProps)
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm truncate">{m.character_name || "-"}</h3>
+                  <h3 className="font-bold text-sm truncate">
+                    {m.character_name || "-"}
+                  </h3>
                   <span className={`text-[10px] ${getRankColorClass(m.level)}`}>
-                    {m.character_class && m.level ? getCurrentRank(m.character_class, m.level) : ""}
+                    {m.character_class && m.level
+                      ? getCurrentRank(m.character_class, m.level)
+                      : ""}
                   </span>
                 </div>
-                <p className="text-[10px] text-muted-foreground truncate">@{m.github_username}</p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  @{m.github_username}
+                </p>
               </div>
               <div className="flex flex-col items-end text-right shrink-0">
                 <p className="font-bold text-xs">Level {m.level || 1}</p>
-                <p className="text-[10px] text-muted-foreground">{(m.total_xp || 0).toLocaleString()} XP</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {(m.total_xp || 0).toLocaleString()} XP
+                </p>
               </div>
             </div>
           ))}

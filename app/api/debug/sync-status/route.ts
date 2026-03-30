@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import GitHubService from "@/lib/github-service";
+import { blockDebugRouteInProduction } from "@/lib/debug-route";
 
 /**
  * Endpoint de DEBUG para verificar status da sincronização
  */
 export async function GET(request: NextRequest) {
   try {
+    const blockedResponse = blockDebugRouteInProduction();
+
+    if (blockedResponse) {
+      return blockedResponse;
+    }
+
     const supabase = await createClient();
 
     const {

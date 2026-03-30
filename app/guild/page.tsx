@@ -24,7 +24,12 @@ import {
   FaUserPlus,
   FaStar,
 } from "react-icons/fa6";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function GuildPage() {
   const { user, hasCharacter } = useUserContext();
@@ -167,7 +172,9 @@ export default function GuildPage() {
         <main className="flex-1 flex items-center justify-center p-8">
           <Card>
             <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">Você precisa criar um personagem para acessar guildas</p>
+              <p className="text-muted-foreground">
+                Você precisa criar um personagem para acessar guildas
+              </p>
             </CardContent>
           </Card>
         </main>
@@ -212,11 +219,10 @@ export default function GuildPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">Convites Recebidos ({invites.length})</h2>
-                  <Button
-                    variant="secondary"
-                    onClick={refreshInvites}
-                  >
+                  <h2 className="text-xl font-bold">
+                    Convites Recebidos ({invites.length})
+                  </h2>
+                  <Button variant="secondary" onClick={refreshInvites}>
                     <FaBell className="mr-2" /> Atualizar
                   </Button>
                 </div>
@@ -230,7 +236,9 @@ export default function GuildPage() {
                         <p className="font-bold text-sm">
                           {invite.guild_name}{" "}
                           {invite.guild_tag ? (
-                            <span className="text-xs text-muted-foreground">[{invite.guild_tag}]</span>
+                            <span className="text-xs text-muted-foreground">
+                              [{invite.guild_tag}]
+                            </span>
                           ) : null}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -270,12 +278,22 @@ export default function GuildPage() {
                     <div className="flex flex-row items-center gap-2">
                       <h2 className="text-2xl font-black">{guild.name}</h2>
                       <p>
-                        {guild.tag && <span className="text-xs font-bold text-muted-foreground">[{guild.tag}]</span>}
+                        {guild.tag && (
+                          <span className="text-xs font-bold text-muted-foreground">
+                            [{guild.tag}]
+                          </span>
+                        )}
                       </p>
-                      {isOwner && <FaCrown className="text-yellow-500 text-sm" />}
+                      {isOwner && (
+                        <FaCrown className="text-yellow-500 text-sm" />
+                      )}
                     </div>
 
-                    {guild.description && <p className="text-sm text-muted-foreground">{guild.description}</p>}
+                    {guild.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {guild.description}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-row items-center gap-3">
@@ -297,7 +315,9 @@ export default function GuildPage() {
                             variant="secondary"
                           >
                             <FaUsers />
-                            <p className="text-xs">{guild.total_members} membros</p>
+                            <p className="text-xs">
+                              {guild.total_members} membros
+                            </p>
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
@@ -313,7 +333,9 @@ export default function GuildPage() {
                             variant="secondary"
                           >
                             <FaStar />
-                            <p className="text-xs">{guild.total_xp.toLocaleString()} XP</p>
+                            <p className="text-xs">
+                              {guild.total_xp.toLocaleString()} XP
+                            </p>
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
@@ -346,13 +368,20 @@ export default function GuildPage() {
                 </div>
 
                 {isOwner &&
-                  invites.filter((invite) => invite.status === "pending" && invite.guild_id === guild.id).length >
-                    0 && (
+                  invites.filter(
+                    (invite) =>
+                      invite.status === "pending" &&
+                      invite.guild_id === guild.id,
+                  ).length > 0 && (
                     <div className="space-y-3 mb-6">
                       <h3 className="font-bold text-sm">Convites Pendentes</h3>
                       <div className="space-y-3">
                         {invites
-                          .filter((invite) => invite.status === "pending" && invite.guild_id === guild.id)
+                          .filter(
+                            (invite) =>
+                              invite.status === "pending" &&
+                              invite.guild_id === guild.id,
+                          )
                           .map((invite) => (
                             <div
                               key={invite.id}
@@ -360,11 +389,17 @@ export default function GuildPage() {
                             >
                               <div>
                                 <p className="font-bold text-sm">
-                                  {(invite as any).invited_username || invite.invited_user_id}
+                                  {(invite as any).invited_username ||
+                                    invite.invited_user_id}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  Enviado em {new Date(invite.created_at).toLocaleDateString()}{" "}
-                                  {new Date(invite.created_at).toLocaleTimeString()}
+                                  Enviado em{" "}
+                                  {new Date(
+                                    invite.created_at,
+                                  ).toLocaleDateString()}{" "}
+                                  {new Date(
+                                    invite.created_at,
+                                  ).toLocaleTimeString()}
                                 </p>
                               </div>
                               <Button
@@ -385,8 +420,12 @@ export default function GuildPage() {
             <Card>
               <CardContent className="p-6 text-center">
                 <FaUsers className="text-6xl mx-auto mb-4 text-muted-foreground" />
-                <h2 className="text-xl font-bold mb-2">Você não está em uma guilda</h2>
-                <p className="text-sm text-muted-foreground mb-6">Crie sua própria guilda ou aguarde um convite</p>
+                <h2 className="text-xl font-bold mb-2">
+                  Você não está em uma guilda
+                </h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Crie sua própria guilda ou aguarde um convite
+                </p>
                 <Button onClick={() => setShowCreateDialog(true)}>
                   <FaPlus className="mr-2" />
                   Criar Guilda
@@ -396,7 +435,9 @@ export default function GuildPage() {
           )}
 
           {/* Ranking interno da guilda */}
-          {guild && members.length > 0 && <GuildMemberLeaderboard members={members} />}
+          {guild && members.length > 0 && (
+            <GuildMemberLeaderboard members={members} />
+          )}
 
           {/* Membros (lista bruta) */}
           {guild && (
@@ -413,13 +454,16 @@ export default function GuildPage() {
                 <div className="space-y-2">
                   {members.map((member) => (
                     <div
-                      key={member.user_id}
+                      key={`${member.github_username || "member"}-${member.joined_at}`}
                       className="flex items-center gap-3 p-3 bg-muted rounded-lg text-xs"
                     >
                       <div className="relative w-5 h-5 bg-background rounded-full overflow-hidden shrink-0">
                         {member.character_class && (
                           <Image
-                            src={getCharacterAvatar(member.character_class, member.level || 1)}
+                            src={getCharacterAvatar(
+                              member.character_class,
+                              member.level || 1,
+                            )}
                             alt={member.character_name || ""}
                             fill
                             className="object-contain"
@@ -428,13 +472,23 @@ export default function GuildPage() {
                       </div>
                       <div className="flex-1 min-w-0 flex flex-row items-center gap-3">
                         <div className="flex items-center gap-1">
-                          {member.role === "owner" && <FaCrown className="text-yellow-500 text-xs shrink-0" />}
-                          <p className="font-bold text-xs truncate">{member.character_name}</p>
+                          {member.role === "owner" && (
+                            <FaCrown className="text-yellow-500 text-xs shrink-0" />
+                          )}
+                          <p className="font-bold text-xs truncate">
+                            {member.character_name}
+                          </p>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {member.character_class && getCurrentRank(member.character_class, member.level || 1)}
+                          {member.character_class &&
+                            getCurrentRank(
+                              member.character_class,
+                              member.level || 1,
+                            )}
                         </p>
-                        <p className="text-[10px] opacity-20 ml-auto">@{member.github_username}</p>
+                        <p className="text-[10px] opacity-20 ml-auto">
+                          @{member.github_username}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -446,16 +500,15 @@ export default function GuildPage() {
       </main>
 
       {/* Dialog Criar Guilda */}
-      <Dialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-      >
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <div className="space-y-4 py-4">
             <h2 className="text-2xl font-bold">Criar Guilda</h2>
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-bold mb-1 block">Nome da Guilda *</label>
+                <label className="text-sm font-bold mb-1 block">
+                  Nome da Guilda *
+                </label>
                 <Input
                   placeholder="Nome da guilda"
                   value={guildName}
@@ -464,7 +517,9 @@ export default function GuildPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-bold mb-1 block">Tag (opcional)</label>
+                <label className="text-sm font-bold mb-1 block">
+                  Tag (opcional)
+                </label>
                 <Input
                   placeholder="TAG (máx 6 caracteres)"
                   value={guildTag}
@@ -473,7 +528,9 @@ export default function GuildPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-bold mb-1 block">Descrição (opcional)</label>
+                <label className="text-sm font-bold mb-1 block">
+                  Descrição (opcional)
+                </label>
                 <Input
                   placeholder="Descrição da guilda"
                   value={guildDescription}
@@ -503,10 +560,7 @@ export default function GuildPage() {
       </Dialog>
 
       {/* Dialog Convidar Membro */}
-      <Dialog
-        open={showInviteDialog}
-        onOpenChange={setShowInviteDialog}
-      >
+      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
         <DialogContent>
           <DialogTitle>
             <h2 className="text-xl font-bold">Convidar Membro</h2>
@@ -538,17 +592,15 @@ export default function GuildPage() {
       </Dialog>
 
       {/* Dialog Confirmar Deletar Guilda */}
-      <Dialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-      >
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogTitle>
             <h2 className="text-xl font-bold text-red-600">Deletar Guilda</h2>
           </DialogTitle>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Tem certeza que deseja deletar a guilda <strong>{guild?.name}</strong>? Esta ação não pode ser desfeita e
+              Tem certeza que deseja deletar a guilda{" "}
+              <strong>{guild?.name}</strong>? Esta ação não pode ser desfeita e
               todos os membros serão removidos.
             </p>
             <div className="flex gap-2">

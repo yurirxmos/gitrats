@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { EmailService } from "@/lib/email-service";
+import { blockDebugRouteInProduction } from "@/lib/debug-route";
 
 /**
  * Endpoint de debug para envio de convite de guilda SEM mock.
@@ -17,6 +18,12 @@ import { EmailService } from "@/lib/email-service";
  */
 export async function POST(req: NextRequest) {
   try {
+    const blockedResponse = blockDebugRouteInProduction();
+
+    if (blockedResponse) {
+      return blockedResponse;
+    }
+
     const body = await req.json().catch(() => null);
     if (!body) {
       return NextResponse.json({ error: "Body inválido" }, { status: 400 });
@@ -39,10 +46,20 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validação mínima (explica o porquê: garante que template gere info correta)
-    if (!email || !invitedUsername || !guildName || !guildTag || !inviterUsername || !inviteId) {
+    if (
+      !email ||
+      !invitedUsername ||
+      !guildName ||
+      !guildTag ||
+      !inviterUsername ||
+      !inviteId
+    ) {
       return NextResponse.json(
-        { error: "Campos obrigatórios: email, invitedUsername, guildName, guildTag, inviterUsername, inviteId" },
-        { status: 400 }
+        {
+          error:
+            "Campos obrigatórios: email, invitedUsername, guildName, guildTag, inviterUsername, inviteId",
+        },
+        { status: 400 },
       );
     }
 
@@ -52,7 +69,7 @@ export async function POST(req: NextRequest) {
       guildName,
       guildTag,
       inviterUsername,
-      inviteId
+      inviteId,
     );
 
     return NextResponse.json({
@@ -64,6 +81,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     console.error("Erro envio convite debug sem mock:", e);
-    return NextResponse.json({ error: "Falha ao enviar convite" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Falha ao enviar convite" },
+      { status: 500 },
+    );
   }
 }

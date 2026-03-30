@@ -6,22 +6,39 @@ import { createClient, getAuthUserFromRequest } from "@/lib/supabase/server";
  */
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, user, error: authError } = await getAuthUserFromRequest(request as any);
+    const {
+      supabase,
+      user,
+      error: authError,
+    } = await getAuthUserFromRequest(request as any);
 
-    console.log("[API_USER_GET] Auth:", { hasUser: !!user, error: authError?.message });
+    console.log("[API_USER_GET] Auth:", {
+      hasUser: !!user,
+      error: authError?.message,
+    });
 
     if (authError || !user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const { data: userData } = await supabase.from("users").select("*").eq("id", user.id).single();
+    const { data: userData } = await supabase
+      .from("users")
+      .select("notifications_enabled, role")
+      .eq("id", user.id)
+      .single();
 
-    console.log("[API_USER_GET] User data:", { hasData: !!userData, userId: user.id });
+    console.log("[API_USER_GET] User data:", {
+      hasData: !!userData,
+      userId: user.id,
+    });
 
     return NextResponse.json({ data: userData });
   } catch (error) {
     console.error("[API_USER_GET] Erro ao buscar usuário:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 
@@ -31,9 +48,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log("[API_USER_POST] Iniciado");
-    const { supabase, user, error: authError } = await getAuthUserFromRequest(request as any);
+    const {
+      supabase,
+      user,
+      error: authError,
+    } = await getAuthUserFromRequest(request as any);
 
-    console.log("[API_USER_POST] Auth:", { hasUser: !!user, error: authError?.message });
+    console.log("[API_USER_POST] Auth:", {
+      hasUser: !!user,
+      error: authError?.message,
+    });
 
     if (authError || !user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -47,13 +71,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { githubId, githubUsername, githubAvatarUrl, name, email } = body;
 
-    console.log("[API_USER_POST] Body:", { githubId, githubUsername, name, email });
+    console.log("[API_USER_POST] Body:", {
+      githubId,
+      githubUsername,
+      name,
+      email,
+    });
 
     if (!githubId || !githubUsername) {
-      return NextResponse.json({ error: "GitHub ID e username são obrigatórios" }, { status: 400 });
+      return NextResponse.json(
+        { error: "GitHub ID e username são obrigatórios" },
+        { status: 400 },
+      );
     }
 
-    const { data: existingUser } = await supabase.from("users").select("id").eq("id", user.id).single();
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", user.id)
+      .single();
 
     console.log("[API_USER_POST] Existing user:", !!existingUser);
 
@@ -69,12 +105,20 @@ export async function POST(request: NextRequest) {
           email,
         })
         .eq("id", user.id)
-        .select()
+        .select(
+          "id, github_username, github_avatar_url, name, email, notifications_enabled, role",
+        )
         .single();
 
       if (updateError) {
-        console.error("[API_USER_POST] Erro ao atualizar usuário:", updateError);
-        return NextResponse.json({ error: updateError.message }, { status: 500 });
+        console.error(
+          "[API_USER_POST] Erro ao atualizar usuário:",
+          updateError,
+        );
+        return NextResponse.json(
+          { error: updateError.message },
+          { status: 500 },
+        );
       }
 
       console.log("[API_USER_POST] Usuário atualizado com sucesso");
@@ -96,7 +140,9 @@ export async function POST(request: NextRequest) {
         email,
         // notifications_enabled usa o DEFAULT do banco (true)
       })
-      .select()
+      .select(
+        "id, github_username, github_avatar_url, name, email, notifications_enabled, role",
+      )
       .single();
 
     if (createError) {
@@ -110,7 +156,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[API_USER_POST] Erro no endpoint user:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 
@@ -119,7 +168,11 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const { supabase, user, error: authError } = await getAuthUserFromRequest(request as any);
+    const {
+      supabase,
+      user,
+      error: authError,
+    } = await getAuthUserFromRequest(request as any);
 
     if (authError || !user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -136,7 +189,7 @@ export async function PUT(request: NextRequest) {
       .from("users")
       .update({ notifications_enabled: notificationsEnabled })
       .eq("id", user.id)
-      .select()
+      .select("notifications_enabled, role")
       .single();
 
     if (updateError) {
@@ -146,6 +199,9 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ data: updated });
   } catch (error) {
     console.error("Erro no PUT /api/user:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

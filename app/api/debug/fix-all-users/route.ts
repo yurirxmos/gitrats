@@ -4,6 +4,7 @@ import GitHubService from "@/lib/github-service";
 import { getLevelFromXp, getCurrentXp } from "@/lib/xp-system";
 import { getClassXpMultiplier } from "@/lib/classes";
 import { calculateXpFromActivities } from "@/lib/github-xp";
+import { blockDebugRouteInProduction } from "@/lib/debug-route";
 
 /**
  * Rota de DEBUG - Corrige XP inicial para TODOS os usuários
@@ -12,6 +13,12 @@ import { calculateXpFromActivities } from "@/lib/github-xp";
  */
 export async function POST(request: NextRequest) {
   try {
+    const blockedResponse = blockDebugRouteInProduction();
+
+    if (blockedResponse) {
+      return blockedResponse;
+    }
+
     // Verificar se está em localhost
     const hostname = request.headers.get("host") || "";
     const isLocalhost =

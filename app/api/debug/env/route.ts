@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
+import { blockDebugRouteInProduction } from "@/lib/debug-route";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const blockedResponse = blockDebugRouteInProduction();
+
+  if (blockedResponse) {
+    return blockedResponse;
+  }
+
   return NextResponse.json({
     hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
     hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,

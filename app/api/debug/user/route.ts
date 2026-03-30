@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { blockDebugRouteInProduction } from "@/lib/debug-route";
 
 /**
  * Endpoint de debug para verificar dados do usuário
  */
 export async function GET(request: NextRequest) {
   try {
+    const blockedResponse = blockDebugRouteInProduction();
+
+    if (blockedResponse) {
+      return blockedResponse;
+    }
+
     const supabase = await createClient();
 
     const {
@@ -34,7 +41,9 @@ export async function GET(request: NextRequest) {
     // Buscar stats do GitHub
     const { data: githubStats } = await supabase
       .from("github_stats")
-      .select("total_commits, total_prs, total_stars, total_repos, last_sync_at")
+      .select(
+        "total_commits, total_prs, total_stars, total_repos, last_sync_at",
+      )
       .eq("user_id", user.id)
       .single();
 
@@ -63,6 +72,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erro no debug:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

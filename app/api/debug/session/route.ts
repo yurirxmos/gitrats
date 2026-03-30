@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { blockDebugRouteInProduction } from "@/lib/debug-route";
 
 export async function GET(request: NextRequest) {
   try {
+    const blockedResponse = blockDebugRouteInProduction();
+
+    if (blockedResponse) {
+      return blockedResponse;
+    }
+
     const supabase = await createClient();
-    const { data: userResult, error: userError } = await supabase.auth.getUser();
+    const { data: userResult, error: userError } =
+      await supabase.auth.getUser();
     const { data: sessionResult } = await supabase.auth.getSession();
 
     const cookieHeader = request.headers.get("cookie") || "";
@@ -14,7 +22,9 @@ export async function GET(request: NextRequest) {
       const value = rest.join("=");
       return {
         name,
-        valuePreview: value ? value.slice(0, 12) + (value.length > 12 ? "..." : "") : "",
+        valuePreview: value
+          ? value.slice(0, 12) + (value.length > 12 ? "..." : "")
+          : "",
         length: value.length,
       };
     });
@@ -27,7 +37,8 @@ export async function GET(request: NextRequest) {
         ? {
             expires_at: sessionResult.session.expires_at,
             has_access_token: !!sessionResult.session.access_token,
-            access_token_preview: sessionResult.session.access_token.slice(0, 12) + "...",
+            access_token_preview:
+              sessionResult.session.access_token.slice(0, 12) + "...",
             has_provider_token: !!sessionResult.session.provider_token,
             provider_token_preview: sessionResult.session.provider_token
               ? sessionResult.session.provider_token.slice(0, 12) + "..."

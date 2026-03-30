@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { blockDebugRouteInProduction } from "@/lib/debug-route";
 
 /**
  * Endpoint de DEBUG para resetar last_sync_at e permitir re-sincronização
  */
 export async function POST(request: NextRequest) {
   try {
+    const blockedResponse = blockDebugRouteInProduction();
+
+    if (blockedResponse) {
+      return blockedResponse;
+    }
+
     const supabase = await createClient();
 
     const {
@@ -32,10 +39,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "last_sync_at resetado! Agora você pode fazer a primeira sincronização novamente.",
+      message:
+        "last_sync_at resetado! Agora você pode fazer a primeira sincronização novamente.",
     });
   } catch (error) {
     console.error("Erro no fix-sync:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { blockDebugRouteInProduction } from "@/lib/debug-route";
 
 export async function GET(request: NextRequest) {
   try {
+    const blockedResponse = blockDebugRouteInProduction();
+
+    if (blockedResponse) {
+      return blockedResponse;
+    }
+
     const supabase = await createClient();
 
     const {
@@ -22,7 +29,10 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (userQueryError || !userData) {
-      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Usuário não encontrado" },
+        { status: 404 },
+      );
     }
 
     // Verificar sessão atual
@@ -33,7 +43,9 @@ export async function GET(request: NextRequest) {
     const sessionInfo = {
       has_session: !!session,
       has_provider_token: !!session?.provider_token,
-      provider_token_preview: session?.provider_token ? session.provider_token.substring(0, 10) + "..." : null,
+      provider_token_preview: session?.provider_token
+        ? session.provider_token.substring(0, 10) + "..."
+        : null,
       session_expires_at: session?.expires_at,
       user_metadata: session?.user?.user_metadata,
     };
@@ -42,14 +54,17 @@ export async function GET(request: NextRequest) {
       id: userData.id,
       github_username: userData.github_username,
       has_token_in_db: !!userData.github_access_token,
-      token_in_db_preview: userData.github_access_token ? userData.github_access_token.substring(0, 10) + "..." : null,
+      token_in_db_preview: userData.github_access_token
+        ? userData.github_access_token.substring(0, 10) + "..."
+        : null,
       created_at: userData.created_at,
     };
 
     return NextResponse.json({
       user: userInfo,
       session: sessionInfo,
-      needs_token_refresh: !userData.github_access_token && !session?.provider_token,
+      needs_token_refresh:
+        !userData.github_access_token && !session?.provider_token,
       recommendation: !userData.github_access_token
         ? session?.provider_token
           ? "Token disponível na sessão - chame /api/github/configure-token"
@@ -58,6 +73,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erro no debug token:", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro interno" }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Erro interno" },
+      { status: 500 },
+    );
   }
 }

@@ -1,18 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getAchievementXpTotal } from "@/lib/github-activity-ledger";
 import { getClassXpMultiplier, type CharacterClass } from "@/lib/classes";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
+    const authClient = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser();
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: "userId é obrigatório" },
-        { status: 400 },
-      );
+    if (authError || !user) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const requestedUserId = searchParams.get("userId");
+    const userId = requestedUserId || user.id;
+
+    if (userId !== user.id) {
+      const { data: currentUserData, error: roleError } = await authClient
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (roleError || currentUserData?.role !== "admin") {
+        return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+      }
     }
 
     const supabase = createAdminClient();

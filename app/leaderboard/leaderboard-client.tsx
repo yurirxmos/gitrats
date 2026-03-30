@@ -194,13 +194,28 @@ export default function LeaderboardClient({
     return "text-muted-foreground";
   };
 
-  const currentUserEntry = user
-    ? (leaderboard.find((entry) => entry.user_id === user.id) ?? null)
+  const currentUsername = userProfile?.github_username || null;
+  const currentUserEntry = currentUsername
+    ? (leaderboard.find((entry) => entry.github_username === currentUsername) ??
+      null)
     : null;
   const nextLevelXp = userProfile ? getXpForLevel(userProfile.level + 1) : 0;
   const xpRemaining = userProfile
     ? Math.max(nextLevelXp - userProfile.current_xp, 0)
     : 0;
+
+  const canOpenXpDialog = (
+    entry: LeaderboardEntry | null | undefined,
+  ): entry is LeaderboardEntry => {
+    return Boolean(
+      entry && currentUsername && entry.github_username === currentUsername,
+    );
+  };
+
+  const handleOpenXpDialog = (entry: LeaderboardEntry | null | undefined) => {
+    if (!canOpenXpDialog(entry)) return;
+    setXpDialogPlayer(entry);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] animate-[grid-move_2s_linear_infinite]">
@@ -480,9 +495,13 @@ export default function LeaderboardClient({
                               </p>
                               <p
                                 onClick={() =>
-                                  setXpDialogPlayer(leaderboard[1])
+                                  handleOpenXpDialog(leaderboard[1])
                                 }
-                                className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                className={
+                                  canOpenXpDialog(leaderboard[1])
+                                    ? "text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                    : "text-xs text-muted-foreground"
+                                }
                               >
                                 {leaderboard[1]?.total_xp?.toLocaleString() ||
                                   0}{" "}
@@ -508,7 +527,7 @@ export default function LeaderboardClient({
                                     {leaderboard[1]?.total_issues || 0}
                                   </p>
                                   <p className="text-muted-foreground">
-                                    Issues resolvidas
+                                    Issues
                                   </p>
                                 </div>
                               </div>
@@ -581,9 +600,13 @@ export default function LeaderboardClient({
                               </p>
                               <span
                                 onClick={() =>
-                                  setXpDialogPlayer(leaderboard[0])
+                                  handleOpenXpDialog(leaderboard[0])
                                 }
-                                className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                className={
+                                  canOpenXpDialog(leaderboard[0])
+                                    ? "text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                    : "text-sm text-muted-foreground"
+                                }
                               >
                                 {leaderboard[0]?.total_xp?.toLocaleString() ||
                                   0}{" "}
@@ -609,7 +632,7 @@ export default function LeaderboardClient({
                                     {leaderboard[0]?.total_issues || 0}
                                   </p>
                                   <p className="text-muted-foreground">
-                                    Issues resolvidas
+                                    Issues
                                   </p>
                                 </div>
                               </div>
@@ -682,9 +705,13 @@ export default function LeaderboardClient({
                               </p>
                               <span
                                 onClick={() =>
-                                  setXpDialogPlayer(leaderboard[2])
+                                  handleOpenXpDialog(leaderboard[2])
                                 }
-                                className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                className={
+                                  canOpenXpDialog(leaderboard[2])
+                                    ? "text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                    : "text-xs text-muted-foreground"
+                                }
                               >
                                 {leaderboard[2]?.total_xp?.toLocaleString() ||
                                   0}{" "}
@@ -710,7 +737,7 @@ export default function LeaderboardClient({
                                     {leaderboard[2]?.total_issues || 0}
                                   </p>
                                   <p className="text-muted-foreground">
-                                    Issues resolvidas
+                                    Issues
                                   </p>
                                 </div>
                               </div>
@@ -724,7 +751,7 @@ export default function LeaderboardClient({
                       <div className="space-y-2">
                         {leaderboard.map((player) => (
                           <Card
-                            key={player.user_id}
+                            key={player.github_username}
                             className="transition-all hover:opacity-60 border-none shadow-none"
                           >
                             <CardContent className="border-none shadow-none max-w-xs">
@@ -803,9 +830,13 @@ export default function LeaderboardClient({
                                     <span
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setXpDialogPlayer(player);
+                                        handleOpenXpDialog(player);
                                       }}
-                                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                      className={
+                                        canOpenXpDialog(player)
+                                          ? "text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                          : "text-xs text-muted-foreground"
+                                      }
                                     >
                                       {player.total_xp.toLocaleString()} XP
                                     </span>
@@ -831,7 +862,7 @@ export default function LeaderboardClient({
                                       {player.total_issues}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                      Issues resolvidas
+                                      Issues
                                     </p>
                                   </div>
                                 </div>
@@ -846,7 +877,7 @@ export default function LeaderboardClient({
                       <div className="space-y-2">
                         {leaderboard.slice(3).map((player) => (
                           <Card
-                            key={player.user_id}
+                            key={player.github_username}
                             className="transition-all hover:opacity-60 border-none shadow-none"
                           >
                             <CardContent className="px-4 border-none shadow-none">
@@ -920,9 +951,13 @@ export default function LeaderboardClient({
                                     <span
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setXpDialogPlayer(player);
+                                        handleOpenXpDialog(player);
                                       }}
-                                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                      className={
+                                        canOpenXpDialog(player)
+                                          ? "text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                          : "text-xs text-muted-foreground"
+                                      }
                                     >
                                       {player.total_xp.toLocaleString()} XP
                                     </span>
@@ -948,7 +983,7 @@ export default function LeaderboardClient({
                                       {player.total_issues}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                      Issues resolvidas
+                                      Issues
                                     </p>
                                   </div>
                                 </div>
@@ -1041,7 +1076,6 @@ export default function LeaderboardClient({
         <XpBreakdownDialog
           isOpen={!!xpDialogPlayer}
           onClose={() => setXpDialogPlayer(null)}
-          userId={xpDialogPlayer.user_id}
           username={xpDialogPlayer.github_username}
           characterClass={xpDialogPlayer.character_class}
           totalXp={xpDialogPlayer.total_xp}
@@ -1090,7 +1124,7 @@ export default function LeaderboardClient({
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {guildMembers.map((member) => (
                     <div
-                      key={member.user_id}
+                      key={`${member.github_username || "member"}-${member.joined_at}`}
                       className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
                     >
                       <Image

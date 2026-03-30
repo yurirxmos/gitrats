@@ -21,7 +21,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface XpBreakdownDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  userId: string;
   username: string;
   characterClass: string;
   totalXp: number;
@@ -51,7 +50,6 @@ interface XpAnalysis {
 export function XpBreakdownDialog({
   isOpen,
   onClose,
-  userId,
   username,
   characterClass,
   totalXp,
@@ -64,7 +62,7 @@ export function XpBreakdownDialog({
   useEffect(() => {
     setAnalysis(null);
     setError(null);
-  }, [userId]);
+  }, [username]);
 
   const loadAnalysis = async () => {
     if (analysis) return; // Já carregou
@@ -73,7 +71,7 @@ export function XpBreakdownDialog({
     setError(null);
 
     try {
-      const response = await fetch(`/api/user/xp-analysis?userId=${userId}`);
+      const response = await fetch("/api/user/xp-analysis");
 
       if (!response.ok) {
         throw new Error("Erro ao carregar análise de XP");
@@ -169,9 +167,7 @@ export function XpBreakdownDialog({
                   </p>
                 </div>
                 <div className="bg-muted rounded-lg p-3 text-center">
-                  <p className="text-xs text-muted-foreground">
-                    Issues resolvidas
-                  </p>
+                  <p className="text-xs text-muted-foreground">issues</p>
                   <p className="text-2xl font-bold">
                     {analysis.issues_after_join}
                   </p>
@@ -204,7 +200,7 @@ export function XpBreakdownDialog({
                   </span>
                 </div>
                 <div className="flex items-center justify-between bg-muted rounded-lg p-3">
-                  <span className="text-sm">Issues resolvidas</span>
+                  <span className="text-sm">issues</span>
                   <span className="font-bold text-purple-500">
                     ×{issueMultiplier.toFixed(2)}
                   </span>
@@ -239,7 +235,7 @@ export function XpBreakdownDialog({
                 </div>
                 <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                   <span>
-                    {analysis.issues_after_join} issues resolvidas x{" "}
+                    {analysis.issues_after_join} issues x{" "}
                     {BASE_ACTIVITY_XP.issue} XP × {issueMultiplier.toFixed(2)}
                   </span>
                   <span className="font-bold text-purple-500">

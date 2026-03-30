@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { blockDebugRouteInProduction } from "@/lib/debug-route";
 
 export async function GET(request: NextRequest) {
   try {
+    const blockedResponse = blockDebugRouteInProduction();
+
+    if (blockedResponse) {
+      return blockedResponse;
+    }
+
     const supabase = await createClient();
 
     const {
@@ -34,7 +41,9 @@ export async function GET(request: NextRequest) {
       token_in_db: userData?.github_access_token
         ? `${userData.github_access_token.substring(0, 10)}...`
         : null,
-      token_in_session: sessionToken ? `${sessionToken.substring(0, 10)}...` : null,
+      token_in_session: sessionToken
+        ? `${sessionToken.substring(0, 10)}...`
+        : null,
       tokens_match: userData?.github_access_token === sessionToken,
       session_exists: !!session,
     });
